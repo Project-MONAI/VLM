@@ -56,6 +56,16 @@ The format of the generated `json` file is a dictionary with all the torchxrayvi
 }
 ```
 
+
+#### Make ensemble classification scores
+
+This step reads all the `.json` files generated in the previous step and compute ensemble probabilities for each image.
+The output will be saved at the `torchxrayvision/ensemble` subfolder.
+
+```bash
+python make_ensemble_probs.py
+```
+
 ####  Make VILA format training file
 
 ```bash
