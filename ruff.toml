@@ -11,3 +11,4 @@ exclude = [
 
 [lint]
 select = ["D1"]
+ignore = ["D100"]
