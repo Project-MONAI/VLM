@@ -85,3 +85,6 @@ venv.bak/
 
 # VSCode
 .vscode/
+
+# Data files
+data/
