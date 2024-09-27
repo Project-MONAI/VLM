@@ -10,16 +10,19 @@
 # limitations under the License.
 
 import argparse
-from expert_utils import model_list, assert_image_placeholder, get_predictions, add_expert_conversation
-from data_utils import read_json, write_json
-from tqdm import tqdm
 import random
+
+from data_utils import read_json, write_json
+from expert_utils import add_expert_conversation, assert_image_placeholder, get_predictions, model_list
+from tqdm import tqdm
+
 random.seed(0)
 
 assert isinstance(model_list, str)
 
 
 def main(args):
+    """Prepare expert training data for CXR."""
     in_data = read_json(args.in_datafile)
 
     assert args.n_samples < len(in_data)
@@ -46,7 +49,7 @@ def main(args):
     out_train_file = args.out_fileprefix + "_train.json"
     out_test_file = args.out_fileprefix + "_test.json"
 
-    split_idx = int(args.test_frac*len(all_conversations))
+    split_idx = int(args.test_frac * len(all_conversations))
 
     random.shuffle(all_conversations)
     test_conversations = all_conversations[0:split_idx]

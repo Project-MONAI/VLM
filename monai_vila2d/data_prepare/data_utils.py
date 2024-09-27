@@ -14,27 +14,27 @@ import os
 
 # from https://github.com/scikit-image/scikit-image/blob/fe57b47ba46e9e11c626b97a8a24cd4d2c41fba1/skimage/color/colorlabel.py#L14
 colors = (
-    'red',
-    'blue',
-    'yellow',
-    'magenta',
-    'green',
-    'indigo',
-    'darkorange',
-    'cyan',
-    'pink',
-    'brown',
-    'orange',
-    'lime',
-    'orange',
-    'gold',
-    'yellowgreen',
-    'darkgreen',
-
+    "red",
+    "blue",
+    "yellow",
+    "magenta",
+    "green",
+    "indigo",
+    "darkorange",
+    "cyan",
+    "pink",
+    "brown",
+    "orange",
+    "lime",
+    "orange",
+    "gold",
+    "yellowgreen",
+    "darkgreen",
 )
 
 
-def read_txt(filename, ignore_newline=True):
+def read_txt(filename):
+    """Reads a text file and returns a list of lines."""
     assert ".txt" in filename
     with open(filename, "r") as f:
         data = f.readlines()
@@ -44,6 +44,7 @@ def read_txt(filename, ignore_newline=True):
 
 
 def read_json(filename):
+    """Reads a JSON file and returns a dictionary."""
     assert ".json" in filename
     with open(filename, "r") as f:
         data = json.load(f)
@@ -51,6 +52,7 @@ def read_json(filename):
 
 
 def read_jsonl(filename):
+    """Reads a JSONL file and returns a list of dictionaries."""
     assert ".jsonl" in filename
     data = []
     with open(filename, "r") as f:
@@ -61,6 +63,7 @@ def read_jsonl(filename):
 
 
 def write_json(data, out_filename, indent=4):
+    """Writes a dictionary to a JSON file."""
     os.makedirs(os.path.dirname(out_filename), exist_ok=True)
     with open(out_filename, "w") as f:
         json.dump(data, f, indent=indent)
@@ -68,6 +71,7 @@ def write_json(data, out_filename, indent=4):
 
 
 def remove_extension(filename):
+    """Removes the extension from a filename."""
     out_filename = filename
     while len(os.path.splitext(out_filename)[1]) > 0:
         out_filename = os.path.splitext(out_filename)[0]
@@ -75,16 +79,19 @@ def remove_extension(filename):
 
 
 def listdir(path, ignore_hidden=True):
+    """Lists the contents of a directory."""
     if ignore_hidden:
         dirs = []
         for f in os.listdir(path):
-            if not f.startswith('.'):
+            if not f.startswith("."):
                 dirs.append(f)
         return dirs
     else:
         return os.listdir(path)
 
+
 def get_label_name(label_dict, search_id):
+    """Returns the label name for a given label ID in the label_dict."""
     assert search_id > 0
     found_name = None
     for name, _id in label_dict.items():
@@ -94,5 +101,3 @@ def get_label_name(label_dict, search_id):
         print(search_id, "not found!")
     assert found_name is not None
     return found_name
-
-

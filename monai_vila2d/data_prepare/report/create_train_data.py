@@ -9,18 +9,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import base64
+import os
 import pickle
 
 
 def encode_image_to_base64(image_path):
+    """Encode the 2D image to base64 string."""
     with open(image_path, "rb") as img_file:
         base64_string = base64.b64encode(img_file.read()).decode("utf-8")
     return base64_string
 
 
 def save_dataset(dataset_type, dataset_name, save_path, data):
+    """Save the dataset to a pickle file."""
     save_filename = f"{dataset_type}_{dataset_name}.pkl"
     save_pathname = os.path.join(save_path, save_filename)
     with open(save_pathname, "wb") as f:
