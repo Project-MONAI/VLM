@@ -1,18 +1,18 @@
+import argparse
 import os
-from data_utils import read_txt, read_json, write_json
-import uuid
-from tqdm import tqdm
 import random
+import uuid
+
+from data_utils import read_json, read_txt, write_json
+from tqdm import tqdm
+
 random.seed(0)
 
 from expert_utils import model_list
+
 assert isinstance(model_list, str)
 
-root_dir = "./"
-
-n = 100_000
-test_frac = 0.5
-# TODO: upsample tumors
+# TODO: option to upsample tumors
 
 
 def get_qa_pairs(qas):
@@ -21,12 +21,12 @@ def get_qa_pairs(qas):
         _start = qas.find("Q:")
         qas = qas[_start::]
         _end = qas.find("\n")
-        question = qas[qas.find("Q:") + 3:_end]
-        qas = qas[_end + 1::]
+        question = qas[qas.find("Q:") + 3 : _end]
+        qas = qas[_end + 1 : :]
         _end = qas.find("\n")
-        answer = qas[qas.find("A:") + 3:_end]
+        answer = qas[qas.find("A:") + 3 : _end]
         qas = qas[_end::]
-        #print(question, answer)
+        # print(question, answer)
         assert "Q:" not in answer
         assert "A:" not in question
         if len(question) == 0 or len(answer) == 0:
@@ -40,10 +40,10 @@ def get_qa_pairs(qas):
 def get_questions(reply):
     questions = []
     lines = reply.split("\n")
-    for l in lines:
-        if len(l) > 4:
-            if "." == l[1]:  # "e.g., '1.'"
-                question = l[3::]
+    for line in lines:
+        if len(line) > 4:
+            if "." == line[1]:  # "e.g., '1.'"
+                question = line[3::]
                 questions.append(question)
 
     assert len(questions) > 0
@@ -59,31 +59,19 @@ def parse_qas(seg_qas_raw_file, lesions_q_raw_file, how_many_q_raw_file):
     seg_qas = {}
     for v in seg_qas_raw:
         qas = get_qa_pairs(v["reply"])
-        seg_qas[v["object_type"]] = {
-            "reply": v["reply"],
-            "exp_model": v["exp_model"],
-            "qas": qas
-        }
+        seg_qas[v["object_type"]] = {"reply": v["reply"], "exp_model": v["exp_model"], "qas": qas}
         print(f"Added {len(qas)} QA pairs for {v['object_type']}")
 
     lesions_qs = {}
     for v in lesions_q_raw:
         qs = get_questions(v["reply"])
-        lesions_qs[v["tumor"]] = {
-            "reply": v["reply"],
-            "tumor": v["tumor"],
-            "questions": qs
-        }
+        lesions_qs[v["tumor"]] = {"reply": v["reply"], "tumor": v["tumor"], "questions": qs}
         print(f"Added {len(qs)} lesion questions for {v['tumor']}")
 
     how_many_qs = {}
     for v in how_many_q_raw:
         qs = get_questions(v["reply"])
-        how_many_qs[v["tumor"]] = {
-            "reply": v["reply"],
-            "tumor": v["tumor"],
-            "questions": qs
-        }
+        how_many_qs[v["tumor"]] = {"reply": v["reply"], "tumor": v["tumor"], "questions": qs}
         print(f"Added {len(qs)} how many questions for {v['tumor']}")
 
     return seg_qas, lesions_qs, how_many_qs
@@ -92,7 +80,7 @@ def parse_qas(seg_qas_raw_file, lesions_q_raw_file, how_many_q_raw_file):
 def read_meta_files(root, datasets):
     assert isinstance(root, str)
     assert isinstance(datasets, list)
-    meta_files = [os.path.join(root, ds, "extracted_slices_meta.json")for ds in datasets]
+    meta_files = [os.path.join(root, ds, "extracted_slices_meta.json") for ds in datasets]
 
     meta = []
     out_datasets = []
@@ -119,57 +107,59 @@ def find_image(images, image, dataset):
     raise ValueError(f"Did not find a matching image for {image} and dataset {dataset}")
 
 
-def main():
-
+def main(args):
     images = read_txt("./vista3d/ct2D_vista3d_images.txt")
-    assert n < len(images)
+    assert args.n_samples < len(images)
 
     incl_ds = ["Task03", "Task07", "Task09", "TotalSegmentatorV2"]
-    #incl_ds = ["Task03", "Task09"]
+    # incl_ds = ["Task03", "Task09"]
     meta, datasets = read_meta_files(root="../experts/vista3d", datasets=incl_ds)
-
-    out_fileprefix = "../../data/experts/vista3d/llama_gen_expert_data_vista3d_what"
 
     # TODO: add tumor questions
 
     what_questions = read_txt("./llama_output/llama_gen_expert_what.txt")
 
     # convert raw to dict
-    seg_qas, lesions_qs, how_many_qs = parse_qas("./llama_output/llama_gen_expert_qa_vista3d.json",
-                                                 "./llama_output/llama_gen_expert_qa_lesions.json",
-                                                 "./llama_output/llama_gen_expert_qa_how_many.json")
+    seg_qas, lesions_qs, how_many_qs = parse_qas(
+        "./llama_output/llama_gen_expert_qa_vista3d.json",
+        "./llama_output/llama_gen_expert_qa_lesions.json",
+        "./llama_output/llama_gen_expert_qa_how_many.json",
+    )
 
     meta_ds = [(m, d) for m, d in zip(meta, datasets)]
-    meta_ds = random.sample(meta_ds, k=n)
+    meta_ds = random.sample(meta_ds, k=args.n_samplesn)
 
     all_conversations = []
     n_neg_tumors, n_pos_tumors, n_seg, n_what = 0, 0, 0, 0
     for md in tqdm(meta_ds, desc="creating train data..."):
         m, ds = md[0], md[1]
-        image = find_image(images, m["image"], ds).replace(root_dir, "").replace("\n", "")
+        image = find_image(images, m["image"], ds).replace(args.root_dir, "").replace("\n", "")
         label = image.replace("_img.png", "_label.png")
         group_name = m["group_name"]
 
         id = str(uuid.uuid4())
 
-        entry = {
-            "image": image,
-            "id": id
-        }
+        entry = {"image": image, "id": id}
 
         if "tumor" in group_name or "lesion" in group_name:
             # tumor task
             if group_name in lesions_qs:
                 les_qs = lesions_qs[group_name]
             else:
-                les_qs = lesions_qs[group_name+"s"]
+                les_qs = lesions_qs[group_name + "s"]
 
             question = random.choice(les_qs["questions"])
 
             conv = list()
             conv.append({"from": "human", "value": model_list + f" <image>This is a CT image.\n" + question})
             conv.append({"from": "gpt", "value": f"This looks like a CT image. Let me trigger <VISTA3D({group_name})>. "})
-            conv.append({"from": "human", "value": f"The results are <segmentation>. The colors in this image describe {m['label_colors']}. Use this result to respond to this prompt:\n{question}."})
+            conv.append(
+                {
+                    "from": "human",
+                    "value": f"The results are <segmentation>. The colors in this image describe {m['label_colors']}. "
+                    f"Use this result to respond to this prompt:\n{question}.",
+                }
+            )
             if len(m["num_tumors"]) > 0:
                 n_pos_tumors += 1
                 answer = "yes"
@@ -217,9 +207,25 @@ def main():
                 question = random.choice(what_questions)
                 conv = list()
                 conv.append({"from": "human", "value": model_list + f" <image>This is a CT image.\n" + question})
-                conv.append({"from": "gpt", "value": f"This looks like a CT image. Let me trigger <VISTA3D({group_name})>. "})
-                conv.append({"from": "human", "value": f"The results are <segmentation>. The colors in this image describe {m['label_colors']}. Use this result to respond to this prompt:\n{question}."})
-                conv.append({"from": "gpt", "value": f"This a CT image. It contains several anatomical structures such as identified by VISTA3D: {m['label_colors']}."})
+                conv.append(
+                    {"from": "gpt", "value": f"This looks like a CT image. Let me trigger <VISTA3D({group_name})>. "}
+                )
+                conv.append(
+                    {
+                        "from": "human",
+                        "value": f"The results are <segmentation>. "
+                        f"The colors in this image describe {m['label_colors']}. "
+                        f"Use this result to respond to this prompt:\n{question}.",
+                    }
+                )
+                conv.append(
+                    {
+                        "from": "gpt",
+                        "value": f"This a CT image. "
+                        f"It contains several anatomical structures such as identified by VISTA3D: "
+                        f"{m['label_colors']}.",
+                    }
+                )
 
         entry["conversations"] = conv
 
@@ -227,10 +233,10 @@ def main():
 
     print(f"Converted {len(all_conversations)} conversations")
 
-    out_train_file = out_fileprefix + "_train.json"
-    out_test_file = out_fileprefix + "_test.json"
+    out_train_file = args.out_fileprefix + "_train.json"
+    out_test_file = args.out_fileprefix + "_test.json"
 
-    split_idx = int(test_frac*len(all_conversations))
+    split_idx = int(args.test_frac * len(all_conversations))
 
     random.shuffle(all_conversations)
     test_conversations = all_conversations[0:split_idx]
@@ -239,8 +245,18 @@ def main():
     write_json(train_conversations, out_train_file)
     write_json(test_conversations, out_test_file)
 
-    print(f"Saved neg tumors: {n_neg_tumors}, pos tumors: {n_pos_tumors}, seg: {n_seg}, what: {n_what}, total: {len(all_conversations)}")
+    print(
+        f"Saved neg tumors: {n_neg_tumors}, pos tumors: {n_pos_tumors}, "
+        f"seg: {n_seg}, what: {n_what}, total: {len(all_conversations)}"
+    )
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root_dir", type=str, required=True)
+    parser.add_argument("--out_fileprefix", type=str, required=True)
+    parser.add_argument("--n_samples", type=int, default=100_000)
+    parser.add_argument("--test_frac", type=float, default=0.5)
+    args = parser.parse_args()
+
+    main(args)
