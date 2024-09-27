@@ -10,33 +10,35 @@
 # limitations under the License.
 
 import copy
-import jieba
 import json
 import multiprocessing
-import numpy as np
 import os
 import random
 import re
-import spacy
-import section_parser as sp
 import sys
 import warnings
-
 from pathlib import Path
 
+import jieba
+import numpy as np
+import section_parser as sp
+import spacy
 
 random.seed(10)
 
 
 def remove_newline(text):
+    """Remove newline characters from the text."""
     return text.replace("\n", "").replace("\r", "").strip()
 
 
 def normalize_spaces(text):
+    """Normalize spaces in the text."""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def split_into_sentences(paragraph):
+    """Split the paragraph into sentences."""
     # Regular expression to split sentences but avoid splitting on "a.m.", "p.m.", and "Dr."
     # The period following a.m., p.m., and Dr. is not treated as sentence-ending punctuation
     sentence_endings = re.compile(r"(?<!a\.m)(?<!p\.m)(?<!Dr)\.(?!\d)|(?<=[!?])")
@@ -68,11 +70,13 @@ def split_into_sentences(paragraph):
 
 
 def remove_sentences_with_underscore(sentences):
+    """Remove sentences that contain the underscore character."""
     # Filter out sentences that contain the underscore character
     return [sentence for sentence in sentences if "_" not in sentence]
 
 
 def refine_numbered_sentences(sentences):
+    """Refine sentences that start with a number followed by a period."""
     # Regular expression to match "1. ", "2. ", etc.
     pattern = re.compile(r"^\d+\.\s")
 
@@ -88,6 +92,7 @@ def refine_numbered_sentences(sentences):
 
 
 def skip_to_first_letter(sentences):
+    """Skip to the first letter in each sentence."""
     refined_sentences = []
 
     for sentence in sentences:
@@ -105,6 +110,7 @@ def skip_to_first_letter(sentences):
 
 
 def capitalize_first_letter(sentences):
+    """Capitalize the first letter of each sentence."""
     refined_sentences = []
 
     for sentence in sentences:
@@ -114,24 +120,21 @@ def capitalize_first_letter(sentences):
             refined_sentences.append(sentence[0].upper() + sentence[1:])
         else:
             # Raise an error if the first character is not a letter
-            raise ValueError(
-                f"First character is not a letter in sentence: '{sentence}'"
-            )
+            raise ValueError(f"First character is not a letter in sentence: '{sentence}'")
 
     return refined_sentences
 
 
 def remove_before_colon(sentences):
+    """Remove text before a colon in each sentence."""
     # Replace only when a colon is followed by a space
-    refined_sentences = [
-        sentence.split(": ", 1)[-1] if ": " in sentence else sentence
-        for sentence in sentences
-    ]
+    refined_sentences = [sentence.split(": ", 1)[-1] if ": " in sentence else sentence for sentence in sentences]
 
     return refined_sentences
 
 
 def replace_abbreviations(text):
+    """Replace common abbreviations in the text."""
     # Replace specific abbreviations
     pattern = re.compile(r"a\.m\.\s([A-Z])")
     text = pattern.sub(r"am_. \1", text)
@@ -148,6 +151,7 @@ def replace_abbreviations(text):
 
 
 def add_period_if_missing(sentences):
+    """Add a period at the end of each sentence if missing."""
     # Regular expression to check if the sentence ends with a punctuation mark
     pattern = re.compile(r"[.!?]$")
 
@@ -163,6 +167,7 @@ def add_period_if_missing(sentences):
 
 
 def partition_into_paragraphs(report):
+    """Partition the report into paragraphs."""
     # Split the report based on double newlines (i.e., paragraphs separated by empty lines)
     paragraphs = report.split("\n\n")
 
@@ -173,30 +178,25 @@ def partition_into_paragraphs(report):
 
 
 def remove_duplicate_sentences(sentences):
+    """Remove duplicate sentences from the list."""
     seen = set()  # To keep track of sentences we have already seen
     unique_sentences = []
 
     for sentence in sentences:
         if sentence not in seen:
-            unique_sentences.append(
-                sentence
-            )  # Add sentence to the result if not seen before
+            unique_sentences.append(sentence)  # Add sentence to the result if not seen before
             seen.add(sentence)  # Mark this sentence as seen
 
     return unique_sentences
 
 
 def remove_single_char_sentences(sentence_list):
-    """
-    This function removes sentences with only one character from the list.
-    """
+    """This function removes sentences with only one character from the list."""
     return [sentence for sentence in sentence_list if len(sentence) > 6]
 
 
 def find_duplicates(input_list):
-    """
-    This function returns a list of duplicated values in the input list.
-    """
+    """This function returns a list of duplicated values in the input list."""
     seen = set()
     duplicates = set()
 
@@ -210,9 +210,7 @@ def find_duplicates(input_list):
 
 
 def replace_appearance(text, target_word, replacement_word, nth_app):
-    """
-    Replace the second appearance of a target_word in the text with a replacement_word.
-    """
+    """Replace the second appearance of a target_word in the text with a replacement_word."""
     # Split the text at each occurrence of the target_word
     parts = text.split(target_word)
 
@@ -221,23 +219,18 @@ def replace_appearance(text, target_word, replacement_word, nth_app):
         return text
 
     # Rebuild the string: join the parts, but replace the second occurrence
-    modified_text = (
-        target_word.join(parts[:nth_app])
-        + replacement_word
-        + target_word.join(parts[nth_app:])
-    )
+    modified_text = target_word.join(parts[:nth_app]) + replacement_word + target_word.join(parts[nth_app:])
 
     return modified_text
 
 
 def remove_question_sentences(sentences):
-    """
-    Remove sentences that contain question marks from the list.
-    """
+    """Remove sentences that contain question marks from the list."""
     return [sentence for sentence in sentences if "?" not in sentence]
 
 
 def get_mimic_data(text_filepath):
+    """Extract the relevant text from the MIMIC CXR report."""
     path_to_report = text_filepath
     if not os.path.exists(path_to_report):
         print(f"path_to_report: {path_to_report}")
