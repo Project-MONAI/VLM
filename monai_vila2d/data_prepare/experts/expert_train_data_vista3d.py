@@ -27,6 +27,7 @@ assert isinstance(model_list, str)
 
 
 def get_qa_pairs(qas):
+    """Get Question answer pairs from LLM generated results."""
     qa_pairs = []
     while qas.find("Q:") and qas.find("A:"):
         _start = qas.find("Q:")
@@ -49,6 +50,7 @@ def get_qa_pairs(qas):
 
 
 def get_questions(reply):
+    """Isolate the question."""
     questions = []
     lines = reply.split("\n")
     for line in lines:
@@ -62,6 +64,7 @@ def get_questions(reply):
 
 
 def parse_qas(seg_qas_raw_file, lesions_q_raw_file, how_many_q_raw_file):
+    """Parse the LLM generated QA pairs."""
     seg_qas_raw = read_json(seg_qas_raw_file)
     lesions_q_raw = read_json(lesions_q_raw_file)
     how_many_q_raw = read_json(how_many_q_raw_file)
@@ -89,6 +92,7 @@ def parse_qas(seg_qas_raw_file, lesions_q_raw_file, how_many_q_raw_file):
 
 
 def read_meta_files(root, datasets):
+    """Read meta files from image extraction procedure."""
     assert isinstance(root, str)
     assert isinstance(datasets, list)
     meta_files = [os.path.join(root, ds, "extracted_slices_meta.json") for ds in datasets]
@@ -107,6 +111,7 @@ def read_meta_files(root, datasets):
 
 
 def find_image(images, image, dataset):
+    """Find matching images."""
     assert isinstance(images, list)
     assert isinstance(image, str)
     assert isinstance(dataset, str)
@@ -119,6 +124,7 @@ def find_image(images, image, dataset):
 
 
 def main(args):
+    """Prepare expert training data for VISTA3D (CT images)."""
     images = read_txt("./vista3d/ct2D_vista3d_images.txt")
     assert args.n_samples < len(images)
 
