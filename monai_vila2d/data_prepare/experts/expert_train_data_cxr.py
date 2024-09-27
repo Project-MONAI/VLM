@@ -13,10 +13,7 @@ import argparse
 import random
 
 from data_utils import read_json, write_json
-from expert_utils import (add_expert_conversation,
-                          assert_image_placeholder,
-                          get_predictions,
-                          model_list)
+from expert_utils import add_expert_conversation, assert_image_placeholder, get_predictions, model_list
 from tqdm import tqdm
 
 random.seed(0)
