@@ -19,26 +19,9 @@ input_label_dir = "/media/hroth/NVIDIA/home_old/hroth/Data2/VLM/MRI3D/brats_mri_
 output_dir="../../data/experts/brats/slices"
 
 MIN_VOL = 1000  # 1 cm^3
-OVERWRITE = True
+OVERWRITE = False
 
 modalities = ["t1ce", "t1", "t2", "flair"]
-
-
-def get_centroid_slice_ids(label, min_vol, vox_vol):
-    label = np.squeeze(label)
-    center_slices = []
-    print(f"Find connected components in {label.shape} volume ...")
-    connects, num_connects = skimage.measure.label(label, return_num=True)  # uses ndim connectivity by default
-    for connect_id in range(1, num_connects + 1):
-        volume = np.sum(connects == connect_id) * vox_vol
-        if volume > min_vol:
-            obj_center = skimage.measure.centroid(connects == connect_id)
-
-            center_slices.append(math.floor(obj_center[-1]))
-
-    # assert len(center_slices) > 0
-    print(f"Found {len(center_slices)} centroid slices ...")
-    return sorted(center_slices)
 
 
 def main():
@@ -46,9 +29,14 @@ def main():
 
     assert len(datalist) > 0, "Datalist is empty!"
 
+    os.makedirs(output_dir, exist_ok=True)
+    if len(listdir(output_dir)) > 0 and (not OVERWRITE):
+        raise ValueError(f"Output directory not empty! {output_dir}")
+
     out_meta = []
     for dataset_name in ["training", "validation", "testing"]:
         dataset_list = datalist[dataset_name]
+        print(f"Processing {len(dataset_list)} images in {dataset_name} set")
         # get images & seg labels
         image_files, label_files = [], []
         for entry in dataset_list:
@@ -72,10 +60,6 @@ def main():
         assert len(image_files) == len(label_files), f"{len(image_files)} image vs. {len(label_files)} labels"
         print(f"Found {len(image_files)} image label pairs")
 
-        os.makedirs(output_dir, exist_ok=True)
-        if len(listdir(output_dir)) > 0 and (not OVERWRITE):
-            raise ValueError(f"Output directory not empty! {output_dir}")
-
         loader = LoadImage(image_only=True, ensure_channel_first=True)
         orientation = Orientation(axcodes="RAS")
 
@@ -92,7 +76,6 @@ def main():
 
         # iterate through images
         count = 0
-        n_target_labels = []
         for image_files, label_file in zip(image_files, label_files):
             out_img_dir = os.path.join(output_dir, os.path.basename(remove_extension(image_files[0])))
             os.makedirs(out_img_dir, exist_ok=True)
@@ -125,7 +108,6 @@ def main():
                 if 1 not in label_slice or 2 not in label_slice or 4 not in label_slice:
                     continue
 
-                # get color label names
                 #out_color_label_names = "yellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor"
 
                 img_id = f"{modality.lower()}_{count:05d}"
@@ -145,12 +127,12 @@ def main():
                     image_slice = np.repeat(np.expand_dims(image_slices[0], axis=-1), axis=-1, repeats=3)
                     image_slice = np.rot90(np.swapaxes(image_slice.astype(np.uint8), 0, 1), k=2)
                     skimage.io.imsave(image_outname, image_slice)
-                    image_outnames.append(os.path.basename(image_outname))
+                    image_outnames.append(image_outname.replace(output_dir+os.path.sep, ""))
 
                 out_meta.append(
                     {
                         "image": image_outnames,
-                        "label": os.path.basename(label_outname),
+                        "label": label_outname.replace(output_dir+os.path.sep, ""),
                         "orig_images": image_files,
                         "orig_shape": [int(i) for i in orig_image_volume.shape],
                         "orig_label": label_file
@@ -161,9 +143,7 @@ def main():
 
                 # return
 
-        print(f"Exported a total of {count} images")
-        print("Extracted label frequency")
-        print(np.histogram(n_target_labels))
+    print(f"Exported a total of {count} images")
 
     write_json(out_meta, os.path.join(output_dir, "extracted_slices_meta.json"))
 
