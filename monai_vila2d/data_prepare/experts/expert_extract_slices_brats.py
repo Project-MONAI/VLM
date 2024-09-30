@@ -108,8 +108,6 @@ def main():
                 if 1 not in label_slice or 2 not in label_slice or 4 not in label_slice:
                     continue
 
-                #out_color_label_names = "yellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor"
-
                 img_id = f"{modality.lower()}_{count:05d}"
                 out_prefix = os.path.join(out_img_dir, img_id)
 
