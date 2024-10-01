@@ -13,6 +13,7 @@ import argparse
 import json
 import pickle
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, required=True)

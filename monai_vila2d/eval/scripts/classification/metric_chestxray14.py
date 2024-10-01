@@ -10,13 +10,13 @@
 # limitations under the License.
 
 import argparse
+import json
 import os
 import re
 import warnings
 
 import numpy as np
 from sklearn.metrics import f1_score
-import json
 
 classes = {"fracture": 0, "pneumothorax": 1, "lung_opacity": 2}
 gt_ids = {"fracture": -5, "pneumothorax": -4, "lung_opacity": -3}

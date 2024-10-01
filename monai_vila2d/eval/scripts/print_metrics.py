@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, default=True)

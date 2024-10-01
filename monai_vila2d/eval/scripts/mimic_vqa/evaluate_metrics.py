@@ -10,8 +10,10 @@
 # limitations under the License.
 
 import math
+
 from glossary import *
 from utils import *
+
 
 def bleu(candidate, references, n, weights):
 

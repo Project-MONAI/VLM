@@ -11,11 +11,10 @@
 
 import argparse
 import os.path as osp
-import requests
-import torch
-
 from io import BytesIO
 
+import requests
+import torch
 from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
 from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token

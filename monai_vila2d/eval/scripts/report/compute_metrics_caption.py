@@ -13,8 +13,9 @@
 import argparse
 import json
 import os
-from pycocotools.coco import COCO
+
 from pycocoevalcap.eval import COCOEvalCap
+from pycocotools.coco import COCO
 
 
 # Read the files

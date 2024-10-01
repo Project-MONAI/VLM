@@ -15,6 +15,7 @@ from .meteor.meteor import Meteor
 from .rouge.rouge import Rouge
 from .tokenizer.ptbtokenizer import PTBTokenizer
 
+
 class COCOEvalCap:
     def __init__(self, coco, cocoRes):
         self.evalImgs = []

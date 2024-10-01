@@ -11,11 +11,11 @@
 
 import argparse
 import json
-import numpy as np
 import os
 import re
 import warnings
 
+import numpy as np
 from sklearn.metrics import f1_score
 
 classes = {"Atelectasis": "a", "Cardiomegaly": "b", "Consolidation": "c", "Edema": "d", "pleural_effusion": "e"}

@@ -18,6 +18,7 @@ from llava.mm_utils import get_model_name_from_path
 from llava.model.builder import load_pretrained_model
 from run_vila import eval_model
 
+
 def batch_run(exp_id, mpath, conv_mode, folder_name):
     prompt = (
         "<image>\nThe following is a multiple-choice question about findings in chest X-ray in the frontal view. "

@@ -12,11 +12,11 @@
 
 import argparse
 import json
-import numpy as np
+from pathlib import Path
 
+import numpy as np
 from evaluate_metrics import calculate_f1score
 from glossary import normalize_word
-from pathlib import Path
 from utils import load_json, load_jsonl
 
 

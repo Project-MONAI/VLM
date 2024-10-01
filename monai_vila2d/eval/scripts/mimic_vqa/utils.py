@@ -12,7 +12,6 @@
 
 import json
 import math
-
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, List

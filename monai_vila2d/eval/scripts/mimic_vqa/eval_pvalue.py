@@ -9,13 +9,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+from pathlib import Path
 
+import numpy as np
 from evaluate_metrics import calculate_f1score
 from glossary import normalize_word
-from pathlib import Path
 from scipy.stats import wilcoxon
 from utils import load_json, load_jsonl
+
 
 def get_significance(instruct, prediction1, prediction2):
     gt = load_json(instruct)
