@@ -12,12 +12,12 @@
 # load chest x-ray and try different classification prompts
 import argparse
 import os
-from types import SimpleNamespace
 
-from run_vila import eval_model
-# from llava.eval.run_vila import eval_model
 from llava.mm_utils import get_model_name_from_path
 from llava.model.builder import load_pretrained_model
+
+from run_vila import eval_model
+from types import SimpleNamespace
 
 
 def batch_run(exp_id, mpath, conv_mode, folder_name):

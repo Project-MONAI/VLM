@@ -10,11 +10,12 @@
 # limitations under the License.
 
 
-from pathlib import Path
 import json
-from typing import Any, List, Tuple, Union, Optional
-from collections import defaultdict
 import math
+
+from collections import defaultdict
+from pathlib import Path
+from typing import Any, List
 
 
 def load_json(path: Path) -> Any:

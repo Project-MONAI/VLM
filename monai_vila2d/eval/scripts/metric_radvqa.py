@@ -10,9 +10,10 @@
 # limitations under the License.
 
 
+import argparse
 import json
 import jsonlines
-import argparse
+
 
 def get_args():
     parser = argparse.ArgumentParser()

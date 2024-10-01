@@ -10,16 +10,13 @@
 # limitations under the License.
 
 
-import os
-import json
-# import jsonlines
 import argparse
-
-from pathlib import Path
+import json
 import numpy as np
 
-from glossary import normalize_word
 from evaluate_metrics import calculate_f1score
+from glossary import normalize_word
+from pathlib import Path
 from utils import load_json, load_jsonl
 
 

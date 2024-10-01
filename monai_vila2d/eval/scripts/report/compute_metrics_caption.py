@@ -11,9 +11,8 @@
 # limitations under the License.
 
 import argparse
-import os
 import json
-import sys
+import os
 from pycocotools.coco import COCO
 from pycocoevalcap.eval import COCOEvalCap
 

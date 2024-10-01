@@ -1,4 +1,3 @@
-__author__ = "tylin"
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -10,12 +9,11 @@ __author__ = "tylin"
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .tokenizer.ptbtokenizer import PTBTokenizer
 from .bleu.bleu import Bleu
+from .cider.cider import Cider
 from .meteor.meteor import Meteor
 from .rouge.rouge import Rouge
-from .cider.cider import Cider
-
+from .tokenizer.ptbtokenizer import PTBTokenizer
 
 class COCOEvalCap:
     def __init__(self, coco, cocoRes):

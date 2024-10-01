@@ -10,14 +10,12 @@
 # limitations under the License.
 
 import argparse
-import re
-from io import BytesIO
-import os
 import os.path as osp
-
+import re
 import requests
 import torch
-from PIL import Image
+
+from io import BytesIO
 
 from llava.constants import (
     DEFAULT_IM_END_TOKEN,
@@ -36,6 +34,7 @@ from llava.mm_utils import (
 from llava.model.builder import load_pretrained_model
 from llava.utils import disable_torch_init
 
+from PIL import Image
 
 def load_filenames(file_path):
     with open(file_path, "r") as f:

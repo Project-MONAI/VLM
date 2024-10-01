@@ -13,20 +13,19 @@
 import argparse
 import os
 import warnings
-from copy import deepcopy
-from types import SimpleNamespace
 
+from copy import deepcopy
 from llava.conversation import conv_templates
 from llava.mm_utils import get_model_name_from_path
 from llava.model.builder import load_pretrained_model
 from monai.bundle.config_parser import ConfigParser
 from monai.utils import look_up_option
-
 from prompts import has_placeholder, replace, templates
-
-# from llava.eval.run_vila import eval_model
 from run_vila import eval_model
 from torchxray_cls import all_models, cls_models
+from types import SimpleNamespace
+
+
 
 cls = {1: "fracture", 2: "pneumothorax", 3: "lung opacity"}
 
