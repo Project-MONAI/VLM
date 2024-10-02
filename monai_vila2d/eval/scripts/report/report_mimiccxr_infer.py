@@ -31,11 +31,13 @@ from PIL import Image
 
 
 def load_filenames(file_path):
+    """Load filenames from a file."""
     with open(file_path, "r") as f:
         return [line.strip() for line in f]
 
 
 def load_image(image_file):
+    """Load an image from a file or URL."""
     if image_file.startswith("http") or image_file.startswith("https"):
         response = requests.get(image_file)
         image = Image.open(BytesIO(response.content)).convert("RGB")
@@ -45,10 +47,12 @@ def load_image(image_file):
 
 
 def load_images(image_files):
+    """Load images from a list of files or URLs."""
     return [load_image(image_file) for image_file in image_files]
 
 
 def eval_model(args):
+    """Evaluate a model on a list of images."""
     disable_torch_init()
 
     image_filenames = load_filenames(args.image_list_file)
@@ -57,9 +61,7 @@ def eval_model(args):
     output_folder = args.output_folder
 
     model_name = get_model_name_from_path(args.model_path)
-    tokenizer, model, image_processor, context_len = load_pretrained_model(
-        args.model_path, model_name, args.model_base
-    )
+    tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, model_name, args.model_base)
 
     for img_filename in image_filenames:
         image_path = osp.join(images_folder, img_filename)
@@ -67,9 +69,7 @@ def eval_model(args):
 
         query = "Describe the image in detail."
 
-        image_token_se = (
-            DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
-        )
+        image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
         if IMAGE_PLACEHOLDER in query:
             if model.config.mm_use_im_start_end:
                 query = re.sub(IMAGE_PLACEHOLDER, image_token_se, query)
@@ -77,9 +77,7 @@ def eval_model(args):
                 query = re.sub(IMAGE_PLACEHOLDER, DEFAULT_IMAGE_TOKEN, query)
         else:
             if DEFAULT_IMAGE_TOKEN not in query:
-                print(
-                    f"no <image> tag found in input. Automatically append one at the beginning of text."
-                )
+                print(f"no <image> tag found in input. Automatically append one at the beginning of text.")
                 if model.config.mm_use_im_start_end:
                     query = image_token_se + "\n" + query
                 else:
@@ -110,16 +108,8 @@ def eval_model(args):
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
 
-        images_tensor = process_images([image], image_processor, model.config).to(
-            model.device, dtype=torch.float16
-        )
-        input_ids = (
-            tokenizer_image_token(
-                prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
-            )
-            .unsqueeze(0)
-            .cuda()
-        )
+        images_tensor = process_images([image], image_processor, model.config).to(model.device, dtype=torch.float16)
+        input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
@@ -156,7 +146,7 @@ def eval_model(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument( "--model-path", type=str, required=True)
+    parser.add_argument("--model-path", type=str, required=True)
     parser.add_argument("--model-base", type=str, default=None)
     parser.add_argument("--image-list-file", type=str, required=True)
     parser.add_argument("--images-folder", type=str, required=True)

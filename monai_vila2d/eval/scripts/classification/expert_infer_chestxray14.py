@@ -29,6 +29,7 @@ cls = {1: "fracture", 2: "pneumothorax", 3: "lung opacity"}
 
 
 def batch_run(exp_id=0, mpath=None, conv_mode=None, folder_name="", p_mode="binary"):
+    """Batch run for expert inference on chest x-ray images."""
     if exp_id == 0:
         p_mode = "multi_choice"  # keep the default to a single multi-choice prompt mode
     print(f"using prompt_mode={p_mode}")
@@ -119,7 +120,7 @@ def batch_run(exp_id=0, mpath=None, conv_mode=None, folder_name="", p_mode="bina
 
 
 def get_args():
-
+    """Get arguments from command line."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--idx", type=int, default=0)
     parser.add_argument("--mpath", type=str, required=True)
@@ -131,6 +132,5 @@ def get_args():
 
 
 if __name__ == "__main__":
-
     args = get_args()
     batch_run(args.idx, args.mpath, args.conv, args.output, args.prompt_mode)

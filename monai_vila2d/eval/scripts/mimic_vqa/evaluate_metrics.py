@@ -16,7 +16,7 @@ from utils import *
 
 
 def bleu(candidate, references, n, weights):
-
+    """Get BLEU score."""
     pn = []
     bp = brevity_penalty(candidate, references)
     for i in range(n):
@@ -39,8 +39,10 @@ def bleu(candidate, references, n, weights):
         bleu_result = calculate_bleu(weights, pn, n, bp)
         return str(bleu_result)
 
-#BLEU
+
+# BLEU
 def calculate_bleu(weights, pn, n, bp):
+    """Calculate BLEU score."""
     sum_wlogp = 0
     for i in range(n):
         if pn[i] != 0:
@@ -48,9 +50,10 @@ def calculate_bleu(weights, pn, n, bp):
     bleu_result = bp * math.exp(sum_wlogp)
     return bleu_result
 
-#Exact match
-def calculate_exactmatch(candidate, reference):
 
+# Exact match
+def calculate_exactmatch(candidate, reference):
+    """Calculate exact match between candidate and reference."""
     candidate = normalize_word(candidate)
     reference = normalize_word(reference)
 
@@ -63,16 +66,18 @@ def calculate_exactmatch(candidate, reference):
             count += 1
     for word in candidate_words:
         total += candidate_words[word]
-        
+
     if total == 0:
-        return 0 # "0 (warning: length of candidate's words is 0)"
+        return 0  # "0 (warning: length of candidate's words is 0)"
     else:
         return count / total
 
-#Exact match with normalization
 
-def similarity_candidate_prediction(candidate_answer, prediction): 
-    
+# Exact match with normalization
+
+
+def similarity_candidate_prediction(candidate_answer, prediction):
+    """Calculate similarity between candidate answer and prediction."""
     candidate_answer = split_sentence(candidate_answer, 1)
 
     count = 0
@@ -82,28 +87,30 @@ def similarity_candidate_prediction(candidate_answer, prediction):
             count += 1
 
     total = len(candidate_answer)
-        
+
     if total == 0:
-        return 0.0 # "0 (warning: length of candidate's words is 0)"
+        return 0.0  # "0 (warning: length of candidate's words is 0)"
     else:
         return count / total
 
+
 def argmax(lst):
+    """Get the index of the maximum value in the list."""
     return lst.index(max(lst))
 
-def calculate_appearance_with_normalization(prediction, reference, candidate_set):
 
+def calculate_appearance_with_normalization(prediction, reference, candidate_set):
+    """Calculate appearance with normalization."""
     prediction = normalize_word(prediction)
     reference = normalize_word(reference)
     prediction_words = split_sentence(prediction, 1)
     reference_words = split_sentence(reference, 1)
 
-    candidate_set = candidate_set['0']
+    candidate_set = candidate_set["0"]
 
     similarity_list = []
     candidate_answer_normalized_list = []
     for candidate_answer in candidate_set:
-        
         if isinstance(candidate_answer, int):
             candidate_answer = str(candidate_answer)
 
@@ -116,16 +123,14 @@ def calculate_appearance_with_normalization(prediction, reference, candidate_set
     # import pdb; pdb.set_trace()
 
     if final_prediction == reference:
-        return 1.0 #
+        return 1.0  #
     else:
         return 0.0
 
 
-
-
-#F1
+# F1
 def calculate_f1score(candidate, reference):
-
+    """Calculate F1 score."""
     candidate = normalize_word(candidate)
     reference = normalize_word(reference)
 
@@ -136,7 +141,7 @@ def calculate_f1score(candidate, reference):
         word_set.add(word)
     for word in reference_words:
         word_set.add(word)
-    
+
     tp = 0
     fp = 0
     fn = 0
@@ -147,9 +152,9 @@ def calculate_f1score(candidate, reference):
             fp += candidate_words[word]
         elif word not in candidate_words and word in reference_words:
             fn += reference_words[word]
-    
+
     if len(candidate_words) == 0:
-        return 0, 0, 0 # "0 (warning: length of candidate's words is 0)"
+        return 0, 0, 0  # "0 (warning: length of candidate's words is 0)"
     elif len(reference_words) == 0:
         return 0, 0, 0
     else:
