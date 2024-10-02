@@ -14,8 +14,9 @@ import re
 
 
 def eval_model():
+    """Placeholder for model evaluation."""
     return 1
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     eval_model()

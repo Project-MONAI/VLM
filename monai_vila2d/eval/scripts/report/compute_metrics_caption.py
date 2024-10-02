@@ -1,4 +1,3 @@
-
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +19,7 @@ from pycocotools.coco import COCO
 
 # Read the files
 def read_files(directory):
+    """Read the files in the directory."""
     files_content = {}
     for filename in os.listdir(directory):
         if filename.endswith(".txt"):
@@ -29,6 +29,7 @@ def read_files(directory):
 
 
 def main():
+    """Compute the metrics for the captioning task."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--gt_dir", action="store", type=str, help="Ground truth directory.")
     parser.add_argument("--pred_dir", action="store", type=str, help="Prediction directory.")
@@ -62,8 +63,7 @@ def main():
                 "info": {},
                 "images": [{"id": i} for i in range(len(ground_truth_data))],
                 "annotations": [
-                    {"image_id": d["image_id"], "caption": d["caption"], "id": i}
-                    for i, d in enumerate(ground_truth_data)
+                    {"image_id": d["image_id"], "caption": d["caption"], "id": i} for i, d in enumerate(ground_truth_data)
                 ],
                 "licenses": [],
                 "type": "captions",
@@ -75,10 +75,7 @@ def main():
     results_file = "results.json"
     with open(results_file, "w", encoding="utf-8") as f:
         json.dump(
-            [
-                {"image_id": d["image_id"], "caption": d["caption"]}
-                for d in prediction_data
-            ],
+            [{"image_id": d["image_id"], "caption": d["caption"]} for d in prediction_data],
             f,
         )
 
@@ -100,8 +97,9 @@ def main():
     for metric, score in coco_eval.eval.items():
         print(f"{metric}: {score:.3f}")
 
-    with open(args.output, 'w') as f:
-        json.dump({"accuracy" : coco_eval.eval}, f)
-        
+    with open(args.output, "w") as f:
+        json.dump({"accuracy": coco_eval.eval}, f)
+
+
 if __name__ == "__main__":
     main()

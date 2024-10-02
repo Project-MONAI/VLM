@@ -17,7 +17,10 @@ from .tokenizer.ptbtokenizer import PTBTokenizer
 
 
 class COCOEvalCap:
+    """Calculate the evaluation metrics for the COCO dataset."""
+
     def __init__(self, coco, cocoRes):
+        """Initialize the COCOEvalCap class."""
         self.evalImgs = []
         self.eval = {}
         self.imgToEval = {}
@@ -26,6 +29,7 @@ class COCOEvalCap:
         self.params = {"image_id": coco.getImgIds()}
 
     def evaluate(self):
+        """Evaluate the results."""
         imgIds = self.params["image_id"]
         # imgIds = self.coco.getImgIds()
         gts = {}
@@ -71,9 +75,11 @@ class COCOEvalCap:
         self.setEvalImgs()
 
     def setEval(self, score, method):
+        """Set the evaluation metrics."""
         self.eval[method] = score
 
     def setImgToEvalImgs(self, scores, imgIds, method):
+        """Set the image to evaluation images."""
         for imgId, score in zip(imgIds, scores):
             if not imgId in self.imgToEval:
                 self.imgToEval[imgId] = {}
@@ -81,4 +87,5 @@ class COCOEvalCap:
             self.imgToEval[imgId][method] = score
 
     def setEvalImgs(self):
+        """Set the evaluation images."""
         self.evalImgs = [eval for imgId, eval in self.imgToEval.items()]

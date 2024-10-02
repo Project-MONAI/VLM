@@ -24,11 +24,13 @@ from PIL import Image
 
 
 def image_parser(args):
+    """Parse image file argument."""
     out = args.image_file.split(args.sep)
     return out
 
 
 def load_image(image_file):
+    """Load 2D image from file or URL."""
     if image_file.startswith("http") or image_file.startswith("https"):
         print("downloading image from url", args.video_file)
         response = requests.get(image_file)
@@ -39,6 +41,7 @@ def load_image(image_file):
 
 
 def load_images(image_files):
+    """Load 2D images from file or URL."""
     out = []
     for image_file in image_files:
         image = load_image(image_file)
@@ -47,6 +50,7 @@ def load_images(image_files):
 
 
 def eval_model(args):
+    """Evaluate model on image or video."""
     # Model
     disable_torch_init()
     if args.video_file is None:
@@ -117,6 +121,7 @@ def eval_model(args):
 
 
 def eval_text_model(args):
+    """Evaluate model on text."""
     # Model
     disable_torch_init()
 

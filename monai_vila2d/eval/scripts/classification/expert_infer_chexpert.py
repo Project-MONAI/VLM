@@ -29,6 +29,7 @@ cls = {1: "atelectasis", 2: "cardiomegaly", 3: "consolidation", 4: "edema", 5: "
 
 
 def batch_run(exp_id, mpath, conv_mode, folder_name, p_mode="binary"):
+    """Batch run for expert inference on chest x-ray images."""
     if exp_id == 0:
         p_mode = "multi_choice"  # keep the default to multi_choice mode
     print(f"using prompt_mode={p_mode}")
@@ -88,9 +89,7 @@ def batch_run(exp_id, mpath, conv_mode, folder_name, p_mode="binary"):
         else:
             ens = {}
             for expert_res in expert_models:
-                json_path = os.path.join(
-                    expert_base, expert_res, fname.replace("test/", "").replace("/study1", ".json")
-                )
+                json_path = os.path.join(expert_base, expert_res, fname.replace("test/", "").replace("/study1", ".json"))
                 res = ConfigParser.load_config_files(json_path)
                 for cls_name in res:
                     if cls_name in cls_models and expert_res not in cls_models[cls_name]:
@@ -121,7 +120,7 @@ def batch_run(exp_id, mpath, conv_mode, folder_name, p_mode="binary"):
 
 
 def get_args():
-
+    """Get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--idx", type=int, default=0)
     parser.add_argument("--mpath", type=str, required=True)
@@ -133,6 +132,5 @@ def get_args():
 
 
 if __name__ == "__main__":
-
     args = get_args()
     batch_run(args.idx, args.mpath, args.conv, args.output, args.prompt_mode)

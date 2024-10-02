@@ -15,87 +15,85 @@ import os
 
 
 def get_args():
+    """Parse the command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, default=True)
     return parser.parse_args()
 
+
 def load_json(file_path):
-    with open(file_path, 'r') as f:
+    """Load a JSON file."""
+    with open(file_path, "r") as f:
         return json.load(f)
-    
+
 
 def main():
-
+    """Print the metrics."""
     args = get_args()
     results = {}
 
+    try:
+        json_data = load_json(os.path.join(args.input, "radvqa/results.json"))
+        results["radvqa"] = json_data["accuracy"]
+    except:
+        results["radvqa"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'radvqa/results.json'))
-        results['radvqa'] = json_data['accuracy']
+        json_data = load_json(os.path.join(args.input, "mimicvqa/results.json"))
+        results["mimicvqa"] = json_data["wavg_closed"]
     except:
-        results['radvqa'] = '?'
+        results["mimicvqa"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'mimicvqa/results.json'))
-        results['mimicvqa'] = json_data['wavg_closed']
+        json_data = load_json(os.path.join(args.input, "slakevqa/results.json"))
+        results["slakevqa"] = json_data["accuracy"]
     except:
-        results['mimicvqa'] = '?'
+        results["slakevqa"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'slakevqa/results.json'))
-        results['slakevqa'] = json_data['accuracy']
+        json_data = load_json(os.path.join(args.input, "pathvqa/results.json"))
+        results["pathvqa"] = json_data["accuracy"]
     except:
-        results['slakevqa'] = '?'
+        results["pathvqa"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'pathvqa/results.json'))
-        results['pathvqa'] = json_data['accuracy']
-    except:
-        results['pathvqa'] = '?'
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/results.json"))
+        results["report_mimiccxr_bleu4"] = json_data["accuracy"]["Bleu_4"]
+        results["report_mimiccxr_rougel"] = json_data["accuracy"]["ROUGE_L"]
 
+    except:
+        results["report_mimiccxr_bleu4"] = "?"
+        results["report_mimiccxr_rougel"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'report_mimiccxr/results.json'))
-        results['report_mimiccxr_bleu4'] = json_data['accuracy']['Bleu_4']
-        results['report_mimiccxr_rougel'] = json_data['accuracy']['ROUGE_L']
-
+        json_data = load_json(os.path.join(args.input, "chestxray14_class/results.json"))
+        results["chestxray14_class"] = json_data["f1"]
     except:
-        results['report_mimiccxr_bleu4'] = '?'
-        results['report_mimiccxr_rougel'] = '?'
-
+        results["chestxray14_class"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'chestxray14_class/results.json'))
-        results['chestxray14_class'] = json_data['f1']
+        json_data = load_json(os.path.join(args.input, "chexpert_class/results.json"))
+        results["chexpert_class"] = json_data["f1"]
     except:
-        results['chestxray14_class'] = '?'
-
+        results["chexpert_class"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'chexpert_class/results.json'))
-        results['chexpert_class'] = json_data['f1']
+        json_data = load_json(os.path.join(args.input, "chestxray14_expert_class/results.json"))
+        results["chestxray14_expert_class"] = json_data["f1"]
     except:
-        results['chexpert_class'] = '?'
+        results["chestxray14_expert_class"] = "?"
 
     try:
-        json_data = load_json(os.path.join(args.input, 'chestxray14_expert_class/results.json'))
-        results['chestxray14_expert_class'] = json_data['f1']
+        json_data = load_json(os.path.join(args.input, "chexpert_expert_class/results.json"))
+        results["chexpert_expert_class"] = json_data["f1"]
     except:
-        results['chestxray14_expert_class'] = '?'
+        results["chexpert_expert_class"] = "?"
 
-    try:
-        json_data = load_json(os.path.join(args.input, 'chexpert_expert_class/results.json'))
-        results['chexpert_expert_class'] = json_data['f1']
-    except:
-        results['chexpert_expert_class'] = '?'
+    results = json.loads(json.dumps(results), parse_float=lambda x: round(100 * float(x), 2))  # convert to percentage
 
-    results = json.loads(json.dumps(results), parse_float=lambda x: round(100*float(x), 2)) # convert to percentage
-    
-    print(json.dumps(results, indent = 4))
+    print(json.dumps(results, indent=4))
     print([v for _, v in results.items()])
+
 
 if __name__ == "__main__":
     main()
-
-

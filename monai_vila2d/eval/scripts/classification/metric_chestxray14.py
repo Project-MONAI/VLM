@@ -24,6 +24,7 @@ answers = {"No": 0, "no": 0, "yes": 1, "Yes": 1}
 
 
 def extract_answer(text, fall_back=None):
+    """Extract the answer from the text."""
     original_text = text
     text = text.strip().lower()
     if "answer: " in text:
@@ -62,6 +63,7 @@ def extract_answer(text, fall_back=None):
 
 
 def compute_f1(args):
+    """Compute the F1 score for the given answers."""
     cls_out = 0.0
     for c in classes:
         # csv_file = f"{args.name}/test_vila_prompt.csv"
@@ -95,11 +97,12 @@ def compute_f1(args):
     cls_out /= len(classes)
     print(len(items), cls_out)
 
-    with open(args.output, 'w') as f:
-        json.dump({"f1" : cls_out}, f)
+    with open(args.output, "w") as f:
+        json.dump({"f1": cls_out}, f)
 
 
 def get_args():
+    """Get command line arguments."""
     parser = argparse.ArgumentParser()
     # parser.add_argument("--name", type=str, default="")
     # parser.add_argument("--input", type=str, required=True)

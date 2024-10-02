@@ -64,6 +64,7 @@ model_list = (
 
 
 def replace(prompts, placeholder, content):
+    """Replace placeholder with content in prompts"""
     p = deepcopy(prompts)
     for idx, _ in enumerate(prompts):
         if prompts[idx][1] is None:
@@ -73,6 +74,7 @@ def replace(prompts, placeholder, content):
 
 
 def has_placeholder(prompts, placeholder):
+    """Check if placeholder exists in prompts"""
     for _, words in prompts:
         if words is None:
             continue

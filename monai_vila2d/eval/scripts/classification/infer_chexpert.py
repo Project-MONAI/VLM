@@ -20,6 +20,7 @@ from run_vila import eval_model
 
 
 def batch_run(exp_id, mpath, conv_mode, folder_name):
+    """Batch run for expert inference on chest x-ray images."""
     prompt = (
         "<image>\nThe following is a multiple-choice question about findings in chest X-ray in the frontal view. "
         "Please reply with the corresponding answer choice letter(s).\n"
@@ -114,10 +115,8 @@ def batch_run(exp_id, mpath, conv_mode, folder_name):
             f.write(f"{res_str}\n")
 
 
-
-
 def get_args():
-
+    """Parse the command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--idx", type=int, default=0)
     parser.add_argument("--mpath", type=str, required=True)
@@ -128,6 +127,5 @@ def get_args():
 
 
 if __name__ == "__main__":
-
     args = get_args()
     batch_run(args.idx, args.mpath, args.conv, args.output)
