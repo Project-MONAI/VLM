@@ -67,19 +67,19 @@ DEBUG_PROMPTS = [
     "What level is the cardiomegaly?",
 ]
 
-DEFAULT_MODEL = "8b"
+DEFAULT_MODEL = "nvcf-8b"
 
 MODELS = {
-    DEFAULT_MODEL: {
-        "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
-        "url": "http://dlmed-api-m3.nvidia.com:8000",
-        "type": "openai",
-    },
-    "13b": {
-        "checkpoint": "joint_nocls_8b_balanced_expert_2e_5",
-        "url": "http://dlmed-api-m3.nvidia.com:8001",
-        "type": "openai",
-    },
+    # "8b": {
+    #     "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
+    #     "url": "http://dlmed-api-m3.nvidia.com:8000",
+    #     "type": "openai",
+    # },
+    # "13b": {
+    #     "checkpoint": "joint_nocls_8b_balanced_expert_2e_5",
+    #     "url": "http://dlmed-api-m3.nvidia.com:8001",
+    #     "type": "openai",
+    # },
     "nvcf-8b": {
         "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
         "url": "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/319c3e8e-5913-4577-8223-a7484766f41a",
