@@ -18,7 +18,6 @@ pipeline = transformers.pipeline(
 
 input_dir = "/workspace/vlm/text_gt/dcl/train_1"
 filenames = os.listdir(input_dir)
-# filenames.sort()
 random.shuffle(filenames)
 
 templates_filename = "./templates_sentences_test_slim.txt"
