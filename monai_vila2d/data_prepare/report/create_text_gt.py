@@ -55,7 +55,8 @@ def split_into_sentences(paragraph):
             refined_sentences.append(
                 sentence
                 + paragraph[
-                    paragraph.find(sentences[i]) + len(sentences[i]) : paragraph.find(sentences[i])
+                    paragraph.find(sentences[i])
+                    + len(sentences[i]) : paragraph.find(sentences[i])
                     + len(sentences[i])
                     + 1
                 ]
