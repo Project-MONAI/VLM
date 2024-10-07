@@ -1,3 +1,15 @@
+# Copyright (c) MONAI Consortium
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
 import base64
 import html
 import logging
@@ -8,14 +20,13 @@ import urllib.request
 from io import BytesIO
 from zipfile import ZipFile
 
+import gradio as gr
 import nibabel as nib
 import numpy as np
 import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
-
-import gradio as gr
 
 load_dotenv()
 
@@ -28,7 +39,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
 # Create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Add formatter to ch
 ch.setFormatter(formatter)
@@ -37,7 +48,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 # Suppress logging from dependent libraries
-logging.getLogger('gradio').setLevel(logging.WARNING)
+logging.getLogger("gradio").setLevel(logging.WARNING)
 
 # Sample images dictionary
 IMAGES_URLS = {
@@ -88,12 +99,10 @@ MODELS = {
 }
 
 TOOL_INFO = [
-    ""
-    "Debugging Tool for Local Testing.",
-    "Default checkpoint used: tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
+    '<img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="project monai" style="width: 100%; min-width: 500px; max-width: 800px; margin: auto; display: block;">'
 ]
 
-HTML_PLACEHOLDER = "<br>".join([''] * 15)
+HTML_PLACEHOLDER = "<br>".join([""] * 15)
 
 CACHED_DIR = tempfile.mkdtemp()
 
@@ -147,7 +156,7 @@ def unzip_file_contents(file_content):
     with open(zip_file_path, "wb") as f:
         f.write(zip_file.getvalue())
 
-    with ZipFile(zip_file_path, 'r') as zip_ref:
+    with ZipFile(zip_file_path, "r") as zip_ref:
         zip_ref.extractall(temp_folder)
 
     os.remove(zip_file_path)
@@ -210,7 +219,11 @@ def update_image(selected_image, params_bag, slice_index_html, increment=None):
         return image, params_bag, f"Slice Index: {params_bag.slice_index}"
 
     params_bag.slice_index = None
-    return params_bag.image_url, params_bag, "Slice Index: N/A for 2D images, clicking prev/next will not change the image."
+    return (
+        params_bag.image_url,
+        params_bag,
+        "Slice Index: N/A for 2D images, clicking prev/next will not change the image.",
+    )
 
 
 def update_image_next_10(selected_image, params_bag, slice_index_html):
@@ -262,10 +275,12 @@ def image_to_data_url(image, format="JPEG", max_size=None):
     # Encode the bytes to base64
     img_base64 = base64.b64encode(img_byte).decode()
     if len(img_base64) > 180_000:
-        logger.warning((
-            f"The image is too large for the data URL. "
-            "Use the assets API or use the following snippet to resize:\n {IMAGE_SIZE_WARNING}."
-        ))
+        logger.warning(
+            (
+                f"The image is too large for the data URL. "
+                "Use the assets API or use the following snippet to resize:\n {IMAGE_SIZE_WARNING}."
+            )
+        )
     # Convert the base64 bytes to string and format the data URL
     return f"data:image/{format.lower()};base64,{img_base64}"
 
@@ -299,7 +314,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user"):
     """Color the text based on the role and return the HTML text"""
     logger.debug(f"Preparing the HTML text with {show_all} and role: {role}")
     # if content is not a data URL, escape the text
-    
+
     if not show_all and role == "expert":
         return ""
     escaped_text = html.escape(text)
@@ -348,7 +363,6 @@ class ChatHistory:
         """
         self.messages = []
 
-
     def append(self, prompt_or_answer, image_url=None, slice_index=None, role="user"):
         """
         Append a new message to the chat history.
@@ -366,16 +380,17 @@ class ChatHistory:
             }
         ]
         if image_url is not None:
-            new_contents.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": image_url,
-                    "slice_index": slice_index,
-                },
-            })
+            new_contents.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_url,
+                        "slice_index": slice_index,
+                    },
+                }
+            )
 
         self.messages.append({"role": role, "content": new_contents})
-
 
     def get_html(self, show_all=False):
         """Returns the chat history as an HTML string to display"""
@@ -395,12 +410,13 @@ class ChatHistory:
                         data_url = image_to_data_url(image_url, max_size=(300, 300))
                     else:
                         data_url = resize_data_url(image_url, (300, 300))
-                    history_text_html += colorcode_message(data_url=data_url, show_all=True, role=role)  # always show the image
+                    history_text_html += colorcode_message(
+                        data_url=data_url, show_all=True, role=role
+                    )  # always show the image
                 else:
                     raise ValueError(f"Invalid content type: {content['type']}")
             history.append(history_text_html)
         return "<br>".join(history)
-
 
     def replace_last(self, image_url, role="user"):
         """Replace the last message in the chat history"""
@@ -424,10 +440,11 @@ class ParamsBag:
     max_tokens = 300
     download_file_path = ""
     model = DEFAULT_MODEL
-    
+
 
 class ApiAdapter:
     """Adapter class to interact with the OpenAI API or the NVCF API with requests"""
+
     def __init__(self, base_url, type="openai", api_key="fake-key"):
         self.type = type
         self.base_url = base_url
@@ -444,8 +461,9 @@ class ApiAdapter:
             raise ValueError(f"Invalid API type: {type}")
         self.response = None
 
-
-    def _chat_openai(self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False):
+    def _chat_openai(
+        self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False
+    ):
         """Chat with the OpenAI API"""
         self.response = self.client.chat.completions.create(
             messages=messages,
@@ -456,9 +474,10 @@ class ApiAdapter:
             extra_body={"exclude_model_cards": exclude_model_cards},
             stream=stream,
         )
-    
 
-    def _chat_requests(self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False):
+    def _chat_requests(
+        self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False
+    ):
         """Chat with the NVCF API using requests"""
         response = self.client.post(
             self.base_url,
@@ -470,27 +489,22 @@ class ApiAdapter:
                 "model": model,
                 "exclude_model_cards": exclude_model_cards,
                 "stream": stream,
-            }
+            },
         )
         response.raise_for_status()
         self.response = response.json()
 
-
     def chat_completion(self, **kwargs):
         return self._chat_openai(**kwargs) if self.type == "openai" else self._chat_requests(**kwargs)
-
 
     def get_file_content(self):
         return self.response.file_content if self.type == "openai" else self.response["file_content"]
 
-
     def get_choices(self):
         return self.response.choices if self.type == "openai" else self.response["choices"]
 
-
     def get_role(self, choice):
         return choice.message.role if self.type == "openai" else choice["message"]["role"]
-
 
     def get_content(self, choice):
         return choice.message.content if self.type == "openai" else choice["message"]["content"]
@@ -605,7 +619,7 @@ def update_checkpoint(selected_model, params_bag):
 
 
 # Main function to create the Gradio interface
-def main():
+def main(args):
     def generate_css():
         """Generate CSS"""
         css = ".fixed-size-image {\n"
@@ -619,19 +633,31 @@ def main():
         return css
 
     with gr.Blocks(css=generate_css()) as demo:
+        is_debug = not args.restricted
+        logger.debug(f"Running the demo with debug mode: {is_debug}")
         with gr.Tab("Demo"):
-            gr.HTML("<br>".join(TOOL_INFO), label="Info")  # Display model info in the banner
             chat_history = gr.State(value=ChatHistory())  # Prompt history
             params_bag = gr.State(value=ParamsBag())
 
             with gr.Row():
                 with gr.Column():
-                    image_input = gr.Image(label="Image")
+                    image_sources = ["upload", "webcam", "clipboard"] if is_debug else []
+                    image_input = gr.Image(
+                        label="Image",
+                        sources=image_sources,
+                        placeholder="Please select an 2D or 3D slice from the dropdown list.",
+                    )
                     image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
                     with gr.Accordion("View Parameters", open=False):
-                        temperature_slider = gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True)
-                        top_p_slider = gr.Slider(label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True)
-                        max_tokens_slider = gr.Slider(label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True)
+                        temperature_slider = gr.Slider(
+                            label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
+                        )
+                        top_p_slider = gr.Slider(
+                            label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
+                        )
+                        max_tokens_slider = gr.Slider(
+                            label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True
+                        )
 
                     with gr.Accordion("3D image panel", open=False):
                         slice_index_html = gr.HTML("Slice Index: N/A")
@@ -642,7 +668,9 @@ def main():
                             next10_btn = gr.Button(">>")
 
                 with gr.Column():
-                    model_dropdown = gr.Dropdown(label="Select a model", choices=list(MODELS.keys()), value=DEFAULT_MODEL)
+                    model_dropdown = gr.Dropdown(
+                        label="Select a model", choices=list(MODELS.keys()), value=DEFAULT_MODEL, visible=is_debug
+                    )
                     with gr.Tab("In front of the scene"):
                         history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
                     with gr.Tab("Behind the scene"):
@@ -659,21 +687,50 @@ def main():
                     clear_btn = gr.Button("DEBUG: Reset All")
 
         with gr.Tab("Help"):
+            gr.HTML("<br>".join(TOOL_INFO), label="Info")  # Display model info in the banner
             debug_prompt_html = "<br><br>".join([html.escape(prompt) for prompt in DEBUG_PROMPTS])
             debug_prompt = "Here are some debug prompts you can use:<br><br>" + debug_prompt_html
             gr.HTML(value=debug_prompt)
 
         # Process image and clear it immediately by returning None
-        submit_btn.click(fn=process_prompt, inputs=[prompt_edit, params_bag, chat_history], outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full])
-        prompt_edit.submit(fn=process_prompt, inputs=[prompt_edit, params_bag, chat_history], outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full])
+        submit_btn.click(
+            fn=process_prompt,
+            inputs=[prompt_edit, params_bag, chat_history],
+            outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full],
+        )
+        prompt_edit.submit(
+            fn=process_prompt,
+            inputs=[prompt_edit, params_bag, chat_history],
+            outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full],
+        )
 
         # Param controlling buttons
         image_input.input(fn=input_image, inputs=[image_input, params_bag], outputs=[image_input, params_bag])
-        image_dropdown.change(fn=update_image, inputs=[image_dropdown, params_bag, slice_index_html], outputs=[image_input, params_bag, slice_index_html])
-        prev10_btn.click(fn=update_image_prev_10, inputs=[image_dropdown, params_bag, slice_index_html], outputs=[image_input, params_bag, slice_index_html])
-        prev01_btn.click(fn=update_image_prev_1, inputs=[image_dropdown, params_bag, slice_index_html], outputs=[image_input, params_bag, slice_index_html])
-        next01_btn.click(fn=update_image_next_1, inputs=[image_dropdown, params_bag, slice_index_html], outputs=[image_input, params_bag, slice_index_html])
-        next10_btn.click(fn=update_image_next_10, inputs=[image_dropdown, params_bag, slice_index_html], outputs=[image_input, params_bag, slice_index_html])
+        image_dropdown.change(
+            fn=update_image,
+            inputs=[image_dropdown, params_bag, slice_index_html],
+            outputs=[image_input, params_bag, slice_index_html],
+        )
+        prev10_btn.click(
+            fn=update_image_prev_10,
+            inputs=[image_dropdown, params_bag, slice_index_html],
+            outputs=[image_input, params_bag, slice_index_html],
+        )
+        prev01_btn.click(
+            fn=update_image_prev_1,
+            inputs=[image_dropdown, params_bag, slice_index_html],
+            outputs=[image_input, params_bag, slice_index_html],
+        )
+        next01_btn.click(
+            fn=update_image_next_1,
+            inputs=[image_dropdown, params_bag, slice_index_html],
+            outputs=[image_input, params_bag, slice_index_html],
+        )
+        next10_btn.click(
+            fn=update_image_next_10,
+            inputs=[image_dropdown, params_bag, slice_index_html],
+            outputs=[image_input, params_bag, slice_index_html],
+        )
         checkboxes.change(fn=update_checkbox, inputs=[checkboxes, params_bag], outputs=[params_bag])
         temperature_slider.change(fn=update_temperature, inputs=[temperature_slider, params_bag], outputs=[params_bag])
         top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, params_bag], outputs=[params_bag])
@@ -681,15 +738,35 @@ def main():
         model_dropdown.change(fn=update_checkpoint, inputs=[model_dropdown, params_bag], outputs=[params_bag])
 
         # Reset button
-        clear_btn.click(fn=clear_label, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, params_bag])
+        clear_btn.click(
+            fn=clear_label, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, params_bag]
+        )
 
         # States
-        params_bag.change(fn=reset_params, inputs=[params_bag], outputs=[params_bag, image_input, image_dropdown, checkboxes, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, image_download, model_dropdown])
-
+        params_bag.change(
+            fn=reset_params,
+            inputs=[params_bag],
+            outputs=[
+                params_bag,
+                image_input,
+                image_dropdown,
+                checkboxes,
+                slice_index_html,
+                temperature_slider,
+                top_p_slider,
+                max_tokens_slider,
+                image_download,
+                model_dropdown,
+            ],
+        )
 
     demo.launch(server_name="0.0.0.0", server_port=7860)
     cleanup_cache()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--restricted", action="store_true", help="Run the demo")
+    args = parser.parse_args()
+
+    main(args)
