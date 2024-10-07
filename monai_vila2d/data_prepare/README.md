@@ -16,7 +16,8 @@
 experts
   - CT
   - CXR
-  -- asdfas
+    - Medical-Diff-VQA
+    - MIMIC-CXR-JPG
   - MRI
 
 | Dataset   | QA/Text Pairs  | Images    | Link |
