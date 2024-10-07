@@ -64,11 +64,9 @@ EXAMPLE_PROMPTS = [
     "Segment the visceral structures in the current image.",
     "Can you identify any liver masses or tumors?",
     "Segment the entire image.",
-    "",  # line break
     "What abnormalities are seen in this image?",
     "Is there evidence of edema in this image?",
     "Is there evidence of any abnormalities in this image?",
-    "",  # line break
     "What is the total number of [condition/abnormality] present in this image?",
     "Is there pneumothorax?",
     "What type is the lung opacity?",
@@ -710,15 +708,17 @@ def main(args):
                 with gr.Tab("Behind the scene"):
                     history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full")
                 image_download = gr.DownloadButton("Download the file", visible=False)
-                prompt_edit = gr.Textbox(label="Enter your prompt here")
+                clear_btn = gr.Button("Clear Conversation")
+                with gr.Row(variant="compact"):
+                    prompt_edit = gr.Textbox(label="Enter your prompt here", container=False, placeholder="Enter your prompt here", scale=2)
+                    submit_btn = gr.Button("Submit", scale=0)
+                gr.Examples(EXAMPLE_PROMPTS, prompt_edit)
                 checkboxes = gr.CheckboxGroup(
                     choices=HARDCODED_EXPERT_MODELS,
                     value=HARDCODED_EXPERT_MODELS,
                     label="Expert Models",
                     info="Select the expert models to use.",
                 )
-                submit_btn = gr.Button("Submit Prompt")
-                clear_btn = gr.Button("DEBUG: Reset All")
 
         # Process image and clear it immediately by returning None
         submit_btn.click(
