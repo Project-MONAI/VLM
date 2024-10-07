@@ -60,7 +60,7 @@ IMAGES_URLS = {
 
 HARDCODED_EXPERT_MODELS = ["VISTA3D", "CXR"]
 
-DEBUG_PROMPTS = [
+EXAMPLE_PROMPTS = [
     "Segment the visceral structures in the current image.",
     "Can you identify any liver masses or tumors?",
     "Segment the entire image.",
@@ -98,18 +98,39 @@ MODELS = {
     },
 }
 
-TOOL_INFO = [
-    '<img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="project monai" style="width: 100%; min-width: 500px; max-width: 800px; margin: auto; display: block;">'
-]
-
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
 
 CACHED_DIR = tempfile.mkdtemp()
 
 CACHED_IMAGES = {}
 
+TITLE = """
+    <div style="text-align: center; max-width: 650px; margin: 0 auto;">
+        <p>
+        <img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="project monai" style="width: 50%; min-width: 500px; max-width: 800px; margin: auto; display: block;">
+        </p>
+        <div
+        style="
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.75rem;
+        "
+        >
+        <h1 style="font-weight: 900; margin-bottom: 7px;">
+            MONAI Multi-Modal Medical Imaging (M3) VLM Demo
+        </h1>
+        </div>
+        <p style="margin-bottom: 10px; font-size: 94%">
+        Placeholder text for the description of the tool.
+        </p>
+
+    </div>
+"""
+
 
 def cleanup_cache():
+    """Clean up the cache"""
     logger.debug(f"Cleaning up the cache")
     for _, cache_file_name in CACHED_IMAGES.items():
         if os.path.exists(cache_file_name):
@@ -227,18 +248,22 @@ def update_image(selected_image, params_bag, slice_index_html, increment=None):
 
 
 def update_image_next_10(selected_image, params_bag, slice_index_html):
+    """Update the image to the next 10 slices"""
     return update_image(selected_image, params_bag, slice_index_html, increment=10)
 
 
 def update_image_next_1(selected_image, params_bag, slice_index_html):
+    """Update the image to the next slice"""
     return update_image(selected_image, params_bag, slice_index_html, increment=1)
 
 
 def update_image_prev_1(selected_image, params_bag, slice_index_html):
+    """Update the image to the previous slice"""
     return update_image(selected_image, params_bag, slice_index_html, increment=-1)
 
 
 def update_image_prev_10(selected_image, params_bag, slice_index_html):
+    """Update the image to the previous 10 slices"""
     return update_image(selected_image, params_bag, slice_index_html, increment=-10)
 
 
@@ -330,6 +355,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user"):
 
 
 class ChatHistory:
+    """Class to store the chat history"""
     def __init__(self):
         """
         Messages are stored as a list, with a sample format:
@@ -432,6 +458,8 @@ class ChatHistory:
 
 
 class ParamsBag:
+    """Class to store the parameters"""
+
     expert_models = HARDCODED_EXPERT_MODELS
     slice_index = None
     image_url = None
@@ -446,6 +474,7 @@ class ApiAdapter:
     """Adapter class to interact with the OpenAI API or the NVCF API with requests"""
 
     def __init__(self, base_url, type="openai", api_key="fake-key"):
+        """Initialize the API adapter"""
         self.type = type
         self.base_url = base_url
         if type == "openai":
@@ -495,18 +524,23 @@ class ApiAdapter:
         self.response = response.json()
 
     def chat_completion(self, **kwargs):
+        """Chat with the API"""
         return self._chat_openai(**kwargs) if self.type == "openai" else self._chat_requests(**kwargs)
 
     def get_file_content(self):
+        """Get the file content from the response"""
         return self.response.file_content if self.type == "openai" else self.response["file_content"]
 
     def get_choices(self):
+        """Get the choices from the response"""
         return self.response.choices if self.type == "openai" else self.response["choices"]
 
     def get_role(self, choice):
+        """Get the role of the choice"""
         return choice.message.role if self.type == "openai" else choice["message"]["role"]
 
     def get_content(self, choice):
+        """Get the content of the choice"""
         return choice.message.content if self.type == "openai" else choice["message"]["content"]
 
 
@@ -618,8 +652,8 @@ def update_checkpoint(selected_model, params_bag):
     return params_bag
 
 
-# Main function to create the Gradio interface
 def main(args):
+    """Main function to create the Gradio interface"""
     def generate_css():
         """Generate CSS"""
         css = ".fixed-size-image {\n"
@@ -635,62 +669,56 @@ def main(args):
     with gr.Blocks(css=generate_css()) as demo:
         is_debug = not args.restricted
         logger.debug(f"Running the demo with debug mode: {is_debug}")
-        with gr.Tab("Demo"):
-            chat_history = gr.State(value=ChatHistory())  # Prompt history
-            params_bag = gr.State(value=ParamsBag())
+        gr.HTML(TITLE, label="Title")
+        chat_history = gr.State(value=ChatHistory())  # Prompt history
+        params_bag = gr.State(value=ParamsBag())
 
-            with gr.Row():
-                with gr.Column():
-                    image_sources = ["upload", "webcam", "clipboard"] if is_debug else []
-                    image_input = gr.Image(
-                        label="Image",
-                        sources=image_sources,
-                        placeholder="Please select an 2D or 3D slice from the dropdown list.",
+        with gr.Row():
+            with gr.Column():
+                image_sources = ["upload", "webcam", "clipboard"] if is_debug else []
+                image_input = gr.Image(
+                    label="Image",
+                    sources=image_sources,
+                    placeholder="Please select an 2D or 3D slice from the dropdown list.",
+                )
+                image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
+                with gr.Accordion("View Parameters", open=False):
+                    temperature_slider = gr.Slider(
+                        label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
                     )
-                    image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
-                    with gr.Accordion("View Parameters", open=False):
-                        temperature_slider = gr.Slider(
-                            label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
-                        )
-                        top_p_slider = gr.Slider(
-                            label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
-                        )
-                        max_tokens_slider = gr.Slider(
-                            label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True
-                        )
-
-                    with gr.Accordion("3D image panel", open=False):
-                        slice_index_html = gr.HTML("Slice Index: N/A")
-                        with gr.Row():
-                            prev10_btn = gr.Button("<<")
-                            prev01_btn = gr.Button("<")
-                            next01_btn = gr.Button(">")
-                            next10_btn = gr.Button(">>")
-
-                with gr.Column():
-                    model_dropdown = gr.Dropdown(
-                        label="Select a model", choices=list(MODELS.keys()), value=DEFAULT_MODEL, visible=is_debug
+                    top_p_slider = gr.Slider(
+                        label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
                     )
-                    with gr.Tab("In front of the scene"):
-                        history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
-                    with gr.Tab("Behind the scene"):
-                        history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full")
-                    image_download = gr.DownloadButton("Download the file", visible=False)
-                    prompt_edit = gr.Textbox(label="Enter your prompt here")
-                    checkboxes = gr.CheckboxGroup(
-                        choices=HARDCODED_EXPERT_MODELS,
-                        value=HARDCODED_EXPERT_MODELS,
-                        label="Expert Models",
-                        info="Select the expert models to use.",
+                    max_tokens_slider = gr.Slider(
+                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True
                     )
-                    submit_btn = gr.Button("Submit Prompt")
-                    clear_btn = gr.Button("DEBUG: Reset All")
 
-        with gr.Tab("Help"):
-            gr.HTML("<br>".join(TOOL_INFO), label="Info")  # Display model info in the banner
-            debug_prompt_html = "<br><br>".join([html.escape(prompt) for prompt in DEBUG_PROMPTS])
-            debug_prompt = "Here are some debug prompts you can use:<br><br>" + debug_prompt_html
-            gr.HTML(value=debug_prompt)
+                with gr.Accordion("3D image panel", open=False):
+                    slice_index_html = gr.HTML("Slice Index: N/A")
+                    with gr.Row():
+                        prev10_btn = gr.Button("<<")
+                        prev01_btn = gr.Button("<")
+                        next01_btn = gr.Button(">")
+                        next10_btn = gr.Button(">>")
+
+            with gr.Column():
+                model_dropdown = gr.Dropdown(
+                    label="Select a model", choices=list(MODELS.keys()), value=DEFAULT_MODEL, visible=is_debug
+                )
+                with gr.Tab("In front of the scene"):
+                    history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
+                with gr.Tab("Behind the scene"):
+                    history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full")
+                image_download = gr.DownloadButton("Download the file", visible=False)
+                prompt_edit = gr.Textbox(label="Enter your prompt here")
+                checkboxes = gr.CheckboxGroup(
+                    choices=HARDCODED_EXPERT_MODELS,
+                    value=HARDCODED_EXPERT_MODELS,
+                    label="Expert Models",
+                    info="Select the expert models to use.",
+                )
+                submit_btn = gr.Button("Submit Prompt")
+                clear_btn = gr.Button("DEBUG: Reset All")
 
         # Process image and clear it immediately by returning None
         submit_btn.click(
