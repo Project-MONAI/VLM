@@ -118,7 +118,7 @@ TITLE = """
         "
         >
         <h1 style="font-weight: 900; margin-bottom: 7px;">
-            MONAI Multi-Modal Medical Imaging (M3) VLM Demo
+            MONAI Multi-Modal Medical (M3) VLM Demo
         </h1>
         </div>
         <p style="margin-bottom: 10px; font-size: 94%">
