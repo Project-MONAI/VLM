@@ -76,26 +76,6 @@ EXAMPLE_PROMPTS = [
     "What level is the cardiomegaly?",
 ]
 
-DEFAULT_MODEL = "nvcf-8b"
-
-MODELS = {
-    # "8b": {
-    #     "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
-    #     "url": "http://dlmed-api-m3.nvidia.com:8000",
-    #     "type": "openai",
-    # },
-    # "13b": {
-    #     "checkpoint": "joint_nocls_8b_balanced_expert_2e_5",
-    #     "url": "http://dlmed-api-m3.nvidia.com:8001",
-    #     "type": "openai",
-    # },
-    "nvcf-8b": {
-        "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
-        "url": "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/319c3e8e-5913-4577-8223-a7484766f41a",
-        "type": "requests",
-    },
-}
-
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
 
 CACHED_DIR = tempfile.mkdtemp()
@@ -125,6 +105,34 @@ TITLE = """
 
     </div>
 """
+
+
+def get_models(nvcf=False):
+    """Get the models"""
+    if nvcf:
+        # Fixed models for the NVCF API
+        return {
+            "nvcf-8b": {
+                "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
+                "url": "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/319c3e8e-5913-4577-8223-a7484766f41a",
+                "type": "requests",
+            },
+        }
+    
+    return {
+        "baseline-server-8b": {
+            "url": "http://dlmed-api-m3.nvidia.com:8000",
+            "type": "openai",
+        },
+        "baseline-server-13b": {
+            "url": "http://dlmed-api-m3.nvidia.com:8001",
+            "type": "openai",
+        },
+        "baseline-server-alldata-13b": {
+            "url": "http://dlmed-api-m3.nvidia.com:8002",
+            "type": "openai",
+        },
+    }
 
 
 def cleanup_cache():
@@ -458,14 +466,14 @@ class ChatHistory:
 class ParamsBag:
     """Class to store the parameters"""
 
-    expert_models = HARDCODED_EXPERT_MODELS
-    slice_index = None
-    image_url = None
-    top_p = 0.9
+    expert_models = HARDCODED_EXPERT_MODELS  # Expert models to use
+    slice_index = None  # Slice index for 3D images
+    image_url = None  # Image URL to display and process
+    top_p = 0.9 
     temperature = 0.0
     max_tokens = 300
-    download_file_path = ""
-    model = DEFAULT_MODEL
+    download_file_path = ""  # Path to the downloaded file
+    model_index = 0  # Index of the selected model among a list of models to try. Useful under unrestricted mode.
 
 
 class ApiAdapter:
@@ -553,7 +561,10 @@ def reset_params(params_bag):
         d_btn = gr.DownloadButton(label=f"Download {name}", value=filepath, visible=True)
     else:
         d_btn = gr.DownloadButton(visible=False)
-    return params_bag, None, None, HARDCODED_EXPERT_MODELS, "Slice Index: N/A", 0.0, 0.9, 300, d_btn, params_bag.model
+    models = get_models()
+    model_keys = list(models.keys())
+    model_choice = model_keys[params_bag.model_index]
+    return params_bag, None, None, HARDCODED_EXPERT_MODELS, "Slice Index: N/A", 0.0, 0.9, 300, d_btn, model_choice
 
 
 def process_prompt(prompt, params_bag, chat_history):
@@ -561,9 +572,11 @@ def process_prompt(prompt, params_bag, chat_history):
     logger.debug(f"Process the image and return the result")
 
     chat_history.append(prompt, image_url=params_bag.image_url, slice_index=params_bag.slice_index)
-    model_selected = params_bag.model
-    base_url = MODELS[model_selected]["url"]
-    api_type = MODELS[model_selected]["type"]
+    model_index = params_bag.model_index  # Keep the model selection for the next round
+    models = get_models()
+    model_choice = list(models.keys())[model_index]
+    base_url = models[model_choice]["url"]
+    api_type = models[model_choice]["type"]
     api_adaptor = ApiAdapter(base_url, type=api_type, api_key=os.getenv("api_key", "fake-key"))
 
     exclude_model_cards = []
@@ -599,7 +612,7 @@ def process_prompt(prompt, params_bag, chat_history):
 
     new_params_bag = ParamsBag()
     new_params_bag.download_file_path = mask_file if mask_file else ""
-    new_params_bag.model = model_selected  # Keep the model
+    new_params_bag.model_index = model_index  # Keep the model
     return None, new_params_bag, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
 
 
@@ -643,10 +656,10 @@ def download_file():
     return [gr.DownloadButton(visible=False)]
 
 
-def update_checkpoint(selected_model, params_bag):
+def update_checkpoint(selected_model_index, params_bag):
     """Update the checkpoint"""
-    logger.debug(f"Updating the checkpoint with {selected_model}")
-    params_bag.model = selected_model
+    logger.debug(f"Updating the checkpoint with {selected_model_index}")
+    params_bag.model_index = selected_model_index
     return params_bag
 
 
@@ -700,8 +713,10 @@ def main(args):
                         next10_btn = gr.Button(">>")
 
             with gr.Column():
+                models = get_models(args.nvcf)
+                model_keys = list(models.keys())
                 model_dropdown = gr.Dropdown(
-                    label="Select a model", choices=list(MODELS.keys()), value=DEFAULT_MODEL, visible=is_debug
+                    label="Select a model", choices=list(models.keys()), value=model_keys[0], type="index", visible=is_debug
                 )
                 with gr.Tab("In front of the scene"):
                     history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
@@ -794,7 +809,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--restricted", action="store_true", help="Run the demo")
+    parser.add_argument("--restricted", action="store_true", help="Run the demo in restricted mode")
+    parser.add_argument("--nvcf", action="store_true", help="Use the NVCF API")
     args = parser.parse_args()
 
     main(args)
