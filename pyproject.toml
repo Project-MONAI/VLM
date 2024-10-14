@@ -24,6 +24,7 @@ skip_glob = [
   "build/*",
   "docs/*",
   "setup.py",
+  "thirdparty/*",
   "venv*/",
   "*test_*",
   "./.vscode/*",
