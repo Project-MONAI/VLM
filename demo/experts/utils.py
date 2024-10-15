@@ -241,6 +241,7 @@ def get_monai_transforms(
         ]
     )
 
+
 def save_image_url_to_file(image_url: str, output_dir: Path) -> str:
     """Save the image from the URL to the output directory"""
     try:

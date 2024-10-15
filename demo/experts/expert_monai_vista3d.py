@@ -24,6 +24,7 @@ from experts.utils import get_monai_transforms, get_slice_filenames
 
 class ExpertVista3D(BaseExpert):
     """Expert model for VISTA-3D."""
+
     NIM_VISTA3D = "https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d"
 
     def __init__(self) -> None:

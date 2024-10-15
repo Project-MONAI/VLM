@@ -17,6 +17,7 @@ from experts.base_expert import BaseExpert
 
 class ExpertTXRV(BaseExpert):
     """Expert model for the TorchXRayVision model."""
+
     NIM_CXR = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/5ac6a152-6d3f-4691-aef8-9e656557ee45"
 
     def __init__(self) -> None:

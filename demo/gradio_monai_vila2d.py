@@ -230,6 +230,7 @@ class ChatHistory:
 
 class SessionVariables:
     """Class to store the session variables"""
+
     def __init__(self):
         """Initialize the session variables"""
         self.sys_prompt = SYS_PROMPT
@@ -265,7 +266,9 @@ class M3Generator:
         disable_torch_init()
         self.conv_mode = conv_mode
         self.model_name = get_model_name_from_path(model_path)
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(model_path, self.model_name)
+        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+            model_path, self.model_name
+        )
         logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
 
     def generate_response(
@@ -368,7 +371,6 @@ class M3Generator:
         if sv.temp_working_dir is None:
             sv.temp_working_dir = tempfile.mkdtemp()
 
-        
         modality = get_modality(sv.image_url, text=prompt)
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
@@ -398,7 +400,7 @@ class M3Generator:
             max_tokens=sv.max_tokens,
             temperature=sv.temperature,
             top_p=sv.top_p,
-            system_prompt = sv.sys_prompt
+            system_prompt=sv.sys_prompt,
         )
 
         chat_history.append(outputs, role="assistant")
@@ -429,18 +431,17 @@ class M3Generator:
                     max_tokens=sv.max_tokens,
                     temperature=sv.temperature,
                     top_p=sv.top_p,
-                    system_prompt = sv.sys_prompt
+                    system_prompt=sv.sys_prompt,
                 )
                 chat_history.append(outputs, role="assistant")
 
         new_sv = new_session_variables(
             # Keep these parameters accross one conversation
-            sys_prompt = sv.sys_prompt,
-            sys_msg = sv.sys_msg,
-            download_file_path = download_pkg,
+            sys_prompt=sv.sys_prompt,
+            sys_msg=sv.sys_msg,
+            download_file_path=download_pkg,
         )
         return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
-
 
 
 def input_image(image, sv: SessionVariables):
@@ -561,7 +562,15 @@ def clear_all_convs():
     logger.debug(f"Clearing all conversations")
     new_sv = new_session_variables()
     # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text
-    return new_sv, "Enter your prompt here", ChatHistory(), HTML_PLACEHOLDER, HTML_PLACEHOLDER, new_sv.sys_prompt, new_sv.sys_msg
+    return (
+        new_sv,
+        "Enter your prompt here",
+        ChatHistory(),
+        HTML_PLACEHOLDER,
+        HTML_PLACEHOLDER,
+        new_sv.sys_prompt,
+        new_sv.sys_msg,
+    )
 
 
 def update_temperature(temperature, sv):
@@ -597,6 +606,7 @@ def update_sys_message(sys_message, sv):
     logger.debug(f"Updating the system message")
     sv.sys_msg = sys_message
     return sv
+
 
 def download_file():
     """Download the file."""
@@ -634,13 +644,17 @@ def create_demo(model_path, conv_mode, server_port):
                         prev01_btn = gr.Button("<")
                         next01_btn = gr.Button(">")
                         next10_btn = gr.Button(">>")
-                
+
                 with gr.Accordion("System Prompt and Message", open=False):
                     sys_prompt_text = gr.Textbox(
-                        label="System Prompt", value=sv.value.sys_prompt, lines=4,
+                        label="System Prompt",
+                        value=sv.value.sys_prompt,
+                        lines=4,
                     )
                     sys_message_text = gr.Textbox(
-                        label="System Message", value=sv.value.sys_msg, lines=10,
+                        label="System Message",
+                        value=sv.value.sys_msg,
+                        lines=10,
                     )
 
             with gr.Column():
@@ -702,7 +716,11 @@ def create_demo(model_path, conv_mode, server_port):
         sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
         sys_message_text.change(fn=update_sys_message, inputs=[sys_message_text, sv], outputs=[sv])
         # Reset button
-        clear_btn.click(fn=clear_all_convs, inputs=[], outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text])
+        clear_btn.click(
+            fn=clear_all_convs,
+            inputs=[],
+            outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text],
+        )
 
         # States
         sv.change(

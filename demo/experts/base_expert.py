@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 
 class BaseExpert(ABC):
     """Base class for all expert models."""
+
     @abstractmethod
     def mentioned_by(self, input: str):
         """Check if the expert is mentioned in the input."""
