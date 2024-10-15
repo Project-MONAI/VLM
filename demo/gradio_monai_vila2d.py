@@ -13,41 +13,30 @@ import argparse
 import html
 import logging
 import os
-import json
-import tempfile
-
 import re
-
-import argparse
-import base64
-import logging
-import os
 import tempfile
-import uuid
-
 from copy import deepcopy
-
-import torch
-from llava.constants import IMAGE_TOKEN_INDEX
-from llava.conversation import SeparatorStyle, conv_templates
-from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
-                            process_images, tokenizer_image_token)
-from llava.model.builder import load_pretrained_model
-from llava.utils import disable_torch_init
-
 
 import gradio as gr
 import nibabel as nib
-
-from experts.expert_torchxrayvision import ExpertTXRV
-from experts.expert_monai_vista3d import ExpertVista3D
-from experts.utils import (get_slice_filenames,
-                   get_modality,
-                   load_image,
-                   get_monai_transforms, save_image_url_to_file, image_to_data_url)
-
-
+import torch
 from dotenv import load_dotenv
+from experts.expert_monai_vista3d import ExpertVista3D
+from experts.expert_torchxrayvision import ExpertTXRV
+from experts.utils import (
+    get_modality,
+    get_monai_transforms,
+    get_slice_filenames,
+    image_to_data_url,
+    load_image,
+    save_image_url_to_file,
+)
+from llava.constants import IMAGE_TOKEN_INDEX
+from llava.conversation import SeparatorStyle, conv_templates
+from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
+from llava.model.builder import load_pretrained_model
+from llava.utils import disable_torch_init
+
 load_dotenv()
 
 
@@ -157,6 +146,7 @@ def cache_cleanup():
 
 class ChatHistory:
     """Class to store the chat history"""
+
     def __init__(self):
         """
         Messages are stored as a list, with a sample format:
@@ -231,9 +221,7 @@ class ChatHistory:
                     history_text_html += colorcode_message(text=content["text"], show_all=show_all, role=role)
                 else:
                     history_text_html += colorcode_message(
-                        data_url=image_to_data_url(content["image_path"], max_size=(300, 300)),
-                        show_all=True,
-                        role=role
+                        data_url=image_to_data_url(content["image_path"], max_size=(300, 300)), show_all=True, role=role
                     )  # always show the image
             history.append(history_text_html)
         return "<br>".join(history)
@@ -241,6 +229,7 @@ class ChatHistory:
 
 class M3Generator:
     """Class to generate M3 responses"""
+
     def __init__(self, model_path, conv_mode, device="cuda"):
         """Initialize the M3 generator"""
         # TODO: allow setting the device
@@ -248,9 +237,10 @@ class M3Generator:
         self.conv_mode = conv_mode
         self.device = device
         self.model_name = get_model_name_from_path(model_path)
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(model_path, self.model_name, device=self.device)
+        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+            model_path, self.model_name, device=self.device
+        )
         logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
-
 
     def generate_response(
         self,
@@ -284,7 +274,9 @@ class M3Generator:
         logger.debug(f"Prompt input: {prompt_text}")
 
         if len(images) > 0:
-            images_tensor = process_images(images, self.image_processor, self.model.config).to(self.model.device, dtype=torch.float16)
+            images_tensor = process_images(images, self.image_processor, self.model.config).to(
+                self.model.device, dtype=torch.float16
+            )
         images_input = [images_tensor] if len(images) > 0 else None
 
         input_ids = (
@@ -321,7 +313,6 @@ class M3Generator:
 
         return outputs
 
-    
     def squash_expert_messages_into_user(self, messages: list):
         """Squash consecutive expert messages into a single user message."""
         logger.debug("Squashing expert messages into user messages")
@@ -329,7 +320,7 @@ class M3Generator:
 
         i = 0
         while i < len(messages):
-            if messages[i]["role"] == 'expert':  # Check if the role is 'expert'
+            if messages[i]["role"] == "expert":  # Check if the role is 'expert'
                 # Change the role to 'user'
                 messages[i]["role"] = "user"
                 # Squash all consecutive expert messages
@@ -338,12 +329,11 @@ class M3Generator:
                     messages[i]["content"].extend(messages[j]["content"])  # Append the content directly
                     j += 1
                 # Remove all the squashed expert messages
-                del messages[i+1:j]
+                del messages[i + 1 : j]
 
             i += 1  # Move to the next message
 
         return messages
-
 
     def process_prompt(self, prompt, sv, chat_history):
         """Process the prompt and return the result. Inputs/outputs are the gradio components."""
@@ -361,7 +351,10 @@ class M3Generator:
         if isinstance(img_file, str) and img_file.endswith(".nii.gz"):
             # Take the specific slice from a volume
 
-            chat_history.append(sys_msg + _prompt, image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]))
+            chat_history.append(
+                sys_msg + _prompt,
+                image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]),
+            )
         elif isinstance(img_file, str):
             chat_history.append(sys_msg + _prompt, image_path=img_file)
         elif img_file is None:
@@ -385,9 +378,11 @@ class M3Generator:
             expert = expert_model() if expert_model().is_mentioned(outputs) else None
             if expert:
                 break
-        
+
         if expert:
-            logger.debug(f"Parameter in the expert run\nimage_url: {sv.image_url}\ninput: {outputs}\noutput_dir: {sv.temp_working_dir}\nimg_file: {img_file}\nslice_index: {sv.slice_index}\nprompt: {prompt}")
+            logger.debug(
+                f"Parameter in the expert run\nimage_url: {sv.image_url}\ninput: {outputs}\noutput_dir: {sv.temp_working_dir}\nimg_file: {img_file}\nslice_index: {sv.slice_index}\nprompt: {prompt}"
+            )
             text_output, seg_file, instruction = expert.run(
                 image_url=sv.image_url,
                 input=outputs,
@@ -414,6 +409,7 @@ class M3Generator:
 
 class SessionVariables:
     """Class to store the session variables"""
+
     def __init__(self):
         """Initialize the session variables"""
         self.sys_msg = SYS_MSG
@@ -421,13 +417,12 @@ class SessionVariables:
         self.slice_index = None  # Slice index for 3D images
         self.image_path = None  # Image path to display and process
         self.axis = 2
-        self.top_p = 0.9 
+        self.top_p = 0.9
         self.temperature = 0.0
         self.max_tokens = 300
         self.download_file_path = ""  # Path to the downloaded file
         self.temp_working_dir = None
         self.idx_range = (None, None)
-
 
     def _extract_expert_models(self):
         """Extract the expert models from the system message"""
@@ -469,16 +464,16 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
         image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
         if not os.path.exists(image_filename):
             compose = get_monai_transforms(
-                    ["image"],
-                    sv.temp_working_dir,
-                    modality="CT",  # TODO: Get the modality from the image/prompt/metadata
-                    slice_index=sv.slice_index,
-                    image_filename=image_filename,
-                )
+                ["image"],
+                sv.temp_working_dir,
+                modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                slice_index=sv.slice_index,
+                image_filename=image_filename,
+            )
             compose({"image": img_file})
         return os.path.join(sv.temp_working_dir, image_filename), sv, f"Slice Index: {sv.slice_index}"
 
-    sv.slice_index = None    
+    sv.slice_index = None
     return (
         img_file,
         sv,
@@ -579,7 +574,6 @@ def download_file():
     return [gr.DownloadButton(visible=False)]
 
 
-
 def create_demo(model_path, conv_mode):
     """Main function to create the Gradio interface"""
     generator = M3Generator(model_path, conv_mode)
@@ -620,7 +614,9 @@ def create_demo(model_path, conv_mode):
                 image_download = gr.DownloadButton("Download the file", visible=False)
                 clear_btn = gr.Button("Clear Conversation")
                 with gr.Row(variant="compact"):
-                    prompt_edit = gr.Textbox(label="Enter your prompt here", container=False, placeholder="Enter your prompt here", scale=2)
+                    prompt_edit = gr.Textbox(
+                        label="Enter your prompt here", container=False, placeholder="Enter your prompt here", scale=2
+                    )
                     submit_btn = gr.Button("Submit", scale=0)
                 gr.Examples(EXAMPLE_PROMPTS, prompt_edit)
                 checkboxes = gr.CheckboxGroup(
@@ -675,9 +671,7 @@ def create_demo(model_path, conv_mode):
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
 
         # Reset button
-        clear_btn.click(
-            fn=reset_all, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, sv]
-        )
+        clear_btn.click(fn=reset_all, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, sv])
 
         # States
         sv.change(
@@ -702,7 +696,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # TODO: Add the argument to load multiple models from a JSON file
     parser.add_argument("--conv_mode", type=str, default="llama_3", help="The conversation mode to use.")
-    parser.add_argument("--model_path", type=str, default="/workspace/nvidia/medical-service-nims/vila/checkpoints/baseline/checkpoint-3500", help="The path to the model to load.")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default="/workspace/nvidia/medical-service-nims/vila/checkpoints/baseline/checkpoint-3500",
+        help="The path to the model to load.",
+    )
     args = parser.parse_args()
     cache_images()
     create_demo(args.model_path, args.conv_mode)

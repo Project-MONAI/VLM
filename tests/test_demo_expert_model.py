@@ -2,6 +2,7 @@ import sys
 import unittest
 from dotenv import load_dotenv
 import tempfile
+
 load_dotenv()
 import os
 
@@ -13,6 +14,7 @@ from utils import get_slice_filenames, get_monai_transforms, save_image_url_to_f
 
 VISTA_URL = "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz"
 CXR_URL = "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_ce3d3d98-bf5170fa-8e962da1-97422442-6653c48a_v1.jpg"
+
 
 class TestExperts(unittest.TestCase):
     def test_run_vista3d(self):
@@ -33,7 +35,6 @@ class TestExperts(unittest.TestCase):
             self.assertTrue(output_text is not None)
             self.assertTrue(os.path.exists(seg_file))
 
-
     def test_run_vista3d_no_followup(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             prompt = "I segmented the image with <VISTA3D(everything)>."
@@ -50,7 +51,6 @@ class TestExperts(unittest.TestCase):
             )
 
             self.assertTrue(instruction == "")
-
 
     def test_run_cxr(self):
         input = "This seems a CXR image. Let me trigger <CXR>."
@@ -75,7 +75,9 @@ class TestExpertUtils(unittest.TestCase):
             # Download the TEST_IMAGE_3D
             img_file = save_image_url_to_file(VISTA_URL, tempdir)
             image_filename = "slice0.jpg"
-            compose = get_monai_transforms(["image"], tempdir, modality="CT", slice_index=0, image_filename=image_filename)
+            compose = get_monai_transforms(
+                ["image"], tempdir, modality="CT", slice_index=0, image_filename=image_filename
+            )
             compose({"image": img_file})
             self.assertEqual(os.path.exists(os.path.join(tempdir, image_filename)), True)
 

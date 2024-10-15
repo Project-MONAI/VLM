@@ -1,23 +1,20 @@
+import base64
 import itertools
 import logging
 import os
 import re
-
+from io import BytesIO
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
-from PIL import Image
 
-import base64
-from io import BytesIO
 import numpy as np
 import requests
 import skimage
-from monai.transforms import (Compose, LoadImageD, MapTransform, OrientationD,
-                              ScaleIntensityD, ScaleIntensityRangeD)
+from monai.transforms import Compose, LoadImageD, MapTransform, OrientationD, ScaleIntensityD, ScaleIntensityRangeD
+from PIL import Image
 from PIL import Image as PILImage
 from PIL.Image import Image
-
 
 logger = logging.getLogger("gradio_monai_vila2d")
 
@@ -50,36 +47,37 @@ class Dye(MapTransform):
         output_dir: the directory to save the image and label.
         bg_label: the label value for the background.
     """
+
     COLORS = [
-        'red',
-        'blue',
-        'yellow',
-        'magenta',
-        'green',
-        'indigo',
-        'darkorange',
-        'cyan',
-        'pink',
-        'brown',
-        'orange',
-        'lime',
-        'orange',
-        'gold',
-        'yellowgreen',
-        'darkgreen',
+        "red",
+        "blue",
+        "yellow",
+        "magenta",
+        "green",
+        "indigo",
+        "darkorange",
+        "cyan",
+        "pink",
+        "brown",
+        "orange",
+        "lime",
+        "orange",
+        "gold",
+        "yellowgreen",
+        "darkgreen",
     ]
 
     def __init__(
-            self,
-            slice_index: int | None = None,
-            axis: int = 2,
-            image_key: str = "image",
-            label_key: str = "label",
-            image_filename: str = "image.jpg",
-            label_filename: str = "label.jpg",
-            output_dir: Path = Path("."),
-            bg_label: int = 0,
-        ):
+        self,
+        slice_index: int | None = None,
+        axis: int = 2,
+        image_key: str = "image",
+        label_key: str = "label",
+        image_filename: str = "image.jpg",
+        label_filename: str = "label.jpg",
+        output_dir: Path = Path("."),
+        bg_label: int = 0,
+    ):
         self.slice_index = slice_index
         self.axis = axis
         self.image_key = image_key
@@ -95,7 +93,7 @@ class Dye(MapTransform):
         d = dict(data)
         for key in self.key_iterator(d):
             np_array = np.squeeze(d.get(key))
-            slice_index = np_array.shape[2] // 2  if self.slice_index is None else self.slice_index
+            slice_index = np_array.shape[2] // 2 if self.slice_index is None else self.slice_index
             slice = np.take(np_array, slice_index, axis=self.axis)
             d[key] = np.rot90(np.swapaxes(slice.astype(np.uint8), 0, 1), k=2)
 
@@ -103,12 +101,12 @@ class Dye(MapTransform):
         skimage.io.imsave(self.output_dir / self.image_filename, np.stack([d[self.image_key]] * 3, axis=-1))
 
         if self.label_key in d:
-            color_label = skimage.color.label2rgb(
-                d[self.label_key],
-                colors=self.COLORS,
-                image=d[self.image_key],
-                bg_label=self.bg_label
-            ) * 255
+            color_label = (
+                skimage.color.label2rgb(
+                    d[self.label_key], colors=self.COLORS, image=d[self.image_key], bg_label=self.bg_label
+                )
+                * 255
+            )
 
             skimage.io.imsave(self.output_dir / self.label_filename, color_label.astype(np.uint8))
 
@@ -175,7 +173,7 @@ def load_image(image_path_or_data_url: str) -> Image:
 
     Args:
         image: the image URL or the base64 encoded image that starts with "data:image".
-    
+
     Returns:
         PIL.Image: the loaded image.
     """
@@ -255,15 +253,15 @@ def get_modality(image_url: str | None, text: str | None = None):
 
 
 def get_monai_transforms(
-        keys,
-        output_dir: Path | str,
-        image_key = "image",
-        modality: str = "CT",
-        slice_index: int | None = None,
-        axis: int = 2,
-        image_filename: str = "image.jpg",
-        label_filename: str = "label.jpg",
-    ):
+    keys,
+    output_dir: Path | str,
+    image_key="image",
+    modality: str = "CT",
+    slice_index: int | None = None,
+    axis: int = 2,
+    image_filename: str = "image.jpg",
+    label_filename: str = "label.jpg",
+):
     """
     Get the MONAI transforms for the modality.
 
@@ -285,28 +283,31 @@ def get_monai_transforms(
         window_width = 400
         scaler = ScaleIntensityRangeD(
             keys=[image_key],
-            a_min=window_center-window_width/2,
-            a_max=window_center+window_width/2,
+            a_min=window_center - window_width / 2,
+            a_max=window_center + window_width / 2,
             b_min=0,
             b_max=255,
-            clip=True
+            clip=True,
         )
     elif modality == "MRI":
-        scaler = ScaleIntensityD(
-            keys=[image_key],
-            minv=0,
-            maxv=255,
-            channel_wise=True
-        )
+        scaler = ScaleIntensityD(keys=[image_key], minv=0, maxv=255, channel_wise=True)
     else:
         raise ValueError(f"Unsupported modality: {modality}. Supported modalities are 'CT' and 'MRI'.")
 
-    return Compose([
-        LoadImageD(keys=keys, ensure_channel_first=True),
-        OrientationD(keys=keys, axcodes="RAS"),
-        scaler,
-        Dye(slice_index=slice_index, axis=axis, output_dir=output_dir, image_filename=image_filename, label_filename=label_filename),
-    ])
+    return Compose(
+        [
+            LoadImageD(keys=keys, ensure_channel_first=True),
+            OrientationD(keys=keys, axcodes="RAS"),
+            scaler,
+            Dye(
+                slice_index=slice_index,
+                axis=axis,
+                output_dir=output_dir,
+                image_filename=image_filename,
+                label_filename=label_filename,
+            ),
+        ]
+    )
 
 
 def manage_errors(e: Exception):
@@ -322,9 +323,13 @@ def manage_errors(e: Exception):
                 unhandled_error = str(e)
         case ValueError:
             if "Invalid expert model" in str(e):
-                bot_liked_output += "I am unable to find the info for the suitable model card. Please provide more context."
+                bot_liked_output += (
+                    "I am unable to find the info for the suitable model card. Please provide more context."
+                )
             elif "Multiple expert models" in str(e):
-                bot_liked_output += "I found multiple expert model cards and cannot continue. Please provide more context."
+                bot_liked_output += (
+                    "I found multiple expert model cards and cannot continue. Please provide more context."
+                )
             elif "Error triggering POST" in str(e):
                 bot_liked_output += (
                     "I had an error when I tried to trigger POST request to the expert model endpoint. "

@@ -1,24 +1,21 @@
-import requests
-import re
 import json
 import os
+import re
+from io import BytesIO
 from pathlib import Path
 from shutil import move
 from zipfile import ZipFile
-from io import BytesIO
 
+import requests
 from experts.base_expert import BaseExpert
-from experts.utils import get_slice_filenames, get_monai_transforms
+from experts.utils import get_monai_transforms, get_slice_filenames
 
 
 class ExpertVista3D(BaseExpert):
-
     NIM_VISTA3D = "https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d"
-
 
     def __init__(self) -> None:
         self.model_name = "VISTA3D"
-
 
     def label_id_to_name(self, label_id: int, label_dict: dict):
         """
@@ -36,14 +33,13 @@ class ExpertVista3D(BaseExpert):
                         return label_name
         return None
 
-
     def save_zipped_seg_to_file(
-            self,
-            zip_response: requests.Response,
-            output_dir: Path,
-            output_name: str = "segmentation",
-            output_ext: str = ".nrrd"
-        ):
+        self,
+        zip_response: requests.Response,
+        output_dir: Path,
+        output_name: str = "segmentation",
+        output_ext: str = ".nrrd",
+    ):
         """
         Save the segmentation file from the zip response to the file.
 
@@ -69,21 +65,19 @@ class ExpertVista3D(BaseExpert):
 
         raise FileNotFoundError(f"Segmentation file not found in {output_dir}")
 
-
     def segmentation_to_string(
-            self,
-            output_dir: Path,
-            img_file: str,
-            seg_file: str,
-            label_groups: dict,
-            modality: str = "CT",
-            slice_index: int | None = None,
-            axis: int = 2,
-            image_filename: str = "image.jpg",
-            label_filename: str = "label.jpg",
-            output_prefix = "The results are <segmentation>. The colors in this image describe ",
-            
-        ):
+        self,
+        output_dir: Path,
+        img_file: str,
+        seg_file: str,
+        label_groups: dict,
+        modality: str = "CT",
+        slice_index: int | None = None,
+        axis: int = 2,
+        image_filename: str = "image.jpg",
+        label_filename: str = "label.jpg",
+        output_prefix="The results are <segmentation>. The colors in this image describe ",
+    ):
         """
         Format the segmentation response to a string.
 
@@ -101,7 +95,7 @@ class ExpertVista3D(BaseExpert):
             label_groups_path: the label groups path for VISTA-3D.
         """
         output_dir = Path(output_dir)
-        
+
         transforms = get_monai_transforms(
             ["image", "label"],
             output_dir,
@@ -123,7 +117,6 @@ class ExpertVista3D(BaseExpert):
 
         return output_prefix + ", ".join(formatted_items) + ". "
 
-
     def is_mentioned(self, input: str):
         """
         Check if the VISTA-3D model is mentioned in the input.
@@ -136,17 +129,16 @@ class ExpertVista3D(BaseExpert):
         """
         return self.model_name in str(input)
 
-
     def run(
-            self, 
-            image_url: str = "",
-            input: str = "",
-            output_dir: str = "",
-            img_file: str = "",
-            slice_index: int = 0,
-            prompt: str = "",
-            **kwargs
-        ):
+        self,
+        image_url: str = "",
+        input: str = "",
+        output_dir: str = "",
+        img_file: str = "",
+        slice_index: int = 0,
+        prompt: str = "",
+        **kwargs,
+    ):
         """
         Run the VISTA-3D model.
 
@@ -167,15 +159,17 @@ class ExpertVista3D(BaseExpert):
         match = matches[0]
 
         # Extract the arguments
-        arg_matches = re.findall(r"\((.*?)\)", match[len(self.model_name):])
+        arg_matches = re.findall(r"\((.*?)\)", match[len(self.model_name) :])
 
         if len(arg_matches) == 0:  # <VISTA3D>
             arg_matches = ["everything"]
         if len(arg_matches) == 1 and (arg_matches[0] == "" or arg_matches[0] == None):  # <VISTA3D()>
             arg_matches = ["everything"]
         if len(arg_matches) > 1:
-            raise ValueError("Multiple expert model arguments are provided in the same prompt"
-                            "which is not supported in this version.")
+            raise ValueError(
+                "Multiple expert model arguments are provided in the same prompt"
+                "which is not supported in this version."
+            )
 
         vista3d_prompts = None
         dir = os.path.dirname(__file__)
@@ -206,7 +200,9 @@ class ExpertVista3D(BaseExpert):
         response = requests.post(self.NIM_VISTA3D, headers=headers, json=payload)
         if response.status_code != 200:
             payload.pop("image")  # hide the image URL in the error message
-            raise requests.exceptions.HTTPError(f"Error triggering POST to {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}")
+            raise requests.exceptions.HTTPError(
+                f"Error triggering POST to {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}"
+            )
 
         seg_file = self.save_zipped_seg_to_file(response, output_dir)
 

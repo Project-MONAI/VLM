@@ -1,7 +1,6 @@
-import requests
 import os
 
-
+import requests
 from experts.base_expert import BaseExpert
 
 
@@ -11,23 +10,18 @@ class ExpertTXRV(BaseExpert):
     def __init__(self) -> None:
         self.model_name = "CXR"
 
-
     def classification_to_string(self, outputs):
         """Format the classification outputs to a string."""
+
         def binary_output(value):
             return "yes" if value >= 0.5 else "no"
 
         def score_output(value):
             return f"{value:.2f}"
 
-        formatted_items = [
-            f"{key.lower().replace('_', ' ')}: {binary_output(outputs[key])}"
-            for key in sorted(outputs)
-        ]
+        formatted_items = [f"{key.lower().replace('_', ' ')}: {binary_output(outputs[key])}" for key in sorted(outputs)]
 
-        return "\n".join(
-            ["The resulting predictions are:"] + formatted_items + ["."])
-
+        return "\n".join(["The resulting predictions are:"] + formatted_items + ["."])
 
     def is_mentioned(self, input: str):
         """
@@ -42,7 +36,6 @@ class ExpertTXRV(BaseExpert):
 
         return self.model_name in str(input)
 
-
     def run(self, image_url: str = "", prompt: str = "", **kwargs):
         """
         Run the CXR model to classify the image.
@@ -50,7 +43,7 @@ class ExpertTXRV(BaseExpert):
         Args:
             image_url (str): The image URL.
             prompt: the original prompt.
-        
+
         Returns:
             tuple: The classification string, file path, and the next step instruction.
         """
@@ -65,4 +58,8 @@ class ExpertTXRV(BaseExpert):
         }
         response = requests.post(self.NIM_CXR, headers=headers, json={"image": image_url})
         response.raise_for_status()
-        return self.classification_to_string(response.json()), None, "Use this result to respond to this prompt:\n" + prompt
+        return (
+            self.classification_to_string(response.json()),
+            None,
+            "Use this result to respond to this prompt:\n" + prompt,
+        )
