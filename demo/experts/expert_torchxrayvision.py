@@ -75,4 +75,5 @@ class ExpertTXRV(BaseExpert):
             self.classification_to_string(response.json()),
             None,
             "Use this result to respond to this prompt:\n" + prompt,
+            "",  # no file needs to be downloaded
         )

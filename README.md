@@ -9,30 +9,33 @@ monai_vila2d
 
 ### Local Demo
 
-- Make sure you have CUDA 12.2    
+- Make sure you have CUDA 12.2 and Python 3.10 installed
     - (Recommendded) Use Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
-        NOTE: You may need to install `python3.10`, `git` manually in this image.
-        ```bash
-        docker run -itd --rm --ipc host --gpus all --net host \
-            -v /localhome/local-mingxinz:/workspace \
-            -w /workspace/nvidia/VLM \
-            nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
-        apt-get update && apt-get install -y python3.10 python3.10-venv git
-        ```
-    - Manually install it: https://developer.nvidia.com/cuda-12-2-2-download-archive
-
-- Prepare the environment:
     ```bash
-    cd $HOME && git clone https://github.com/Project-MONAI/VLM
-    cd $HOME/VLM
+    docker run -itd --rm --ipc host --gpus all --net host -v <mount paths> \
+        nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
+    ```
+    **IMPORTANT**: Install these packages in container too: `apt-get update && apt-get install -y python3.10 python3.10-venv git`
+    - Manually install it: https://developer.nvidia.com/cuda-12-2-2-download-archive
+- Set up the dependencies
+    ```bash
+    git clone https://github.com/Project-MONAI/VLM --recursive
+    cd VLM
     python3.10 -m venv .venv
     source .venv/bin/activate
     make demo_monai_vila2d
     ```
 
-```bash
-python demo/gradio_monai_vila2d.py  --model-path /workspace/nvidia/medical-service-nims/checkpoints/baseline/checkpoint-3500 --conv-mode llama_3
-```
+- Run the Demo
+    ```bash
+    cd demo
+    # keys to call the expert models
+    export api_key=<your nvcf key>
+    export NIM_API_KEY=<your NIM key>
+    python demo/gradio_monai_vila2d.py  \
+        --modelpath <path to the checkpoint> \
+        --convmode <llama_3 or vicuna_1>
+    ```
 
 ## Contributing
 

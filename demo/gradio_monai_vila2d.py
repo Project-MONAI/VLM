@@ -13,7 +13,6 @@ import argparse
 import html
 import logging
 import os
-import re
 import tempfile
 from copy import deepcopy
 
@@ -69,6 +68,8 @@ IMAGES_URLS = {
 }
 
 SYS_MSG = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
+
+SYS_PROMPT = None  # set when the script initializes
 
 EXAMPLE_PROMPTS = [
     "Segment the visceral structures in the current image.",
@@ -227,33 +228,61 @@ class ChatHistory:
         return "<br>".join(history)
 
 
+class SessionVariables:
+    """Class to store the session variables"""
+    def __init__(self):
+        """Initialize the session variables"""
+        self.sys_prompt = SYS_PROMPT
+        self.sys_msg = SYS_MSG
+        self.slice_index = None  # Slice index for 3D images
+        self.image_path = None  # Image path to display and process
+        self.axis = 2
+        self.top_p = 0.9
+        self.temperature = 0.0
+        self.max_tokens = 300
+        self.download_file_path = ""  # Path to the downloaded file
+        self.temp_working_dir = None
+        self.idx_range = (None, None)
+
+
+def new_session_variables(**kwargs):
+    """Create a new session variables but keep the conversation mode"""
+    if len(kwargs) == 0:
+        return SessionVariables()
+    sv = SessionVariables()
+    for key, value in kwargs.items():
+        if sv.__getattribute__(key) != value:
+            sv.__setattr__(key, value)
+    return sv
+
+
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, model_path, conv_mode, device="cuda"):
+    def __init__(self, model_path, conv_mode):
         """Initialize the M3 generator"""
         # TODO: allow setting the device
         disable_torch_init()
         self.conv_mode = conv_mode
-        self.device = device
         self.model_name = get_model_name_from_path(model_path)
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-            model_path, self.model_name, device=self.device
-        )
+        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(model_path, self.model_name)
         logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
 
     def generate_response(
         self,
         messages: list,
-        max_tokens,
-        temperature,
-        top_p,
+        max_tokens: int,
+        temperature: float,
+        top_p: float,
+        system_prompt: str | None = None,
     ):
         """Generate the response"""
         logger.debug(f"Generating response with {len(messages)} messages")
         images = []
 
         conv = conv_templates[self.conv_mode].copy()
+        if system_prompt is not None:
+            conv.system = system_prompt
         user_role = conv.roles[0]
         assistant_role = conv.roles[1]
 
@@ -282,7 +311,7 @@ class M3Generator:
         input_ids = (
             tokenizer_image_token(prompt_text, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
             .unsqueeze(0)
-            .to(self.device)
+            .to(self.model.device)
         )
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
@@ -320,18 +349,15 @@ class M3Generator:
 
         i = 0
         while i < len(messages):
-            if messages[i]["role"] == "expert":  # Check if the role is 'expert'
-                # Change the role to 'user'
+            if messages[i]["role"] == "expert":
                 messages[i]["role"] = "user"
-                # Squash all consecutive expert messages
                 j = i + 1
                 while j < len(messages) and messages[j]["role"] == "expert":
                     messages[i]["content"].extend(messages[j]["content"])  # Append the content directly
                     j += 1
-                # Remove all the squashed expert messages
-                del messages[i + 1 : j]
+                del messages[i + 1 : j]  # Remove all the squashed expert messages
 
-            i += 1  # Move to the next message
+            i += 1  # Move to the next message. TODO: Check if this is correct
 
         return messages
 
@@ -342,23 +368,27 @@ class M3Generator:
         if sv.temp_working_dir is None:
             sv.temp_working_dir = tempfile.mkdtemp()
 
-        img_file = CACHED_IMAGES.get(sv.image_url, None)
+        
         modality = get_modality(sv.image_url, text=prompt)
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
-        sys_msg = sv.sys_msg + mod_msg
-        _prompt = prompt + " <image>" if "<image>" not in prompt else prompt
 
-        if isinstance(img_file, str) and img_file.endswith(".nii.gz"):
-            # Take the specific slice from a volume
+        img_file = CACHED_IMAGES.get(sv.image_url, None)
+        if isinstance(img_file, str):
+            if "<image>" not in prompt:
+                _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
+            else:
+                _prompt = sv.sys_msg + mod_msg + prompt
 
-            chat_history.append(
-                sys_msg + _prompt,
-                image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]),
-            )
-        elif isinstance(img_file, str):
-            chat_history.append(sys_msg + _prompt, image_path=img_file)
+            if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
+                chat_history.append(
+                    _prompt,
+                    image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]),
+                )
+            else:
+                chat_history.append(_prompt, image_path=img_file)
         elif img_file is None:
-            chat_history.append(sys_msg + prompt)  # no image token
+            # text-only prompt
+            chat_history.append(prompt)  # no image token
         else:
             raise ValueError(f"Invalid image file: {img_file}")
 
@@ -368,22 +398,22 @@ class M3Generator:
             max_tokens=sv.max_tokens,
             temperature=sv.temperature,
             top_p=sv.top_p,
+            system_prompt = sv.sys_prompt
         )
 
         chat_history.append(outputs, role="assistant")
 
         # check the message mentions any expert model
         expert = None
+        download_pkg = ""
+
         for expert_model in [ExpertTXRV, ExpertVista3D]:
             expert = expert_model() if expert_model().mentioned_by(outputs) else None
             if expert:
                 break
 
         if expert:
-            logger.debug(
-                f"Parameter in the expert run\nimage_url: {sv.image_url}\ninput: {outputs}\noutput_dir: {sv.temp_working_dir}\nimg_file: {img_file}\nslice_index: {sv.slice_index}\nprompt: {prompt}"
-            )
-            text_output, seg_file, instruction = expert.run(
+            text_output, seg_file, instruction, download_pkg = expert.run(
                 image_url=sv.image_url,
                 input=outputs,
                 output_dir=sv.temp_working_dir,
@@ -399,36 +429,18 @@ class M3Generator:
                     max_tokens=sv.max_tokens,
                     temperature=sv.temperature,
                     top_p=sv.top_p,
+                    system_prompt = sv.sys_prompt
                 )
                 chat_history.append(outputs, role="assistant")
 
-        new_sv = SessionVariables()
-        new_sv.download_file_path = seg_file if seg_file else ""
+        new_sv = new_session_variables(
+            # Keep these parameters accross one conversation
+            sys_prompt = sv.sys_prompt,
+            sys_msg = sv.sys_msg,
+            download_file_path = download_pkg,
+        )
         return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
 
-
-class SessionVariables:
-    """Class to store the session variables"""
-
-    def __init__(self):
-        """Initialize the session variables"""
-        self.sys_msg = SYS_MSG
-        self.expert_models = self._extract_expert_models()
-        self.slice_index = None  # Slice index for 3D images
-        self.image_path = None  # Image path to display and process
-        self.axis = 2
-        self.top_p = 0.9
-        self.temperature = 0.0
-        self.max_tokens = 300
-        self.download_file_path = ""  # Path to the downloaded file
-        self.temp_working_dir = None
-        self.idx_range = (None, None)
-
-    def _extract_expert_models(self):
-        """Extract the expert models from the system message"""
-        matches = re.findall(r"<([A-Z0-9]+)\(args\)>", self.sys_msg)
-        excluded = ["NAME", "BRATS", "VISTA2D"]  # Exclude these models b/c they are not available/valid
-        return [m for m in matches if m not in excluded]
 
 
 def input_image(image, sv: SessionVariables):
@@ -520,9 +532,19 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user"):
     raise ValueError(f"Invalid role: {role}")
 
 
-def reset_params(sv):
-    """Reset the session variables"""
-    logger.debug(f"Consuming the parameters")
+def clear_one_conv(sv):
+    """
+    Post-event hook indicating the session ended.It's called when `new_session_variables` finishes.
+    Particularly, it resets the non-text parameters. So it excludes:
+        - prompt_edit
+        - chat_history
+        - history_text
+        - history_text_full
+        - sys_prompt_text
+        - sys_message_text
+    If some of the parameters need to stay persistent in the session, they should be modified in the `clear_all_convs` function.
+    """
+    logger.debug(f"Clearing the parameters of one conversation")
     if sv.download_file_path != "":
         name = os.path.basename(sv.download_file_path)
         filepath = sv.download_file_path
@@ -530,22 +552,16 @@ def reset_params(sv):
         d_btn = gr.DownloadButton(label=f"Download {name}", value=filepath, visible=True)
     else:
         d_btn = gr.DownloadButton(visible=False)
-    # Order of output: image, image_selector, checkboxes, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, download_button
-    return sv, None, None, sv.expert_models, "Slice Index: N/A", 0.0, 0.9, 300, d_btn
+    # Order of output: image, image_selector, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, download_button
+    return sv, None, None, "Slice Index: N/A", 0.0, 0.9, 300, d_btn
 
 
-def reset_all():
+def clear_all_convs():
     """Clear and reset everything, Inputs/outputs are the gradio components."""
-    logger.debug(f"Clearing everything")
-    # Order of output: prompt_edit, chat_history, history_text, history_text_full, param_bags
-    return "Enter your prompt here", ChatHistory(), HTML_PLACEHOLDER, HTML_PLACEHOLDER, SessionVariables()
-
-
-def update_checkbox(checkboxes, sv):
-    """Update the checkboxes"""
-    logger.debug(f"Updating the checkboxes")
-    sv.expert_models = checkboxes
-    return sv
+    logger.debug(f"Clearing all conversations")
+    new_sv = new_session_variables()
+    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text
+    return new_sv, "Enter your prompt here", ChatHistory(), HTML_PLACEHOLDER, HTML_PLACEHOLDER, new_sv.sys_prompt, new_sv.sys_msg
 
 
 def update_temperature(temperature, sv):
@@ -569,12 +585,25 @@ def update_max_tokens(max_tokens, sv):
     return sv
 
 
+def update_sys_prompt(sys_prompt, sv):
+    """Update the system prompt"""
+    logger.debug(f"Updating the system prompt")
+    sv.sys_prompt = sys_prompt
+    return sv
+
+
+def update_sys_message(sys_message, sv):
+    """Update the system message"""
+    logger.debug(f"Updating the system message")
+    sv.sys_msg = sys_message
+    return sv
+
 def download_file():
     """Download the file."""
     return [gr.DownloadButton(visible=False)]
 
 
-def create_demo(model_path, conv_mode):
+def create_demo(model_path, conv_mode, server_port):
     """Main function to create the Gradio interface"""
     generator = M3Generator(model_path, conv_mode)
 
@@ -605,6 +634,14 @@ def create_demo(model_path, conv_mode):
                         prev01_btn = gr.Button("<")
                         next01_btn = gr.Button(">")
                         next10_btn = gr.Button(">>")
+                
+                with gr.Accordion("System Prompt and Message", open=False):
+                    sys_prompt_text = gr.Textbox(
+                        label="System Prompt", value=sv.value.sys_prompt, lines=4,
+                    )
+                    sys_message_text = gr.Textbox(
+                        label="System Message", value=sv.value.sys_msg, lines=10,
+                    )
 
             with gr.Column():
                 with gr.Tab("In front of the scene"):
@@ -619,12 +656,6 @@ def create_demo(model_path, conv_mode):
                     )
                     submit_btn = gr.Button("Submit", scale=0)
                 gr.Examples(EXAMPLE_PROMPTS, prompt_edit)
-                checkboxes = gr.CheckboxGroup(
-                    choices=sv.value.expert_models,
-                    value=sv.value.expert_models,
-                    label="Expert Models",
-                    info="Select the expert models to use.",
-                )
 
         # Process image and clear it immediately by returning None
         submit_btn.click(
@@ -665,23 +696,22 @@ def create_demo(model_path, conv_mode):
             inputs=[image_dropdown, sv, slice_index_html],
             outputs=[image_input, sv, slice_index_html],
         )
-        checkboxes.change(fn=update_checkbox, inputs=[checkboxes, sv], outputs=[sv])
         temperature_slider.change(fn=update_temperature, inputs=[temperature_slider, sv], outputs=[sv])
         top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, sv], outputs=[sv])
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
-
+        sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
+        sys_message_text.change(fn=update_sys_message, inputs=[sys_message_text, sv], outputs=[sv])
         # Reset button
-        clear_btn.click(fn=reset_all, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, sv])
+        clear_btn.click(fn=clear_all_convs, inputs=[], outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text])
 
         # States
         sv.change(
-            fn=reset_params,
+            fn=clear_one_conv,
             inputs=[sv],
             outputs=[
                 sv,
                 image_input,
                 image_dropdown,
-                checkboxes,
                 slice_index_html,
                 temperature_slider,
                 top_p_slider,
@@ -689,20 +719,27 @@ def create_demo(model_path, conv_mode):
                 image_download,
             ],
         )
-        demo.launch(server_name="0.0.0.0", server_port=7861)
+        demo.launch(server_name="0.0.0.0", server_port=server_port)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # TODO: Add the argument to load multiple models from a JSON file
-    parser.add_argument("--conv_mode", type=str, default="llama_3", help="The conversation mode to use.")
+    parser.add_argument("--convmode", type=str, default="llama_3", help="The conversation mode to use.")
     parser.add_argument(
-        "--model_path",
+        "--modelpath",
         type=str,
         default="/workspace/nvidia/medical-service-nims/vila/checkpoints/baseline/checkpoint-3500",
         help="The path to the model to load.",
     )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=7860,
+        help="The port to run the Gradio server on.",
+    )
     args = parser.parse_args()
+    SYS_PROMPT = conv_templates[args.convmode].system
     cache_images()
-    create_demo(args.model_path, args.conv_mode)
+    create_demo(args.modelpath, args.convmode, args.port)
     cache_cleanup()

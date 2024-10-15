@@ -234,4 +234,5 @@ class ExpertVista3D(BaseExpert):
             instruction = ""  # no need to ask for instruction
         else:
             instruction = "Use this result to respond to this prompt:\n" + prompt
-        return text_output, os.path.join(output_dir, get_slice_filenames(img_file, slice_index)[1]), instruction
+        mask_overlay = os.path.join(output_dir, get_slice_filenames(img_file, slice_index)[1])
+        return text_output, mask_overlay, instruction, seg_file
