@@ -7,8 +7,8 @@ from shutil import move
 from zipfile import ZipFile
 from io import BytesIO
 
-from base_expert import BaseExpert
-from utils import get_slice_filenames, get_monai_transforms
+from experts.base_expert import BaseExpert
+from experts.utils import get_slice_filenames, get_monai_transforms
 
 
 class ExpertVista3D(BaseExpert):
@@ -225,4 +225,4 @@ class ExpertVista3D(BaseExpert):
             instruction = ""  # no need to ask for instruction
         else:
             instruction = "Use this result to respond to this prompt:\n" + prompt
-        return text_output, seg_file, instruction
+        return text_output, os.path.join(output_dir, get_slice_filenames(img_file, slice_index)[1]), instruction

@@ -9,8 +9,7 @@ monai_vila2d
 
 ### Local Demo
 
-- Make sure you have CUDA 12.2
-    - Manually install it: https://developer.nvidia.com/cuda-12-2-2-download-archive
+- Make sure you have CUDA 12.2    
     - (Recommendded) Use Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
         NOTE: You may need to install `python3.10`, `git` manually in this image.
         ```bash
@@ -20,6 +19,7 @@ monai_vila2d
             nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
         apt-get update && apt-get install -y python3.10 python3.10-venv git
         ```
+    - Manually install it: https://developer.nvidia.com/cuda-12-2-2-download-archive
 
 - Prepare the environment:
     ```bash
@@ -31,7 +31,7 @@ monai_vila2d
     ```
 
 ```bash
-python demo/gradio_monai_vila2d.py
+python demo/gradio_monai_vila2d.py  --model-path /workspace/nvidia/medical-service-nims/checkpoints/baseline/checkpoint-3500 --conv-mode llama_3
 ```
 
 ## Contributing

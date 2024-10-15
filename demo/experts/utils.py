@@ -15,9 +15,11 @@ import requests
 import skimage
 from monai.transforms import (Compose, LoadImageD, MapTransform, OrientationD,
                               ScaleIntensityD, ScaleIntensityRangeD)
+from PIL import Image as PILImage
+from PIL.Image import Image
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gradio_monai_vila2d")
 
 
 MODALITY_MAP = {
@@ -342,16 +344,8 @@ def image_to_data_url(image, format="JPEG", max_size=None):
         format (str): The format to save the image in. Default is "JPEG".
         max_size (tuple): The maximum size of the image. Default is None.
     """
-    logger.debug(f"Converting image to data URL")
-    if isinstance(image, str) and image.startswith("data:image"):
-        return image
-    if isinstance(image, str) and image.startswith("http"):
-        logger.debug(f"Received Image URL: {image}")
-        img = Image.open(requests.get(image, stream=True).raw)
-    elif isinstance(image, str):
-        img = Image.open(image)
-    elif isinstance(image, np.ndarray):
-        img = Image.fromarray(image)
+    if isinstance(image, str) and os.path.exists(image):
+        img = PILImage.open(image)
     else:
         raise ValueError(f"Invalid image type: {type(image)}")
     if max_size is not None:
@@ -365,13 +359,6 @@ def image_to_data_url(image, format="JPEG", max_size=None):
     img_byte = buffered.getvalue()
     # Encode the bytes to base64
     img_base64 = base64.b64encode(img_byte).decode()
-    if len(img_base64) > 180_000:
-        logger.warning(
-            (
-                f"The image is too large for the data URL. "
-                "Use the assets API or use the following snippet to resize:\n {IMAGE_SIZE_WARNING}."
-            )
-        )
     # Convert the base64 bytes to string and format the data URL
     return f"data:image/{format.lower()};base64,{img_base64}"
 

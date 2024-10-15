@@ -10,7 +10,6 @@
 # limitations under the License.
 
 import argparse
-import base64
 import html
 import logging
 import os
@@ -39,17 +38,17 @@ from llava.utils import disable_torch_init
 
 import gradio as gr
 import nibabel as nib
-import numpy as np
-import requests
 
 from experts.expert_torchxrayvision import ExpertTXRV
 from experts.expert_monai_vista3d import ExpertVista3D
-from experts.util import (get_slice_filenames,
+from experts.utils import (get_slice_filenames,
                    get_modality,
                    load_image,
                    get_monai_transforms, save_image_url_to_file, image_to_data_url)
 
 
+from dotenv import load_dotenv
+load_dotenv()
 
 
 # Set up the logger
@@ -129,14 +128,14 @@ TITLE = """
 """
 
 CSS_STYLES = (
-    ".fixed-size-image {\n",
-    "width: 512px;\n",
-    "height: 512px;\n",
-    "object-fit: cover;\n",
-    "}\n",
-    ".small-text {\n",
-    "font-size: 6px;\n",
-    "}\n",
+    ".fixed-size-image {\n"
+    "width: 512px;\n"
+    "height: 512px;\n"
+    "object-fit: cover;\n"
+    "}\n"
+    ".small-text {\n"
+    "font-size: 6px;\n"
+    "}\n"
 )
 
 
@@ -264,20 +263,22 @@ class M3Generator:
         logger.debug(f"Generating response with {len(messages)} messages")
         images = []
 
-        conv = deepcopy(conv_templates[self.conv_mode])
-        
+        conv = conv_templates[self.conv_mode].copy()
+        user_role = conv.roles[0]
+        assistant_role = conv.roles[1]
+
         for message in messages:
-            role = conv.roles[0] if message["role"] == "user" else conv.roles[1]
+            role = user_role if message["role"] == "user" else assistant_role
             prompt = ""
             for content in message["content"]:
                 if content["type"] == "text":
-                    prompt += content.text
+                    prompt += content["text"]
                 if content["type"] == "image_path":
                     images.append(load_image(content["image_path"]))
             conv.append_message(role, prompt)
 
         if conv.sep_style == SeparatorStyle.LLAMA_3:
-            conv.append_message(conv.roles[1], "")  # add "" to the assistant message
+            conv.append_message(assistant_role, "")  # add "" to the assistant message
 
         prompt_text = conv.get_prompt()
         logger.debug(f"Prompt input: {prompt_text}")
@@ -355,14 +356,16 @@ class M3Generator:
         modality = get_modality(sv.image_url, text=prompt)
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
         sys_msg = sv.sys_msg + mod_msg
+        _prompt = prompt + " <image>" if "<image>" not in prompt else prompt
 
         if isinstance(img_file, str) and img_file.endswith(".nii.gz"):
             # Take the specific slice from a volume
-            chat_history.append(sys_msg + prompt, image_path=get_slice_filenames(img_file, sv.slice_index)[0])
+
+            chat_history.append(sys_msg + _prompt, image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]))
         elif isinstance(img_file, str):
-            chat_history.append(sv.sys_msg + mod_msg, image_path=img_file)
+            chat_history.append(sys_msg + _prompt, image_path=img_file)
         elif img_file is None:
-            chat_history.append(sv.sys_msg + mod_msg)
+            chat_history.append(sys_msg + prompt)  # no image token
         else:
             raise ValueError(f"Invalid image file: {img_file}")
 
@@ -376,16 +379,26 @@ class M3Generator:
 
         chat_history.append(outputs, role="assistant")
 
+        # check the message mentions any expert model
         expert = None
         for expert_model in [ExpertTXRV, ExpertVista3D]:
-            expert = expert_model()
-            if expert.is_mentioned(prompt):
+            expert = expert_model() if expert_model().is_mentioned(outputs) else None
+            if expert:
                 break
         
         if expert:
-            text_output, seg_file, instruction = expert.run(image_url=sv.image_url, input=prompt, output_dir=sv.temp_working_dir)
+            logger.debug(f"Parameter in the expert run\nimage_url: {sv.image_url}\ninput: {outputs}\noutput_dir: {sv.temp_working_dir}\nimg_file: {img_file}\nslice_index: {sv.slice_index}\nprompt: {prompt}")
+            text_output, seg_file, instruction = expert.run(
+                image_url=sv.image_url,
+                input=outputs,
+                output_dir=sv.temp_working_dir,
+                img_file=img_file,
+                slice_index=sv.slice_index,
+                prompt=prompt,
+            )
             chat_history.append(text_output, image_path=seg_file, role="expert")
             if instruction:
+                chat_history.append(instruction, role="expert")
                 outputs = self.generate_response(
                     messages=self.squash_expert_messages_into_user(chat_history.messages),
                     max_tokens=sv.max_tokens,
@@ -407,6 +420,7 @@ class SessionVariables:
         self.expert_models = self._extract_expert_models()
         self.slice_index = None  # Slice index for 3D images
         self.image_path = None  # Image path to display and process
+        self.axis = 2
         self.top_p = 0.9 
         self.temperature = 0.0
         self.max_tokens = 300
@@ -454,15 +468,15 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
 
         image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
         if not os.path.exists(image_filename):
-            transforms = get_monai_transforms(
+            compose = get_monai_transforms(
                     ["image"],
                     sv.temp_working_dir,
                     modality="CT",  # TODO: Get the modality from the image/prompt/metadata
                     slice_index=sv.slice_index,
                     image_filename=image_filename,
                 )
-            transforms({"image": img_file})
-        return image_filename, sv, f"Slice Index: {sv.slice_index}"
+            compose({"image": img_file})
+        return os.path.join(sv.temp_working_dir, image_filename), sv, f"Slice Index: {sv.slice_index}"
 
     sv.slice_index = None    
     return (
@@ -681,15 +695,15 @@ def create_demo(model_path, conv_mode):
                 image_download,
             ],
         )
+        demo.launch(server_name="0.0.0.0", server_port=7861)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # TODO: Add the argument to load multiple models from a JSON file
-    parser.add_argument("--conv_mode", type=str, default="VILA2D", help="The conversation mode to use.")
-    parser.add_argument("--model_path", type=str, default="VILA2D", help="The path to the model to load.")
+    parser.add_argument("--conv_mode", type=str, default="llama_3", help="The conversation mode to use.")
+    parser.add_argument("--model_path", type=str, default="/workspace/nvidia/medical-service-nims/vila/checkpoints/baseline/checkpoint-3500", help="The path to the model to load.")
     args = parser.parse_args()
     cache_images()
-    demo = create_demo(args.model_path, args.conv_mode)
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    create_demo(args.model_path, args.conv_mode)
     cache_cleanup()

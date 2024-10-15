@@ -2,7 +2,7 @@ import requests
 import os
 
 
-from base_expert import BaseExpert
+from experts.base_expert import BaseExpert
 
 
 class ExpertTXRV(BaseExpert):
@@ -56,10 +56,13 @@ class ExpertTXRV(BaseExpert):
         """
 
         api_key = os.getenv("api_key", "Invalid")
+        if api_key == "Invalid":
+            raise ValueError("API key not found. Please set the 'api_key' environment variable.")
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
             "accept": "application/json",
         }
         response = requests.post(self.NIM_CXR, headers=headers, json={"image": image_url})
+        response.raise_for_status()
         return self.classification_to_string(response.json()), None, "Use this result to respond to this prompt:\n" + prompt
