@@ -40,7 +40,7 @@ class ExpertTXRV(BaseExpert):
             bool: True if the CXR model is mentioned, False otherwise.
         """
 
-        return "trigger" in input and self.model_name in input
+        return self.model_name in str(input)
 
 
     def run(self, image_url: str = "", prompt: str = "", **kwargs):
