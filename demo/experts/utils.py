@@ -149,6 +149,22 @@ def is_url(url):
         return False
 
 
+def save_image_url_to_file(image_url: str, output_dir: Path) -> str:
+    try:
+        url_response = requests.get(image_url, allow_redirects=True)
+    except requests.exceptions.RequestException as e:
+        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
+
+    if url_response.status_code != 200:
+        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
+
+    content_disposition = url_response.headers.get("Content-Disposition")
+    file_name = os.path.join(output_dir, get_filename_from_cd(image_url, content_disposition))
+    with open(file_name, "wb") as f:
+        f.write(url_response.content)
+    return file_name
+
+
 def load_image(image_path_or_data_url: str) -> Image:
     """
     Load the image from the URL.
