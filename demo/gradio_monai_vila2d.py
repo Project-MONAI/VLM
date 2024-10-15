@@ -14,18 +14,47 @@ import base64
 import html
 import logging
 import os
+import json
 import shutil
 import tempfile
 import urllib.request
 from io import BytesIO
 from zipfile import ZipFile
+from pathlib import Path
+import re
+
+import argparse
+import base64
+import logging
+import os
+import shutil
+import tempfile
+import traceback
+import uuid
+from contextlib import asynccontextmanager
+from copy import deepcopy
+
+import torch
+from dotenv import load_dotenv
+from llava.constants import IMAGE_TOKEN_INDEX
+from llava.conversation import SeparatorStyle, conv_templates
+from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
+                            process_images, tokenizer_image_token)
+from llava.model.builder import load_pretrained_model
+from llava.utils import disable_torch_init
+
+from utils import (check_early_stop, classification_to_string, get_slice_filenames,
+                   get_modality, get_model_card_and_arg, insert_system_message,
+                   load_image, manage_errors, parse_user_input_messages,
+                   get_filename_from_cd, segmentation_to_string,
+                   take_slice_and_insert_user_messages, save_zipped_seg_to_file,
+                   trigger_expert_endpoint, get_monai_transforms)
 
 import gradio as gr
 import nibabel as nib
 import numpy as np
 import requests
 from dotenv import load_dotenv
-from openai import OpenAI
 from PIL import Image
 
 load_dotenv()
@@ -59,6 +88,60 @@ IMAGES_URLS = {
 }
 
 HARDCODED_EXPERT_MODELS = ["VISTA3D", "CXR"]
+
+MODEL_CARDS = [
+    # {
+    #     "name": "BRATS",
+    #     "task": "segmentation",
+    #     "description": (
+    #         "Modality: MRI, "
+    #         "Task: segmentation, "
+    #         "Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, "
+    #         "Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518"
+    #     ),
+    #     "valid_args": None,
+    #     "endpoint": os.getenv("BRATS_ENDPOINT", ""),
+    #     "execution": None,
+    # },
+    {
+        "name": "VISTA3D",
+        "task": "segmentation",
+        "description": (
+            "Modality: CT, "
+            "Task: segmentation, "
+            "Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, "
+            "Accuracy: 127 organs: 0.792 Dice on average"
+        ),
+        "valid_args": ["everything", "hepatic tumor", "pancreatic tumor", "lung tumor", "bone lesion", "organs", "cardiovascular", "gastrointestinal", "skeleton", "muscles"],
+        "endpoint": os.getenv("V3D_ENDPOINT", "https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d"),
+        "execution": "endpoint"
+    },
+    # {
+    #     "name": "VISTA2D",
+    #     "task": "segmentation",
+    #     "description": (
+    #         "Modality: cell imaging, "
+    #         "Task: segmentation, "
+    #         "Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, "
+    #         "Accuracy: Good accuracy across several cell imaging datasets"
+    #     ),
+    #     "valid_args": None,
+    #     "endpoint": os.getenv("V2D_ENDPOINT", ""),
+    # },
+    {
+        "name": "CXR",
+        "task": "classification",
+        "description": (
+            "Modality: chest x-ray (CXR), "
+            "Task: classification, "
+            "Overview: pre-trained model which are trained on large cohorts of data, "
+            "Accuracy: Good accuracy across several diverse chest x-rays datasets"
+        ),
+        "valid_args": None,
+        "endpoint": os.getenv("CXR_ENDPOINT", "http://dlmed-api-m3.nvidia.com:7998/torchxrayvision/run"),
+    },
+]
+
 
 EXAMPLE_PROMPTS = [
     "Segment the visceral structures in the current image.",
@@ -106,36 +189,35 @@ TITLE = """
     </div>
 """
 
-
-def get_models(nvcf=False):
-    """Get the models"""
-    if nvcf:
-        # Fixed models for the NVCF API
-        return {
-            "nvcf-8b": {
-                "checkpoint": "tumor_expert_alldata_4node_model_8bfix_aug_29_2024_run2_e3.0/checkpoint-3500",
-                "url": "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/319c3e8e-5913-4577-8223-a7484766f41a",
-                "type": "requests",
-            },
-        }
-    
-    return {
-        "baseline-server-8b": {
-            "url": "http://dlmed-api-m3.nvidia.com:8000",
-            "type": "openai",
-        },
-        "baseline-server-13b": {
-            "url": "http://dlmed-api-m3.nvidia.com:8001",
-            "type": "openai",
-        },
-        "baseline-server-alldata-13b": {
-            "url": "http://dlmed-api-m3.nvidia.com:8002",
-            "type": "openai",
-        },
-    }
+CSS_STYLES = (
+    ".fixed-size-image {\n",
+    "width: 512px;\n",
+    "height: 512px;\n",
+    "object-fit: cover;\n",
+    "}\n",
+    ".small-text {\n",
+    "font-size: 6px;\n",
+    "}\n",
+)
 
 
-def cleanup_cache():
+def cache_images():
+    """Cache the image and return the file path"""
+    logger.debug(f"Caching the image")
+    for _, image_url in IMAGES_URLS.items():
+        try:
+            url_response = requests.get(image_url, allow_redirects=True)
+        except requests.exceptions.RequestException as e:
+            raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
+
+        if url_response.status_code != 200:
+            raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
+
+        content_disposition = url_response.headers.get("Content-Disposition")
+        CACHED_IMAGES[image_url] = os.path.join(CACHED_DIR, get_filename_from_cd(image_url, content_disposition))
+
+
+def cache_cleanup():
     """Clean up the cache"""
     logger.debug(f"Cleaning up the cache")
     for _, cache_file_name in CACHED_IMAGES.items():
@@ -144,133 +226,74 @@ def cleanup_cache():
             print(f"Cache file {cache_file_name} cleaned up")
 
 
-def load_nii_to_numpy(nii_path, slice_index=None, axis=2):
-    """
-    Load a .nii.gz file and convert it to a Pillow RGB image.
-
-    Parameters:
-    - nii_path: str, URL to the .nii.gz file
-    - slice_index: int, the index of the slice to extract (default is 0)
-    - axis: int, the axis along which to take the slice (default is 2 for axial slices)
-
-    Returns:
-    - img: Pillow Image in RGB format
-    """
-    logger.debug(f"Loading NII file to NumPy array")
-    # Get the image data as a NumPy array
-    nii = nib.load(nii_path)
-    data = nii.get_fdata()
-
-    # Select a 2D slice from the 3D volume along the specified axis
-    slice_index = data.shape[axis] // 2 if slice_index is None else slice_index
-    slice_index = min(slice_index, data.shape[axis] - 1)
-    slice_index = max(slice_index, 0)
-    slice_data = np.take(data, slice_index, axis=axis)
-
-    # Normalize the slice to the range [0, 255] for image display
-    slice_data = np.clip(slice_data, np.min(slice_data), np.max(slice_data))
-    slice_data = ((slice_data - np.min(slice_data)) / (np.ptp(slice_data))) * 255
-    # rotate the image
-    slice_data = np.rot90(slice_data)
-    return slice_data.astype(np.uint8), slice_index
-
-
-def unzip_file_contents(file_content):
-    """Unzip the file contents and return the image and segmentation file paths"""
-    zip_file = BytesIO(base64.b64decode(file_content))
-    temp_folder = tempfile.mkdtemp()
-    zip_file_path = CACHED_DIR + "/output.zip"
-    with open(zip_file_path, "wb") as f:
-        f.write(zip_file.getvalue())
-
-    with ZipFile(zip_file_path, "r") as zip_ref:
-        zip_ref.extractall(temp_folder)
-
-    os.remove(zip_file_path)
-
-    print(f"Extracted files: {os.listdir(temp_folder)}")
-    image_files = []
-    mask_file = None
-    for file in os.listdir(temp_folder):
-        if file.endswith(".png") or file.endswith(".jpg") or file.endswith(".jpeg"):
-            image_files.append(file)
-        if file.endswith(".nrrd"):
-            # remove the file if it exists
-            mask_file = os.path.join(CACHED_DIR, file)
-            if os.path.exists(mask_file):
-                os.remove(mask_file)
-            shutil.move(os.path.join(temp_folder, file), CACHED_DIR)
-
-    img_file = None
-    seg_file = None
-    for file in image_files:
-        if "image" in file:
-            shutil.move(os.path.join(temp_folder, file), CACHED_DIR)
-            img_file = os.path.join(CACHED_DIR, file)
-        elif "label" in file:
-            shutil.move(os.path.join(temp_folder, file), CACHED_DIR)
-            seg_file = os.path.join(CACHED_DIR, file)
-    return img_file, seg_file, mask_file
-
-
-def input_image(image, params_bag):
-    """Update the params bag with the input image data URL if it's inputted by the user"""
+def input_image(image, sv):
+    """Update the session variables with the input image data URL if it's inputted by the user"""
     logger.debug(f"Received user input image")
-    params_bag.image_url = image_to_data_url(image)
-    return image, params_bag
+    # TODO: support user uploaded images
+    sv.image_url = image_to_data_url(image)
+    return image, sv
 
 
-def update_image(selected_image, params_bag, slice_index_html, increment=None):
+def update_image_selection(selected_image, sv, slice_index_html, increment=None):
     """Update the gradio components based on the selected image"""
     logger.debug(f"Updating display image for {selected_image}")
-    params_bag.image_url = IMAGES_URLS.get(selected_image, None)
+    sv.image_url = IMAGES_URLS.get(selected_image, None)
+    img_file = CACHED_IMAGES.get(sv.image_url, None)
 
-    if params_bag.image_url is None:
-        return None, params_bag, slice_index_html
+    if sv.image_url is None:
+        return None, sv, slice_index_html
 
-    if params_bag.image_url.endswith(".nii.gz"):
-        logger.debug(f"Downloading 3D sample images to {CACHED_DIR}")
-        if increment is not None and params_bag.slice_index is not None:
-            params_bag.slice_index += increment
+    if sv.temp_working_dir is None:
+        sv.temp_working_dir = tempfile.mkdtemp()
 
-        local_path = CACHED_IMAGES.get(params_bag.image_url, None)
-        if local_path is None:
-            basename = os.path.basename(params_bag.image_url)
-            CACHED_IMAGES[params_bag.image_url] = local_path = os.path.join(CACHED_DIR, basename)
-            with urllib.request.urlopen(params_bag.image_url) as response:
-                with open(local_path, "wb") as f:
-                    f.write(response.read())
+    if img_file.endswith(".nii.gz"):
+        if sv.slice_index is None:
+            data = nib.load(img_file).get_fdata()
+            sv.slice_index = data.shape[sv.axis] // 2
+            sv.idx_range = (0, data.shape[sv.axis] - 1)
 
-        image, params_bag.slice_index = load_nii_to_numpy(local_path, slice_index=params_bag.slice_index)
-        # This `image` will not be used to display. We don't need to convert it to data URL
-        return image, params_bag, f"Slice Index: {params_bag.slice_index}"
+        if increment is not None:
+            sv.slice_index += increment
+            sv.slice_index = max(sv.idx_range[0], min(sv.idx_range[1], sv.slice_index))
 
-    params_bag.slice_index = None
+        image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
+        if not os.path.exists(image_filename):
+            transforms = get_monai_transforms(
+                    ["image"],
+                    sv.temp_working_dir,
+                    modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                    slice_index=sv.slice_index,
+                    image_filename=image_filename,
+                )
+            transforms({"image": img_file})
+        return image_filename, sv, f"Slice Index: {sv.slice_index}"
+
+    sv.slice_index = None    
     return (
-        params_bag.image_url,
-        params_bag,
+        img_file,
+        sv,
         "Slice Index: N/A for 2D images, clicking prev/next will not change the image.",
     )
 
 
-def update_image_next_10(selected_image, params_bag, slice_index_html):
+def update_image_next_10(selected_image, sv, slice_index_html):
     """Update the image to the next 10 slices"""
-    return update_image(selected_image, params_bag, slice_index_html, increment=10)
+    return update_image_selection(selected_image, sv, slice_index_html, increment=10)
 
 
-def update_image_next_1(selected_image, params_bag, slice_index_html):
+def update_image_next_1(selected_image, sv, slice_index_html):
     """Update the image to the next slice"""
-    return update_image(selected_image, params_bag, slice_index_html, increment=1)
+    return update_image_selection(selected_image, sv, slice_index_html, increment=1)
 
 
-def update_image_prev_1(selected_image, params_bag, slice_index_html):
+def update_image_prev_1(selected_image, sv, slice_index_html):
     """Update the image to the previous slice"""
-    return update_image(selected_image, params_bag, slice_index_html, increment=-1)
+    return update_image_selection(selected_image, sv, slice_index_html, increment=-1)
 
 
-def update_image_prev_10(selected_image, params_bag, slice_index_html):
+def update_image_prev_10(selected_image, sv, slice_index_html):
     """Update the image to the previous 10 slices"""
-    return update_image(selected_image, params_bag, slice_index_html, increment=-10)
+    return update_image_selection(selected_image, sv, slice_index_html, increment=-10)
 
 
 def image_to_data_url(image, format="JPEG", max_size=None):
@@ -376,8 +399,8 @@ class ChatHistory:
                     "text": "What is in the image? <image>"
                 },
                 {
-                    "type": "image_url",
-                    "image_url": image_url
+                    "type": "image_path",
+                    "image_path": image_path
                 }
             ]
         },
@@ -394,16 +417,17 @@ class ChatHistory:
         ]
         """
         self.messages = []
+        self.last_prompt_with_image = None
 
-    def append(self, prompt_or_answer, image_url=None, slice_index=None, role="user"):
+    def append(self, prompt_or_answer, image_path=None, role="user"):
         """
         Append a new message to the chat history.
 
         Args:
             prompt_or_answer (str): The text prompt from human or answer from AI to append.
-            img (np.Array): The image to append. Optional. Only used for debugging.
-            image_url (str): The image URL to append.
-            role (str): The role of the message. Default is "user". Other option is "assistant".
+            image_url (str): The image file path to append.
+            slice_index (int): The slice index for 3D images.
+            role (str): The role of the message. Default is "user". Other option is "assistant" and "expert".
         """
         new_contents = [
             {
@@ -411,16 +435,14 @@ class ChatHistory:
                 "text": prompt_or_answer,
             }
         ]
-        if image_url is not None:
+        if image_path is not None:
             new_contents.append(
                 {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_url,
-                        "slice_index": slice_index,
-                    },
+                    "type": "image_path",
+                    "image_path": image_path,
                 }
             )
+            self.last_prompt_with_image = prompt_or_answer
 
         self.messages.append({"role": role, "content": new_contents})
 
@@ -435,220 +457,287 @@ class ChatHistory:
             for content in contents:
                 if content["type"] == "text":
                     history_text_html += colorcode_message(text=content["text"], show_all=show_all, role=role)
-                elif content["type"] == "image_url":
-                    image_url = content["image_url"]["url"]
-                    # Convert the image URL to a data URL
-                    if not image_url.startswith("data:image"):
-                        data_url = image_to_data_url(image_url, max_size=(300, 300))
-                    else:
-                        data_url = resize_data_url(image_url, (300, 300))
-                    history_text_html += colorcode_message(
-                        data_url=data_url, show_all=True, role=role
-                    )  # always show the image
                 else:
-                    raise ValueError(f"Invalid content type: {content['type']}")
+                    history_text_html += colorcode_message(
+                        data_url=image_to_data_url(content["image_path"], max_size=(300, 300)),
+                        show_all=True,
+                        role=role
+                    )  # always show the image
             history.append(history_text_html)
         return "<br>".join(history)
 
-    def replace_last(self, image_url, role="user"):
-        """Replace the last message in the chat history"""
-        logger.debug(f"Replacing the last message in the chat history")
-        if len(self.messages) == 0:
-            return
-        for message in reversed(self.messages):
-            if message["role"] == role:
-                for content in reversed(self.messages[-1]["content"]):
-                    if content["type"] == "image_url":
-                        content["image_url"]["url"] = image_url
-                    return
+
+class SessionVariables:
+    """Class to store the session variables"""
+    def __init__(self):
+        """Initialize the session variables"""
+        self.model_cards = deepcopy(MODEL_CARDS)
+        self.expert_models = [m["name"] for m in self.model_cards]
+        self.slice_index = None  # Slice index for 3D images
+        self.image_path = None  # Image path to display and process
+        self.top_p = 0.9 
+        self.temperature = 0.0
+        self.max_tokens = 300
+        self.download_file_path = ""  # Path to the downloaded file
+        self.temp_working_dir = None
+        self.idx_range = (None, None)
 
 
-class ParamsBag:
-    """Class to store the parameters"""
+class M3Generator:
+    """Class to generate M3 responses"""
+    def __init__(self, model_path, conv_mode, device="cuda"):
+        """Initialize the M3 generator"""
+        # TODO: allow setting the device
+        disable_torch_init()
+        self.conv_mode = conv_mode
+        self.device = device
+        self.model_name = get_model_name_from_path(model_path)
+        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(model_path, self.model_name, device=self.device)
+        logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
 
-    expert_models = HARDCODED_EXPERT_MODELS  # Expert models to use
-    slice_index = None  # Slice index for 3D images
-    image_url = None  # Image URL to display and process
-    top_p = 0.9 
-    temperature = 0.0
-    max_tokens = 300
-    download_file_path = ""  # Path to the downloaded file
-    model_index = 0  # Index of the selected model among a list of models to try. Useful under unrestricted mode.
+
+    def generate_response(
+        self,
+        messages: list,
+        max_tokens,
+        temperature,
+        top_p,
+    ):
+        """Generate the response"""
+        logger.debug(f"Generating response with {len(messages)} messages")
+        images = []
+
+        conv = deepcopy(conv_templates[self.conv_mode])
+        
+        for message in messages:
+            role = conv.roles[0] if message["role"] == "user" else conv.roles[1]
+            prompt = ""
+            for content in message["content"]:
+                if content["type"] == "text":
+                    prompt += content.text
+                if content["type"] == "image_path":
+                    images.append(load_image(content["image_path"]))
+            conv.append_message(role, prompt)
+
+        if conv.sep_style == SeparatorStyle.LLAMA_3:
+            conv.append_message(conv.roles[1], "")  # add "" to the assistant message
+
+        prompt_text = conv.get_prompt()
+        logger.debug(f"Prompt input: {prompt_text}")
+
+        if len(images) > 0:
+            images_tensor = process_images(images, self.image_processor, self.model.config).to(self.model.device, dtype=torch.float16)
+        images_input = [images_tensor] if len(images) > 0 else None
+
+        input_ids = (
+            tokenizer_image_token(prompt_text, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
+            .unsqueeze(0)
+            .to(self.device)
+        )
+
+        stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids,
+                images=images_input,
+                do_sample=True if temperature > 0 else False,
+                temperature=temperature,
+                top_p=top_p,
+                num_beams=1,
+                max_new_tokens=max_tokens,
+                use_cache=True,
+                stopping_criteria=[stopping_criteria],
+                pad_token_id=self.tokenizer.eos_token_id,
+                min_new_tokens=2,
+            )
+
+        outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
+        outputs = outputs.strip()
+        if outputs.endswith(stop_str):
+            outputs = outputs[: -len(stop_str)]
+        outputs = outputs.strip()
+        logger.debug(f"Assistant: {outputs}")
+
+        return outputs
+
+    def get_expert_model_args(self, model_card: dict, arg_matches: list[str]):
+        """Get the expert model arguments from the text"""
+        if len(arg_matches) == 0:
+            return None
+        if len(arg_matches) == 1 and arg_matches[0] == "":
+            return None
+        if len(arg_matches) > 1:
+            raise ValueError("Multiple expert model arguments are provided in the same prompt"
+                            "which is not supported in this version.")
+        arg_match = arg_matches[0]
+        if (arg_match and model_card["valid_args"] is None) or (arg_match.lower() not in model_card["valid_args"]):
+            # Throw an error if
+            # - the expert model does not have any valid arguments
+            # - the argument is not in the valid arguments list
+            raise ValueError(f"Invalid expert model argument {arg_match} for {model_card}")
+        return arg_match
 
 
-class ApiAdapter:
-    """Adapter class to interact with the OpenAI API or the NVCF API with requests"""
+    def get_model_card_and_arg(self, output: str, model_cards: list):
+        """Highlight the expert model messages in the text"""
+        logger.debug(f"Getting expert model and arguments from the output: {output}")
+        matches = re.findall(r"<(.*?)>", output)
+        if len(matches) == 0:
+            return None, None
+        if len(matches) > 1:
+            # TBD: support multiple expert models in the same prompt
+            raise ValueError("Multiple expert models are called in the same prompt"
+                            "which is not supported in this version.")
+        match = matches[0]
+        for model_card in model_cards:
+            if model_card["name"].lower() in match.lower():
+                arg_matches = re.findall(r"\((.*?)\)", match[len(model_card["name"]):])
+                arg = self.get_expert_model_args(model_card, arg_matches)
+                return model_card, arg
 
-    def __init__(self, base_url, type="openai", api_key="fake-key"):
-        """Initialize the API adapter"""
-        self.type = type
-        self.base_url = base_url
-        if type == "openai":
-            self.client = OpenAI(base_url=base_url, api_key=api_key)
-        elif type == "requests":
-            self.client = requests.session()
-            self.client.headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-                "accept": "application/json",
-            }
+        # TODO: need to check if it is okay to return None, None
+        raise ValueError(f"Invalid expert model: {match} is not found in the available expert models")
+
+
+    def get_system_messge(model_cards: List[ModelCard]):
+        """Get the system message with the model cards"""
+        system_message = "Here is a list of available expert models:\n"
+        for model in model_cards:
+            model_valid_args = None
+            if isinstance(model.valid_args, list):
+                model_valid_args = "'" + "', '".join(model.valid_args[:-1]) + "'"
+                if len(model.valid_args) > 1:
+                    model_valid_args += f", or '{model.valid_args[-1]}'"
+            system_message += f"<{model.name}(args)> {model.description}, Valid args are: {model_valid_args}\n"
+        system_message += "Select the most suitable expert model to answer the prompt and give the model <NAME(args)>.\n"
+        return system_message
+
+
+    def process_prompt(self, prompt, sv, chat_history):
+        """Process the prompt and return the result. Inputs/outputs are the gradio components."""
+        logger.debug(f"Process the image and return the result")
+
+        if sv.temp_working_dir is None:
+            sv.temp_working_dir = tempfile.mkdtemp()
+
+        img_file = CACHED_IMAGES.get(sv.image_url, None)
+        model_cards = [m for m in sv.model_cards if m["name"] in sv.expert_models]
+        modality = get_modality(sv.image_url, text=prompt)
+        sys_msg = get_system_messge(model_cards)
+
+        if isinstance(img_file, str) and img_file.endswith(".nii.gz"):
+            # Take the specific slice from a volume
+            chat_history.append(prompt, image_path=get_slice_filenames(img_file, sv.slice_index)[0])
+        elif isinstance(img_file, str):
+            # Take the 2D image if img_file is not None
+            chat_history.append(prompt, image_path=img_file)
+        elif img_file is None:
+            chat_history.append(prompt)
         else:
-            raise ValueError(f"Invalid API type: {type}")
-        self.response = None
+            raise ValueError(f"Invalid image file: {img_file}")
 
-    def _chat_openai(
-        self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False
-    ):
-        """Chat with the OpenAI API"""
-        self.response = self.client.chat.completions.create(
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            top_p=top_p,
-            model=model,
-            extra_body={"exclude_model_cards": exclude_model_cards},
-            stream=stream,
+        # need squash
+        
+
+        outputs = self.generate_response(
+            messages=chat_history.messages,
+            max_tokens=sv.max_tokens,
+            temperature=sv.temperature,
+            top_p=sv.top_p,
         )
 
-    def _chat_requests(
-        self, messages=[], max_tokens=300, temperature=0.0, top_p=0.9, model="M3", exclude_model_cards=[], stream=False
-    ):
-        """Chat with the NVCF API using requests"""
-        response = self.client.post(
-            self.base_url,
-            json={
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "top_p": top_p,
-                "model": model,
-                "exclude_model_cards": exclude_model_cards,
-                "stream": stream,
-            },
-        )
-        response.raise_for_status()
-        self.response = response.json()
+        chat_history.append(outputs, role="assistant")
+        
+        model_card, model_arg = self.get_model_card_and_arg(outputs, model_cards)
 
-    def chat_completion(self, **kwargs):
-        """Chat with the API"""
-        return self._chat_openai(**kwargs) if self.type == "openai" else self._chat_requests(**kwargs)
+        if model_card:
+            early_stop = check_early_stop(outputs, model_card)
+            response = trigger_expert_endpoint(model_card["endpoint"], sv.image_url, model_arg)
+            seg_file = None
+            if model_card["task"] == "classification":
+                text_output = classification_to_string(response.json())
+                instruction = "Analyze the image and take these predictions into account when responding to this prompt:\n" + prompt
+                chat_history.append(text_output, role="expert")
+            elif model_card["task"] == "segmentation":
+                seg_file = save_zipped_seg_to_file(response, sv.temp_working_dir)
+                text_output = segmentation_to_string(
+                    sv.temp_working_dir,
+                    img_file,
+                    seg_file,
+                    modality=get_modality(sv.image_url, text=prompt + outputs),
+                    slice_index=sv.slice_index,
+                    image_filename=get_slice_filenames(img_file, sv.slice_index)[0],
+                    seg_filename=get_slice_filenames(img_file, sv.slice_index)[1],
+                )
+                instruction = "Use this result to respond to this prompt:\n" + prompt
+                chat_history.append(text_output, image_path=get_slice_filenames(img_file, sv.slice_index)[1], role="expert")
 
-    def get_file_content(self):
-        """Get the file content from the response"""
-        return self.response.file_content if self.type == "openai" else self.response["file_content"]
+            if not early_stop:
+                chat_history.append(instruction, role="assistant")
+                # need squash
+                outputs = self.generate_response(
+                    messages=chat_history.messages,
+                    max_tokens=sv.max_tokens,
+                    temperature=sv.temperature,
+                    top_p=sv.top_p,
+                )
+                chat_history.append(outputs, role="assistant")
 
-    def get_choices(self):
-        """Get the choices from the response"""
-        return self.response.choices if self.type == "openai" else self.response["choices"]
-
-    def get_role(self, choice):
-        """Get the role of the choice"""
-        return choice.message.role if self.type == "openai" else choice["message"]["role"]
-
-    def get_content(self, choice):
-        """Get the content of the choice"""
-        return choice.message.content if self.type == "openai" else choice["message"]["content"]
+        new_sv = SessionVariables()
+        new_sv.download_file_path = seg_file if seg_file else ""
+        return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
 
 
-def reset_params(params_bag):
-    """Operate UI components and state after the parameters from the params bag are consumed"""
+def reset_params(sv):
+    """Reset the session variables"""
     logger.debug(f"Consuming the parameters")
-    # Order of output: image, image_selector, checkboxes, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider
-    if params_bag.download_file_path != "":
-        name = os.path.basename(params_bag.download_file_path)
-        filepath = params_bag.download_file_path
-        params_bag.download_file_path = ""
+    if sv.download_file_path != "":
+        name = os.path.basename(sv.download_file_path)
+        filepath = sv.download_file_path
+        sv.download_file_path = ""
         d_btn = gr.DownloadButton(label=f"Download {name}", value=filepath, visible=True)
     else:
         d_btn = gr.DownloadButton(visible=False)
-    models = get_models()
-    model_keys = list(models.keys())
-    model_choice = model_keys[params_bag.model_index]
-    return params_bag, None, None, HARDCODED_EXPERT_MODELS, "Slice Index: N/A", 0.0, 0.9, 300, d_btn, model_choice
+    # Order of output: image, image_selector, checkboxes, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, download_button
+    return sv, None, None, HARDCODED_EXPERT_MODELS, "Slice Index: N/A", 0.0, 0.9, 300, d_btn
 
 
-def process_prompt(prompt, params_bag, chat_history):
-    """Process the prompt and return the result. Inputs/outputs are the gradio components."""
-    logger.debug(f"Process the image and return the result")
-
-    chat_history.append(prompt, image_url=params_bag.image_url, slice_index=params_bag.slice_index)
-    model_index = params_bag.model_index  # Keep the model selection for the next round
-    models = get_models()
-    model_choice = list(models.keys())[model_index]
-    base_url = models[model_choice]["url"]
-    api_type = models[model_choice]["type"]
-    api_adaptor = ApiAdapter(base_url, type=api_type, api_key=os.getenv("api_key", "fake-key"))
-
-    exclude_model_cards = []
-    for model in HARDCODED_EXPERT_MODELS:
-        if model not in params_bag.expert_models:
-            exclude_model_cards.append(model)
-    logger.debug(f"Excluding model cards: {exclude_model_cards}")
-    api_adaptor.chat_completion(
-        messages=chat_history.messages,
-        max_tokens=params_bag.max_tokens,
-        temperature=params_bag.temperature,
-        top_p=params_bag.top_p,
-        model="M3",
-        exclude_model_cards=exclude_model_cards,
-        stream=False,
-    )
-
-    img_file, seg_file, mask_file = unzip_file_contents(api_adaptor.get_file_content())
-    if img_file is not None:
-        chat_history.replace_last(image_to_data_url(img_file))
-        os.remove(img_file)
-    for choice in api_adaptor.get_choices():
-        role = api_adaptor.get_role(choice)
-        content = api_adaptor.get_content(choice)
-        if role == "expert" and seg_file is not None and "<segmentation>" in content:
-            logger.debug(f"Segmentation image found in the expert response")
-            seg_url = image_to_data_url(seg_file)
-            os.remove(seg_file)
-            chat_history.append(content, role=role, image_url=seg_url)
-        else:
-            logger.debug(f"Appending the response to the chat history")
-            chat_history.append(content, role=role)
-
-    new_params_bag = ParamsBag()
-    new_params_bag.download_file_path = mask_file if mask_file else ""
-    new_params_bag.model_index = model_index  # Keep the model
-    return None, new_params_bag, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
-
-
-def clear_label():
+def reset_all():
     """Clear and reset everything, Inputs/outputs are the gradio components."""
     logger.debug(f"Clearing everything")
     # Order of output: prompt_edit, chat_history, history_text, history_text_full, param_bags
-    return "Enter your prompt here", ChatHistory(), HTML_PLACEHOLDER, HTML_PLACEHOLDER, ParamsBag()
+    return "Enter your prompt here", ChatHistory(), HTML_PLACEHOLDER, HTML_PLACEHOLDER, SessionVariables()
 
 
-def update_checkbox(checkboxes, params_bag):
+def update_checkbox(checkboxes, sv):
     """Update the checkboxes"""
     logger.debug(f"Updating the checkboxes")
-    params_bag.expert_models = checkboxes
-    return params_bag
+    sv.expert_models = checkboxes
+    return sv
 
 
-def update_temperature(temperature, params_bag):
+def update_temperature(temperature, sv):
     """Update the temperature"""
     logger.debug(f"Updating the temperature")
-    params_bag.temperature = temperature
-    return params_bag
+    sv.temperature = temperature
+    return sv
 
 
-def update_top_p(top_p, params_bag):
+def update_top_p(top_p, sv):
     """Update the top P"""
     logger.debug(f"Updating the top P")
-    params_bag.top_p = top_p
-    return params_bag
+    sv.top_p = top_p
+    return sv
 
 
-def update_max_tokens(max_tokens, params_bag):
+def update_max_tokens(max_tokens, sv):
     """Update the max tokens"""
     logger.debug(f"Updating the max tokens")
-    params_bag.max_tokens = max_tokens
-    return params_bag
+    sv.max_tokens = max_tokens
+    return sv
 
 
 def download_file():
@@ -656,42 +745,19 @@ def download_file():
     return [gr.DownloadButton(visible=False)]
 
 
-def update_checkpoint(selected_model_index, params_bag):
-    """Update the checkpoint"""
-    logger.debug(f"Updating the checkpoint with {selected_model_index}")
-    params_bag.model_index = selected_model_index
-    return params_bag
 
-
-def main(args):
+def create_demo(model_path, conv_mode):
     """Main function to create the Gradio interface"""
-    def generate_css():
-        """Generate CSS"""
-        css = ".fixed-size-image {\n"
-        css += "width: 512px;\n"
-        css += "height: 512px;\n"
-        css += "object-fit: cover;\n"
-        css += "}\n"
-        css += ".small-text {\n"
-        css += "font-size: 6px;\n"
-        css += "}\n"
-        return css
+    generator = M3Generator(model_path, conv_mode)
 
-    with gr.Blocks(css=generate_css()) as demo:
-        is_debug = not args.restricted
-        logger.debug(f"Running the demo with debug mode: {is_debug}")
+    with gr.Blocks(css=CSS_STYLES) as demo:
         gr.HTML(TITLE, label="Title")
         chat_history = gr.State(value=ChatHistory())  # Prompt history
-        params_bag = gr.State(value=ParamsBag())
+        sv = gr.State(value=SessionVariables())
 
         with gr.Row():
             with gr.Column():
-                image_sources = ["upload", "webcam", "clipboard"] if is_debug else []
-                image_input = gr.Image(
-                    label="Image",
-                    sources=image_sources,
-                    placeholder="Please select an 2D or 3D slice from the dropdown list.",
-                )
+                image_input = gr.Image(label="Image", placeholder="Please select an image from the dropdown list.")
                 image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
@@ -713,11 +779,6 @@ def main(args):
                         next10_btn = gr.Button(">>")
 
             with gr.Column():
-                models = get_models(args.nvcf)
-                model_keys = list(models.keys())
-                model_dropdown = gr.Dropdown(
-                    label="Select a model", choices=list(models.keys()), value=model_keys[0], type="index", visible=is_debug
-                )
                 with gr.Tab("In front of the scene"):
                     history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
                 with gr.Tab("Behind the scene"):
@@ -729,68 +790,67 @@ def main(args):
                     submit_btn = gr.Button("Submit", scale=0)
                 gr.Examples(EXAMPLE_PROMPTS, prompt_edit)
                 checkboxes = gr.CheckboxGroup(
-                    choices=HARDCODED_EXPERT_MODELS,
-                    value=HARDCODED_EXPERT_MODELS,
+                    choices=[m["name"] for m in MODEL_CARDS],
+                    value=[m["name"] for m in MODEL_CARDS],
                     label="Expert Models",
                     info="Select the expert models to use.",
                 )
 
         # Process image and clear it immediately by returning None
         submit_btn.click(
-            fn=process_prompt,
-            inputs=[prompt_edit, params_bag, chat_history],
-            outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full],
+            fn=generator.process_prompt,
+            inputs=[prompt_edit, sv, chat_history],
+            outputs=[prompt_edit, sv, chat_history, history_text, history_text_full],
         )
         prompt_edit.submit(
-            fn=process_prompt,
-            inputs=[prompt_edit, params_bag, chat_history],
-            outputs=[prompt_edit, params_bag, chat_history, history_text, history_text_full],
+            fn=generator.process_prompt,
+            inputs=[prompt_edit, sv, chat_history],
+            outputs=[prompt_edit, sv, chat_history, history_text, history_text_full],
         )
 
         # Param controlling buttons
-        image_input.input(fn=input_image, inputs=[image_input, params_bag], outputs=[image_input, params_bag])
+        image_input.input(fn=input_image, inputs=[image_input, sv], outputs=[image_input, sv])
         image_dropdown.change(
-            fn=update_image,
-            inputs=[image_dropdown, params_bag, slice_index_html],
-            outputs=[image_input, params_bag, slice_index_html],
+            fn=update_image_selection,
+            inputs=[image_dropdown, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html],
         )
         prev10_btn.click(
             fn=update_image_prev_10,
-            inputs=[image_dropdown, params_bag, slice_index_html],
-            outputs=[image_input, params_bag, slice_index_html],
+            inputs=[image_dropdown, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html],
         )
         prev01_btn.click(
             fn=update_image_prev_1,
-            inputs=[image_dropdown, params_bag, slice_index_html],
-            outputs=[image_input, params_bag, slice_index_html],
+            inputs=[image_dropdown, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html],
         )
         next01_btn.click(
             fn=update_image_next_1,
-            inputs=[image_dropdown, params_bag, slice_index_html],
-            outputs=[image_input, params_bag, slice_index_html],
+            inputs=[image_dropdown, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html],
         )
         next10_btn.click(
             fn=update_image_next_10,
-            inputs=[image_dropdown, params_bag, slice_index_html],
-            outputs=[image_input, params_bag, slice_index_html],
+            inputs=[image_dropdown, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html],
         )
-        checkboxes.change(fn=update_checkbox, inputs=[checkboxes, params_bag], outputs=[params_bag])
-        temperature_slider.change(fn=update_temperature, inputs=[temperature_slider, params_bag], outputs=[params_bag])
-        top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, params_bag], outputs=[params_bag])
-        max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, params_bag], outputs=[params_bag])
-        model_dropdown.change(fn=update_checkpoint, inputs=[model_dropdown, params_bag], outputs=[params_bag])
+        checkboxes.change(fn=update_checkbox, inputs=[checkboxes, sv], outputs=[sv])
+        temperature_slider.change(fn=update_temperature, inputs=[temperature_slider, sv], outputs=[sv])
+        top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, sv], outputs=[sv])
+        max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
 
         # Reset button
         clear_btn.click(
-            fn=clear_label, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, params_bag]
+            fn=reset_all, inputs=[], outputs=[prompt_edit, chat_history, history_text, history_text_full, sv]
         )
 
         # States
-        params_bag.change(
+        sv.change(
             fn=reset_params,
-            inputs=[params_bag],
+            inputs=[sv],
             outputs=[
-                params_bag,
+                sv,
                 image_input,
                 image_dropdown,
                 checkboxes,
@@ -799,18 +859,20 @@ def main(args):
                 top_p_slider,
                 max_tokens_slider,
                 image_download,
-                model_dropdown,
             ],
         )
-
-    demo.launch(server_name="0.0.0.0", server_port=7860)
-    cleanup_cache()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--restricted", action="store_true", help="Run the demo in restricted mode")
-    parser.add_argument("--nvcf", action="store_true", help="Use the NVCF API")
+    # TODO: Add the argument to load multiple models from a JSON file
+    parser.add_argument("--conv_mode", type=str, default="VILA2D", help="The conversation mode to use.")
+    parser.add_argument("--model_path", type=str, default="VILA2D", help="The path to the model to load.")
     args = parser.parse_args()
-
-    main(args)
+    # Save the config to a file
+    with open("config.json", "w") as f:
+        json.dump(vars(args), f)
+    cache_images()
+    demo = create_demo(args.model_path, args.conv_mode)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
+    cache_cleanup()
