@@ -13,10 +13,13 @@ from abc import ABC, abstractmethod
 
 
 class BaseExpert(ABC):
+    """Base class for all expert models."""
     @abstractmethod
-    def is_mentioned(self, input: str):
+    def mentioned_by(self, input: str):
+        """Check if the expert is mentioned in the input."""
         raise NotImplementedError
 
     @abstractmethod
     def run(self, *args, **kwargs):
+        """Run the expert model."""
         raise NotImplementedError

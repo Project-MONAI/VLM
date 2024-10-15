@@ -375,7 +375,7 @@ class M3Generator:
         # check the message mentions any expert model
         expert = None
         for expert_model in [ExpertTXRV, ExpertVista3D]:
-            expert = expert_model() if expert_model().is_mentioned(outputs) else None
+            expert = expert_model() if expert_model().mentioned_by(outputs) else None
             if expert:
                 break
 

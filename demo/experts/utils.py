@@ -41,9 +41,6 @@ MODALITY_MAP = {
 }
 
 
-SUPPORTED_3D_IMAGE_FORMATS = [".nii", ".nii.gz", ".nrrd"]
-
-
 class Dye(MapTransform):
     """
     Dye the label map with predefined colors and write the image and label to disk.
@@ -89,6 +86,7 @@ class Dye(MapTransform):
         output_dir: Path = Path("."),
         bg_label: int = 0,
     ):
+        """Initialize the dye transform."""
         self.slice_index = slice_index
         self.axis = axis
         self.image_key = image_key
@@ -101,6 +99,7 @@ class Dye(MapTransform):
         self.allow_missing_keys = True
 
     def __call__(self, data):
+        """Dye the label map with predefined colors and write the image and label to disk."""
         d = dict(data)
         for key in self.key_iterator(d):
             np_array = np.squeeze(d.get(key))
@@ -151,84 +150,6 @@ def get_slice_filenames(image_file, slice_index):
     image_filename = base_name.replace(".nii.gz", f"_slice{slice_index}.jpg")
     seg_filename = base_name.replace(".nii.gz", f"_slice{slice_index}_seg.jpg")
     return image_filename, seg_filename
-
-
-def is_url(url):
-    """Function to check if the URL"""
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except ValueError:
-        return False
-
-
-def save_image_url_to_file(image_url: str, output_dir: Path) -> str:
-    try:
-        url_response = requests.get(image_url, allow_redirects=True)
-    except requests.exceptions.RequestException as e:
-        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
-
-    if url_response.status_code != 200:
-        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
-
-    content_disposition = url_response.headers.get("Content-Disposition")
-    file_name = os.path.join(output_dir, get_filename_from_cd(image_url, content_disposition))
-    with open(file_name, "wb") as f:
-        f.write(url_response.content)
-    return file_name
-
-
-def load_image(image_path_or_data_url: str) -> Image:
-    """
-    Load the image from the URL.
-
-    Args:
-        image: the image URL or the base64 encoded image that starts with "data:image".
-
-    Returns:
-        PIL.Image: the loaded image.
-    """
-    logger.debug(f"Loading image from URL")
-
-    if os.path.exists(image_path_or_data_url):
-        try:
-            return PILImage.open(image_path_or_data_url).convert("RGB")
-        except Exception as e:
-            raise ValueError(f"Failed to load the image: {e}")
-    else:
-        image_base64_regex = re.compile(r"^data:image/(png|jpe?g);base64,(.*)$")
-        match_results = image_base64_regex.match(image_path_or_data_url)
-        if match_results:
-            image_base64 = match_results.groups()[1]
-            return PILImage.open(BytesIO(base64.b64decode(image_base64))).convert("RGB")
-
-    raise ValueError(f"Unable to load the image from {image_path_or_data_url[:50]}")
-
-
-def is_url_allowed_file_type(url: str, content_disposition: str | None, supported_type: List[str]) -> bool:
-    """Function to check if the URL's extension or Content-Disposition indicates an allowed file type"""
-    # Check based on URL extension
-    for ext in supported_type:
-        if url.endswith(ext):
-            return True
-
-    # Extract filename from Content-Disposition and check its extension
-    if content_disposition:
-        filename = re.findall('filename="(.+)"', content_disposition)
-        if filename and any(filename[0].endswith(ext) for ext in supported_type):
-            return True
-
-    return False
-
-
-def is_url_allowed_domain(url: str, whitelist: List[str], blacklist: List[str]) -> bool:
-    """Function to check URL against whitelist and blacklist"""
-    if not is_url(url):
-        return False
-    if blacklist != [""]:
-        if any(re.match(pattern, url) for pattern in blacklist):
-            return False
-    return any(re.match(pattern, url) for pattern in whitelist)
 
 
 def _get_modality_url(image_url: str | None):
@@ -320,35 +241,48 @@ def get_monai_transforms(
         ]
     )
 
+def save_image_url_to_file(image_url: str, output_dir: Path) -> str:
+    """Save the image from the URL to the output directory"""
+    try:
+        url_response = requests.get(image_url, allow_redirects=True)
+    except requests.exceptions.RequestException as e:
+        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
 
-def manage_errors(e: Exception):
-    """Manage the errors and return the error message"""
-    bot_liked_output = "I'm sorry I can't continue, because "
-    unhandled_error = ""
-    match e:
-        case requests.exceptions.RequestException:
-            if "Error fetching image" in str(e):
-                # append a message to the messages list and returns the response
-                bot_liked_output += "I am unable to reach the given URL"
-            else:
-                unhandled_error = str(e)
-        case ValueError:
-            if "Invalid expert model" in str(e):
-                bot_liked_output += (
-                    "I am unable to find the info for the suitable model card. Please provide more context."
-                )
-            elif "Multiple expert models" in str(e):
-                bot_liked_output += (
-                    "I found multiple expert model cards and cannot continue. Please provide more context."
-                )
-            elif "Error triggering POST" in str(e):
-                bot_liked_output += (
-                    "I had an error when I tried to trigger POST request to the expert model endpoint. "
-                    "Please try selecting different expert models to help me understand the problem."
-                )
-            else:
-                unhandled_error = str(e)
-    return bot_liked_output, unhandled_error
+    if url_response.status_code != 200:
+        raise requests.exceptions.RequestException(f"Failed to download the image: {e}")
+
+    content_disposition = url_response.headers.get("Content-Disposition")
+    file_name = os.path.join(output_dir, get_filename_from_cd(image_url, content_disposition))
+    with open(file_name, "wb") as f:
+        f.write(url_response.content)
+    return file_name
+
+
+def load_image(image_path_or_data_url: str) -> Image:
+    """
+    Load the image from the URL.
+
+    Args:
+        image: the image URL or the base64 encoded image that starts with "data:image".
+
+    Returns:
+        PIL.Image: the loaded image.
+    """
+    logger.debug(f"Loading image from URL")
+
+    if os.path.exists(image_path_or_data_url):
+        try:
+            return PILImage.open(image_path_or_data_url).convert("RGB")
+        except Exception as e:
+            raise ValueError(f"Failed to load the image: {e}")
+    else:
+        image_base64_regex = re.compile(r"^data:image/(png|jpe?g);base64,(.*)$")
+        match_results = image_base64_regex.match(image_path_or_data_url)
+        if match_results:
+            image_base64 = match_results.groups()[1]
+            return PILImage.open(BytesIO(base64.b64decode(image_base64))).convert("RGB")
+
+    raise ValueError(f"Unable to load the image from {image_path_or_data_url[:50]}")
 
 
 def image_to_data_url(image, format="JPEG", max_size=None):

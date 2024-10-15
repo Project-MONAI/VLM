@@ -23,9 +23,11 @@ from experts.utils import get_monai_transforms, get_slice_filenames
 
 
 class ExpertVista3D(BaseExpert):
+    """Expert model for VISTA-3D."""
     NIM_VISTA3D = "https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d"
 
     def __init__(self) -> None:
+        """Initialize the VISTA-3D expert model."""
         self.model_name = "VISTA3D"
 
     def label_id_to_name(self, label_id: int, label_dict: dict):
@@ -128,7 +130,7 @@ class ExpertVista3D(BaseExpert):
 
         return output_prefix + ", ".join(formatted_items) + ". "
 
-    def is_mentioned(self, input: str):
+    def mentioned_by(self, input: str):
         """
         Check if the VISTA-3D model is mentioned in the input.
 

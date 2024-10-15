@@ -32,7 +32,7 @@ class TestExperts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             prompt = "This seems a CT image. Let me trigger <VISTA3D(everything)>."
             vista3d = ExpertVista3D()
-            self.assertTrue(vista3d.is_mentioned(prompt))
+            self.assertTrue(vista3d.mentioned_by(prompt))
             img_file = save_image_url_to_file(VISTA_URL, temp_dir)
             output_text, seg_file, _ = vista3d.run(
                 image_url=VISTA_URL,
@@ -50,7 +50,7 @@ class TestExperts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             prompt = "I segmented the image with <VISTA3D(everything)>."
             vista3d = ExpertVista3D()
-            self.assertTrue(vista3d.is_mentioned(prompt))
+            self.assertTrue(vista3d.mentioned_by(prompt))
             img_file = save_image_url_to_file(VISTA_URL, temp_dir)
             _, _, instruction = vista3d.run(
                 image_url=VISTA_URL,
@@ -66,7 +66,7 @@ class TestExperts(unittest.TestCase):
     def test_run_cxr(self):
         input = "This seems a CXR image. Let me trigger <CXR>."
         cxr = ExpertTXRV()
-        self.assertTrue(cxr.is_mentioned(input))
+        self.assertTrue(cxr.mentioned_by(input))
 
         output_text, file, _ = cxr.run(image_url=CXR_URL, prompt="")
         print(output_text)
