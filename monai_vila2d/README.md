@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" width="30%"/>
 </p>
 
-# MONAI VILA-M3
+# VILA-M3
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](../LICENSE)
 [![Model License](https://img.shields.io/badge/MODEL--License-CC_BY--NC--SA--4.0-red.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)
@@ -23,7 +23,7 @@ acknowledging the demands of precision and domain knowledge of the medical field
 
 3. **Hybrid Information Fusion**: VILA-M3 can incorporate 2D, 3D, and even 4D information by fusion of expert model results and VLM predictions.
 
-4. **Open-Source MONAI Module**: The model and several fine-tuned checkpoints are released as part of the MONAI (Medical Open Network for AI). 
+4. **Open-Source MONAI Module**: The model and several fine-tuned checkpoints are released as part of project [MONAI](https://monai.io). 
 We provide scripts for data preparation and a standardized module for benchmarking to evaluate the models in various medical imaging tasks.
 
 Below is an overview of the VILA-M3 with expert model integration and feedback. 
