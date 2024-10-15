@@ -8,6 +8,8 @@ from typing import List
 from urllib.parse import urlparse
 from PIL import Image
 
+import base64
+from io import BytesIO
 import numpy as np
 import requests
 import skimage
@@ -15,7 +17,7 @@ from monai.transforms import (Compose, LoadImageD, MapTransform, OrientationD,
                               ScaleIntensityD, ScaleIntensityRangeD)
 
 
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger(__name__)
 
 
 MODALITY_MAP = {
@@ -329,3 +331,71 @@ def manage_errors(e: Exception):
             else:
                 unhandled_error = str(e)
     return bot_liked_output, unhandled_error
+
+
+def image_to_data_url(image, format="JPEG", max_size=None):
+    """
+    Convert an image to a data URL.
+
+    Args:
+        image (str | np.Array): The image to convert. If a string, it is treated as a file path.
+        format (str): The format to save the image in. Default is "JPEG".
+        max_size (tuple): The maximum size of the image. Default is None.
+    """
+    logger.debug(f"Converting image to data URL")
+    if isinstance(image, str) and image.startswith("data:image"):
+        return image
+    if isinstance(image, str) and image.startswith("http"):
+        logger.debug(f"Received Image URL: {image}")
+        img = Image.open(requests.get(image, stream=True).raw)
+    elif isinstance(image, str):
+        img = Image.open(image)
+    elif isinstance(image, np.ndarray):
+        img = Image.fromarray(image)
+    else:
+        raise ValueError(f"Invalid image type: {type(image)}")
+    if max_size is not None:
+        # Resize the image to the specified maximum height
+        img.thumbnail(max_size)
+    # Create a BytesIO buffer to save the image
+    buffered = BytesIO()
+    # Save the image to the buffer in the specified format
+    img.save(buffered, format=format)
+    # Convert the buffer content into bytes
+    img_byte = buffered.getvalue()
+    # Encode the bytes to base64
+    img_base64 = base64.b64encode(img_byte).decode()
+    if len(img_base64) > 180_000:
+        logger.warning(
+            (
+                f"The image is too large for the data URL. "
+                "Use the assets API or use the following snippet to resize:\n {IMAGE_SIZE_WARNING}."
+            )
+        )
+    # Convert the base64 bytes to string and format the data URL
+    return f"data:image/{format.lower()};base64,{img_base64}"
+
+
+def resize_data_url(data_url, max_size):
+    """
+    Resize a data URL image to a maximum size.
+
+    Args:
+        data_url (str): The data URL of the image.
+        max_size (tuple): The maximum size of the image.
+    """
+    logger.debug(f"Resizing data URL image")
+    # Convert the data URL to an image
+    img = Image.open(BytesIO(base64.b64decode(data_url.split(",")[1])))
+    # Resize the image
+    img.thumbnail(max_size)
+    # Create a BytesIO buffer to save the image
+    buffered = BytesIO()
+    # Save the image to the buffer in the specified format
+    img.save(buffered, format="JPEG")
+    # Convert the buffer content into bytes
+    img_byte = buffered.getvalue()
+    # Encode the bytes to base64
+    img_base64 = base64.b64encode(img_byte).decode()
+    # Convert the base64 bytes to string and format the data URL
+    return f"data:image/jpeg;base64,{img_base64}"
