@@ -9,32 +9,65 @@ monai_vila2d
 
 ### Local Demo
 
-- Make sure you have CUDA 12.2 and Python 3.10 installed
-    - (Recommendded) Use Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
+#### Prerequisites
+
+1. **Linux Operating System**
+
+1. **CUDA Toolkit 12.2** (with `nvcc`) for [VILA](https://github.com/NVlabs/VILA).
+
+    To verify CUDA installation, run:
     ```bash
-    docker run -itd --rm --ipc host --gpus all --net host -v <mount paths> \
-        nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
+    nvcc --version
     ```
-    **IMPORTANT**: Install these packages in container too: `apt-get update && apt-get install -y python3.10 python3.10-venv git`
-    - Manually install it: https://developer.nvidia.com/cuda-12-2-2-download-archive
-- Set up the dependencies
+    If CUDA is not installed, use one of the following methods:
+    - **Recommended** Use the Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
+        ```bash
+        docker run -it --rm --ipc host --gpus all --net host \
+            -v <ckpts_dir>:/data/checkpoints \
+            nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
+        ```
+    - **Manual Installation (not recommended)**: Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
+
+1. **Python 3.10** and **Git**
+    
+    To install these, run
+    ```bash
+    sudo apt-get update
+    sudo apt-get install -y python3.10 python3.10-venv python3.10-dev git
+    ```
+    NOTE: The commands are tailored for the Docker image `nvidia/cuda:12.2.2-devel-ubuntu22.04`. If using a different setup, adjust the commands accordingly.
+
+
+#### Setup Environment
+
+1. Clone the repository and set up the environment:
     ```bash
     git clone https://github.com/Project-MONAI/VLM --recursive
     cd VLM
-    python3.10 -m venv .venv
+    python -m venv .venv
     source .venv/bin/activate
     make demo_monai_vila2d
     ```
 
-- Run the Demo
+#### Running the Gradio Demo
+
+1. Navigate to the demo directory:
     ```bash
     cd demo
-    # keys to call the expert models
+    ```
+
+1. Set the API keys for calling the expert models:
+    ```bash
     export api_key=<your nvcf key>
     export NIM_API_KEY=<your NIM key>
+    ```
+
+1. Start the Gradio demo:
+    ```bash
     python demo/gradio_monai_vila2d.py  \
-        --modelpath <path to the checkpoint> \
-        --convmode <llama_3 or vicuna_1>
+        --modelpath /data/checkpoints/<checkpoint-name> \
+        --convmode <llama_3 or vicuna_1> \
+        --port 7860
     ```
 
 ## Contributing
