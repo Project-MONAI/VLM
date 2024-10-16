@@ -236,7 +236,7 @@ class SessionVariables:
         self.sys_prompt = SYS_PROMPT
         self.sys_msg = SYS_MSG
         self.slice_index = None  # Slice index for 3D images
-        self.image_path = None  # Image path to display and process
+        self.image_url = None  # Image path to display and process
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
@@ -415,6 +415,7 @@ class M3Generator:
                 break
 
         if expert:
+            logger.debug(f"Expert model {expert.__class__.__name__} is being called.")
             text_output, seg_file, instruction, download_pkg = expert.run(
                 image_url=sv.image_url,
                 input=outputs,
