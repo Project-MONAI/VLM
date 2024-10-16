@@ -236,7 +236,7 @@ class SessionVariables:
         self.sys_prompt = SYS_PROMPT
         self.sys_msg = SYS_MSG
         self.slice_index = None  # Slice index for 3D images
-        self.image_url = None  # Image path to display and process
+        self.image_url = None  # Image URL to the image on the web
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
