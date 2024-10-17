@@ -4,6 +4,10 @@
         "liver": 1,
         "hepatic tumor": 26
     },
+    "hepatoma": {
+        "liver": 1,
+        "hepatic tumor": 26
+    },
     "pancreatic tumor": {
         "pancreas": 4,
         "pancreatic tumor": 24

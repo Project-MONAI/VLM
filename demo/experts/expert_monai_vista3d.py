@@ -141,7 +141,10 @@ class ExpertVista3D(BaseExpert):
         Returns:
             bool: True if the VISTA-3D model is mentioned, False otherwise.
         """
-        return self.model_name in str(input)
+        matches = re.findall(r"<(.*?)>", str(input))
+        if len(matches) != 1:
+            return False
+        return self.model_name in str(matches[0])
 
     def run(
         self,
@@ -181,7 +184,7 @@ class ExpertVista3D(BaseExpert):
             arg_matches = ["everything"]
         if len(arg_matches) > 1:
             raise ValueError(
-                "Multiple expert model arguments are provided in the same prompt"
+                "Multiple expert model arguments are provided in the same prompt, "
                 "which is not supported in this version."
             )
 
@@ -191,7 +194,7 @@ class ExpertVista3D(BaseExpert):
             label_groups = json.load(f)
 
         if arg_matches[0] not in label_groups:
-            raise ValueError(f"Label group {arg_matches[0]} not found in {label_groups}")
+            raise ValueError(f"Label group {arg_matches[0]} is not accepted by the VISTA-3D model.")
 
         if arg_matches[0] != "everything":
             vista3d_prompts = {"classes": list(label_groups[arg_matches[0]].keys())}
@@ -213,7 +216,6 @@ class ExpertVista3D(BaseExpert):
 
         response = requests.post(self.NIM_VISTA3D, headers=headers, json=payload)
         if response.status_code != 200:
-            payload.pop("image")  # hide the image URL in the error message
             raise requests.exceptions.HTTPError(
                 f"Error triggering POST to {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}"
             )

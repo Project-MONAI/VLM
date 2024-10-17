@@ -415,15 +415,24 @@ class M3Generator:
                 break
 
         if expert:
-            logger.debug(f"Expert model {expert.__class__.__name__} is being called.")
-            text_output, seg_file, instruction, download_pkg = expert.run(
-                image_url=sv.image_url,
-                input=outputs,
-                output_dir=sv.temp_working_dir,
-                img_file=img_file,
-                slice_index=sv.slice_index,
-                prompt=prompt,
-            )
+            logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
+            try:
+                if sv.image_url is None:
+                    raise ValueError(f"No image is provided with {outputs}.")
+                text_output, seg_file, instruction, download_pkg = expert.run(
+                    image_url=sv.image_url,
+                    input=outputs,
+                    output_dir=sv.temp_working_dir,
+                    img_file=img_file,
+                    slice_index=sv.slice_index,
+                    prompt=prompt,
+                )
+            except Exception as e:
+                text_output = f"Sorry I met an error: {e}"
+                seg_file = None
+                instruction = ""
+                download_pkg = ""
+
             chat_history.append(text_output, image_path=seg_file, role="expert")
             if instruction:
                 chat_history.append(instruction, role="expert")
@@ -625,7 +634,7 @@ def create_demo(model_path, conv_mode, server_port):
 
         with gr.Row():
             with gr.Column():
-                image_input = gr.Image(label="Image", placeholder="Please select an image from the dropdown list.")
+                image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
                 image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
