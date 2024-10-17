@@ -240,7 +240,7 @@ class SessionVariables:
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
-        self.max_tokens = 300
+        self.max_tokens = 1024
         self.download_file_path = ""  # Path to the downloaded file
         self.temp_working_dir = None
         self.idx_range = (None, None)
@@ -280,7 +280,7 @@ class M3Generator:
     def generate_response_local(
         self,
         messages: list = [],
-        max_tokens: int = 300,
+        max_tokens: int = 1024,
         temperature: float = 0.0,
         top_p: float = 0.9,
         system_prompt: str | None = None,
@@ -351,23 +351,10 @@ class M3Generator:
 
         return outputs
 
-    def generate_response(
-        self,
-        messages: list = [],
-        max_tokens: int = 300,
-        temperature: float = 0.0,
-        top_p: float = 0.9,
-        system_prompt: str | None = None,
-    ):
+    def generate_response(self, **kwargs):
         """Generate the response"""
         if self.source == "local":
-            return self.generate_response_local(
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                system_prompt=system_prompt,
-            )
+            return self.generate_response_local(**kwargs)
 
     def squash_expert_messages_into_user(self, messages: list):
         """Squash consecutive expert messages into a single user message."""
@@ -595,7 +582,7 @@ def clear_one_conv(sv):
     else:
         d_btn = gr.DownloadButton(visible=False)
     # Order of output: image, image_selector, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, download_button
-    return sv, None, None, "Slice Index: N/A", 0.0, 0.9, 300, d_btn
+    return sv, None, None, "Slice Index: N/A", sv.temperature, sv.top_p, sv.max_tokens, d_btn
 
 
 def clear_all_convs():
@@ -675,7 +662,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                         label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
                     )
                     max_tokens_slider = gr.Slider(
-                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True
+                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=1024, interactive=True
                     )
 
                 with gr.Accordion("3D image panel", open=False):
