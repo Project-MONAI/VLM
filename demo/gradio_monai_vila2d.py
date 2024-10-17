@@ -244,6 +244,7 @@ class SessionVariables:
         self.download_file_path = ""  # Path to the downloaded file
         self.temp_working_dir = None
         self.idx_range = (None, None)
+        self.interactive = False
 
 
 def new_session_variables(**kwargs):
@@ -368,6 +369,10 @@ class M3Generator:
         """Process the prompt and return the result. Inputs/outputs are the gradio components."""
         logger.debug(f"Process the image and return the result")
 
+        if not sv.interactive:
+            # Do not process the prompt if the image is not provided
+            return None, sv, chat_history, "Please select an image", "Please select an image" 
+
         if sv.temp_working_dir is None:
             sv.temp_working_dir = tempfile.mkdtemp()
 
@@ -450,6 +455,7 @@ class M3Generator:
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
             download_file_path=download_pkg,
+            interactive=True,
         )
         return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
 
@@ -459,6 +465,7 @@ def input_image(image, sv: SessionVariables):
     logger.debug(f"Received user input image")
     # TODO: support user uploaded images
     sv.image_url = image_to_data_url(image)
+    sv.interactive = True
     return image, sv
 
 
@@ -474,6 +481,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
     if sv.temp_working_dir is None:
         sv.temp_working_dir = tempfile.mkdtemp()
 
+    sv.interactive = True
     if img_file.endswith(".nii.gz"):
         if sv.slice_index is None:
             data = nib.load(img_file).get_fdata()
