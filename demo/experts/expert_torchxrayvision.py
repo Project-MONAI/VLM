@@ -10,6 +10,7 @@
 # limitations under the License.
 
 import os
+import re
 
 import requests
 from experts.base_expert import BaseExpert
@@ -47,8 +48,10 @@ class ExpertTXRV(BaseExpert):
         Returns:
             bool: True if the CXR model is mentioned, False otherwise.
         """
-
-        return self.model_name in str(input)
+        matches = re.findall(r"<(.*?)>", str(input))
+        if len(matches) != 1:
+            return False
+        return self.model_name in str(matches[0])
 
     def run(self, image_url: str = "", prompt: str = "", **kwargs):
         """

@@ -240,10 +240,11 @@ class SessionVariables:
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
-        self.max_tokens = 300
+        self.max_tokens = 1024
         self.download_file_path = ""  # Path to the downloaded file
         self.temp_working_dir = None
         self.idx_range = (None, None)
+        self.interactive = False
 
 
 def new_session_variables(**kwargs):
@@ -260,23 +261,28 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, model_path, conv_mode):
+    def __init__(self, source="local", model_path="", conv_mode=""):
         """Initialize the M3 generator"""
-        # TODO: allow setting the device
-        disable_torch_init()
-        self.conv_mode = conv_mode
-        self.model_name = get_model_name_from_path(model_path)
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-            model_path, self.model_name
-        )
-        logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
+        self.source = source
+        # TODO: support huggingface models
+        if source == "local":
+            # TODO: allow setting the device
+            disable_torch_init()
+            self.conv_mode = conv_mode
+            self.model_name = get_model_name_from_path(model_path)
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path, self.model_name
+            )
+            logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
+        else:
+            raise NotImplementedError(f"Source {source} is not supported.")
 
-    def generate_response(
+    def generate_response_local(
         self,
-        messages: list,
-        max_tokens: int,
-        temperature: float,
-        top_p: float,
+        messages: list = [],
+        max_tokens: int = 1024,
+        temperature: float = 0.0,
+        top_p: float = 0.9,
         system_prompt: str | None = None,
     ):
         """Generate the response"""
@@ -345,6 +351,11 @@ class M3Generator:
 
         return outputs
 
+    def generate_response(self, **kwargs):
+        """Generate the response"""
+        if self.source == "local":
+            return self.generate_response_local(**kwargs)
+
     def squash_expert_messages_into_user(self, messages: list):
         """Squash consecutive expert messages into a single user message."""
         logger.debug("Squashing expert messages into user messages")
@@ -367,6 +378,10 @@ class M3Generator:
     def process_prompt(self, prompt, sv, chat_history):
         """Process the prompt and return the result. Inputs/outputs are the gradio components."""
         logger.debug(f"Process the image and return the result")
+
+        if not sv.interactive:
+            # Do not process the prompt if the image is not provided
+            return None, sv, chat_history, "Please select an image", "Please select an image" 
 
         if sv.temp_working_dir is None:
             sv.temp_working_dir = tempfile.mkdtemp()
@@ -415,15 +430,24 @@ class M3Generator:
                 break
 
         if expert:
-            logger.debug(f"Expert model {expert.__class__.__name__} is being called.")
-            text_output, seg_file, instruction, download_pkg = expert.run(
-                image_url=sv.image_url,
-                input=outputs,
-                output_dir=sv.temp_working_dir,
-                img_file=img_file,
-                slice_index=sv.slice_index,
-                prompt=prompt,
-            )
+            logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
+            try:
+                if sv.image_url is None:
+                    raise ValueError(f"No image is provided with {outputs}.")
+                text_output, seg_file, instruction, download_pkg = expert.run(
+                    image_url=sv.image_url,
+                    input=outputs,
+                    output_dir=sv.temp_working_dir,
+                    img_file=img_file,
+                    slice_index=sv.slice_index,
+                    prompt=prompt,
+                )
+            except Exception as e:
+                text_output = f"Sorry I met an error: {e}"
+                seg_file = None
+                instruction = ""
+                download_pkg = ""
+
             chat_history.append(text_output, image_path=seg_file, role="expert")
             if instruction:
                 chat_history.append(instruction, role="expert")
@@ -441,6 +465,7 @@ class M3Generator:
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
             download_file_path=download_pkg,
+            interactive=True,
         )
         return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
 
@@ -450,6 +475,7 @@ def input_image(image, sv: SessionVariables):
     logger.debug(f"Received user input image")
     # TODO: support user uploaded images
     sv.image_url = image_to_data_url(image)
+    sv.interactive = True
     return image, sv
 
 
@@ -465,6 +491,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
     if sv.temp_working_dir is None:
         sv.temp_working_dir = tempfile.mkdtemp()
 
+    sv.interactive = True
     if img_file.endswith(".nii.gz"):
         if sv.slice_index is None:
             data = nib.load(img_file).get_fdata()
@@ -555,7 +582,7 @@ def clear_one_conv(sv):
     else:
         d_btn = gr.DownloadButton(visible=False)
     # Order of output: image, image_selector, slice_index_html, temperature_slider, top_p_slider, max_tokens_slider, download_button
-    return sv, None, None, "Slice Index: N/A", 0.0, 0.9, 300, d_btn
+    return sv, None, None, "Slice Index: N/A", sv.temperature, sv.top_p, sv.max_tokens, d_btn
 
 
 def clear_all_convs():
@@ -614,9 +641,9 @@ def download_file():
     return [gr.DownloadButton(visible=False)]
 
 
-def create_demo(model_path, conv_mode, server_port):
+def create_demo(source, model_path, conv_mode, server_port):
     """Main function to create the Gradio interface"""
-    generator = M3Generator(model_path, conv_mode)
+    generator = M3Generator(source=source, model_path=model_path, conv_mode=conv_mode)
 
     with gr.Blocks(css=CSS_STYLES) as demo:
         gr.HTML(TITLE, label="Title")
@@ -625,7 +652,7 @@ def create_demo(model_path, conv_mode, server_port):
 
         with gr.Row():
             with gr.Column():
-                image_input = gr.Image(label="Image", placeholder="Please select an image from the dropdown list.")
+                image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
                 image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
@@ -635,7 +662,7 @@ def create_demo(model_path, conv_mode, server_port):
                         label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
                     )
                     max_tokens_slider = gr.Slider(
-                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=300, interactive=True
+                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=1024, interactive=True
                     )
 
                 with gr.Accordion("3D image panel", open=False):
@@ -748,7 +775,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--modelpath",
         type=str,
-        default="/workspace/nvidia/medical-service-nims/vila/checkpoints/baseline/checkpoint-3500",
+        default="/data/checkpoints/vila-m3-8b",
         help="The path to the model to load.",
     )
     parser.add_argument(
@@ -757,8 +784,14 @@ if __name__ == "__main__":
         default=7860,
         help="The port to run the Gradio server on.",
     )
+    parser.add_argument(
+        "--source",
+        type=str,
+        default="local",
+        help="The source of the model. Option is only 'local'.",
+    )
     args = parser.parse_args()
     SYS_PROMPT = conv_templates[args.convmode].system
     cache_images()
-    create_demo(args.modelpath, args.convmode, args.port)
+    create_demo(args.source, args.modelpath, args.convmode, args.port)
     cache_cleanup()
