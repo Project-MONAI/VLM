@@ -24,4 +24,4 @@ jobs:
         run: npm install -g markdown-link-check
 
       - name: Check for broken links
-        run: find . -name "*.md" | xargs -I {} markdown-link-check {}
+        run: find . -name "*.md" | xargs -I {} markdown-link-check {} --config .github/markdown-link-check.json
