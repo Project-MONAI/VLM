@@ -72,20 +72,23 @@ SYS_MSG = "Here is a list of available expert models:\n<BRATS(args)> Modality: M
 
 SYS_PROMPT = None  # set when the script initializes
 
-EXAMPLE_PROMPTS = [
-    "Segment the visceral structures in the current image.",
-    "Can you identify any liver masses or tumors?",
-    "Segment the entire image.",
-    "What abnormalities are seen in this image?",
-    "Is there evidence of edema in this image?",
-    "Is there evidence of any abnormalities in this image?",
-    "What is the total number of [condition/abnormality] present in this image?",
-    "Is there pneumothorax?",
-    "What type is the lung opacity?",
-    "which view is this image taken?",
-    "Is there evidence of cardiomegaly in this image?",
-    "Is the atelectasis located on the left side or right side?",
-    "What level is the cardiomegaly?",
+EXAMPLE_PROMPTS_3D = [
+    ["Segment the visceral structures in the current image."],
+    ["Can you identify any liver masses or tumors?"],
+    ["Segment the entire image."],
+    ["What is the total number of [condition/abnormality] present in this image?"],
+    ["Is there evidence of any abnormalities in this image?"],
+]
+
+EXAMPLE_PROMPTS_2D = [
+    ["What abnormalities are seen in this image?"],
+    ["Is there evidence of edema in this image?"],
+    ["Is there pneumothorax?"],
+    ["What type is the lung opacity?"],
+    ["Which view is this image taken?"],
+    ["Is there evidence of cardiomegaly in this image?"],
+    ["Is the atelectasis located on the left side or right side?"],
+    ["What level is the cardiomegaly?"],
 ]
 
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
@@ -488,7 +491,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
     img_file = CACHED_IMAGES.get(sv.image_url, None)
 
     if sv.image_url is None:
-        return None, sv, slice_index_html
+        return None, sv, slice_index_html, [[""]]
 
     if sv.temp_working_dir is None:
         sv.temp_working_dir = tempfile.mkdtemp()
@@ -514,13 +517,19 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index_htm
                 image_filename=image_filename,
             )
             compose({"image": img_file})
-        return os.path.join(sv.temp_working_dir, image_filename), sv, f"Slice Index: {sv.slice_index}"
+        return (
+            os.path.join(sv.temp_working_dir, image_filename),
+            sv,
+            f"Slice Index: {sv.slice_index}",
+            gr.Dataset(samples=EXAMPLE_PROMPTS_3D),
+        )
 
     sv.slice_index = None
     return (
         img_file,
         sv,
         "Slice Index: N/A for 2D images, clicking prev/next will not change the image.",
+        gr.Dataset(samples=EXAMPLE_PROMPTS_2D),
     )
 
 
@@ -696,10 +705,10 @@ def create_demo(source, model_path, conv_mode, server_port):
                 clear_btn = gr.Button("Clear Conversation")
                 with gr.Row(variant="compact"):
                     prompt_edit = gr.Textbox(
-                        label="Enter your prompt here", container=False, placeholder="Enter your prompt here", scale=2
+                        label="TextPrompt", container=False, placeholder="Please ask a question about the current image or 2D slice", scale=2
                     )
                     submit_btn = gr.Button("Submit", scale=0)
-                gr.Examples(EXAMPLE_PROMPTS, prompt_edit)
+                examples = gr.Examples([[""]], prompt_edit)
 
         # Process image and clear it immediately by returning None
         submit_btn.click(
@@ -718,7 +727,7 @@ def create_demo(source, model_path, conv_mode, server_port):
         image_dropdown.change(
             fn=update_image_selection,
             inputs=[image_dropdown, sv, slice_index_html],
-            outputs=[image_input, sv, slice_index_html],
+            outputs=[image_input, sv, slice_index_html, examples.dataset],
         )
         prev10_btn.click(
             fn=update_image_prev_10,
