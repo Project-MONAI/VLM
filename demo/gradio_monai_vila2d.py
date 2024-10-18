@@ -62,6 +62,7 @@ logging.getLogger("gradio").setLevel(logging.WARNING)
 # Sample images dictionary
 IMAGES_URLS = {
     "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
+    "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
     "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_ce3d3d98-bf5170fa-8e962da1-97422442-6653c48a_v1.jpg",
     "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_fcb77615-ceca521c-c8e4d028-0d294832-b97b7d77_v1.jpg",
     "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_6cbf5aa1-71de2d2b-96f6b460-24227d6e-6e7a7e1d_v1.jpg",
@@ -94,7 +95,7 @@ CACHED_DIR = tempfile.mkdtemp()
 CACHED_IMAGES = {}
 
 TITLE = """
-    <div style="text-align: center; max-width: 650px; margin: 0 auto;">
+    <div style="text-align: center; max-width: 800px; margin: 0 auto;">
         <p>
         <img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="project monai" style="width: 50%; min-width: 500px; max-width: 800px; margin: auto; display: block;">
         </p>
@@ -111,7 +112,8 @@ TITLE = """
         </h1>
         </div>
         <p style="margin-bottom: 10px; font-size: 94%">
-        Placeholder text for the description of the tool.
+        VILA-M3 is a vision-language model for medical applications that interprets medical images and text prompts to generate relevant responses.
+        Disclaimer: AI models generate responses and outputs based on complex algorithms and machine learning techniques, and those responses or outputs may be inaccurate, harmful, biased or indecent. By testing this model, you assume the risk of any harm caused by any response or output of the model. This model is for research purposes and not for clinical usage.
         </p>
 
     </div>
@@ -274,6 +276,8 @@ class M3Generator:
                 model_path, self.model_name
             )
             logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
+        elif source == "huggingface":
+            pass
         else:
             raise NotImplementedError(f"Source {source} is not supported.")
 
@@ -474,8 +478,6 @@ def input_image(image, sv: SessionVariables):
     """Update the session variables with the input image data URL if it's inputted by the user"""
     logger.debug(f"Received user input image")
     # TODO: support user uploaded images
-    sv.image_url = image_to_data_url(image)
-    sv.interactive = True
     return image, sv
 
 
@@ -652,8 +654,16 @@ def create_demo(source, model_path, conv_mode, server_port):
 
         with gr.Row():
             with gr.Column():
+                image_dropdown = gr.Dropdown(label="Select an image", choices=["Please select .."] + list(IMAGES_URLS.keys()))
                 image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
-                image_dropdown = gr.Dropdown(label="Select an image", choices=list(IMAGES_URLS.keys()))
+                with gr.Accordion("3D image panel", open=False):
+                    slice_index_html = gr.HTML("Slice Index: N/A")
+                    with gr.Row():
+                        prev10_btn = gr.Button("<<")
+                        prev01_btn = gr.Button("<")
+                        next01_btn = gr.Button(">")
+                        next10_btn = gr.Button(">>")
+
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
                         label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
@@ -664,14 +674,6 @@ def create_demo(source, model_path, conv_mode, server_port):
                     max_tokens_slider = gr.Slider(
                         label="Max Tokens", minimum=1, maximum=1024, step=1, value=1024, interactive=True
                     )
-
-                with gr.Accordion("3D image panel", open=False):
-                    slice_index_html = gr.HTML("Slice Index: N/A")
-                    with gr.Row():
-                        prev10_btn = gr.Button("<<")
-                        prev01_btn = gr.Button("<")
-                        next01_btn = gr.Button(">")
-                        next10_btn = gr.Button(">>")
 
                 with gr.Accordion("System Prompt and Message", open=False):
                     sys_prompt_text = gr.Textbox(
