@@ -31,11 +31,11 @@ python slake_instruct_data_generate.py \
 Example command to run generate the instruction training data json file for PathVQA dataset:
 
 ```
-python pathvqa_instruct_data_generate.py \
-    --train_pkl /path/to/train_vqa.pkl \
-    --val_pkl /path/to/val_vqa.pkl \
-    --test_pkl /path/to/test_vqa.pkl \
-    --output_json /path/to/output/merged_pathvqa_instruct.json
+python pathvqa_instruction_gen_parquet.py --input_path /path/to/input/parquet/files --output_path /path/to/output/processed/dataset
+```
+Please make sure that the .csv files were succesfully generated from the prior command before running the next command
+```
+python pathvqa_instruction_generate.py --input_dir /path/to/output/processed/dataset --output_dir /path/to/output_directory
 ```
 
 ### MIMIC-VQA

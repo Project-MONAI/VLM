@@ -28,9 +28,9 @@ experts
 
 | Dataset   | QA/Text Pairs  | Images    | Link |
 |-----------|-----------|-----------|------|
-| PathVQA   | ~32,000   | ~4,000    | [PathVQA](https://github.com/UCSD-AI4H/PathVQA) |
-| RadVQA    | ~25,000   | ~7,000    | [RadVQA](https://github.com/abachaa/VQA-Med-2019) |
-| SLAKE     | ~45,000   | ~14,000   | [SLAKE](https://github.com/SLAKE-SLAKE/SLAKE) |
+| PathVQA   | ~32,000   | ~4,000    | [PathVQA](https://huggingface.co/datasets/flaviagiammarino/path-vqa) |
+| RadVQA    | ~25,000   | ~7,000    | [RadVQA](https://osf.io/89kps/) |
+| SLAKE     | ~45,000   | ~14,000   | [SLAKE](https://www.med-vqa.com/slake/) |
 | Medical-Diff-VQA | ~429,000  | 129,232  | [MIMIC-VQA](https://physionet.org/content/medical-diff-vqa/1.0.0) |
 | MIMIC-CXR-JPG | 270,784 | 270,784 | [MIMIC-CXR-JPG](https://physionet.org/content/mimic-cxr-jpg/2.1.0/) |
 | ChestXRay14 | 1,962 | 1,962 | [nih-chest-xray](https://cloud.google.com/healthcare-api/docs/resources/public-datasets/nih-chest#additional_labels) |
