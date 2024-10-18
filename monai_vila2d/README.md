@@ -71,7 +71,7 @@ An interactive demo is provided in ...
 To prepare the datasets for training and evaluation, follow the instructions in [data_prepare](./data_prepare).
 
 ## Training
-To replicate our fine-tuning procedure, utilize the provided [scripts](./scripts).
+To replicate our fine-tuning procedure, utilize the provided scripts.
 
 ## Evaluation
 To evaluate a model on the above benchmarks, follow the instructions in [eval](./eval/README.md)
