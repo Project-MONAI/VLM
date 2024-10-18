@@ -9,13 +9,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import pandas as pd
-import shutil
-from PIL import Image
-import io
-from tqdm import tqdm
 import argparse
+import io
+import os
+import shutil
+
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Process PathVQA parquet files.')
