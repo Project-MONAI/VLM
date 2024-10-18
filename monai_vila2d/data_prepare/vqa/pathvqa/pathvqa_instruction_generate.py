@@ -85,7 +85,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge PathVQA instruct data")
-    parser.add_argument("--input_dir", default='/home/vnath/Downloads/pathvqa_parquets/processed_dataset', required=False, help="Directory containing the CSV files")
-    parser.add_argument("--output_dir", default='/home/vnath/Downloads/pathvqa_parquets/processed_dataset', required=False, help="Directory to output the JSON files")
+    parser.add_argument("--input_dir", default='set/path/to/csv/files', required=False, help="Directory containing the CSV files")
+    parser.add_argument("--output_dir", default='set/path/for/output/json/files', required=False, help="Directory to output the JSON files")
     args = parser.parse_args()
     main(args)
