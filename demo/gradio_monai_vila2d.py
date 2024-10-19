@@ -76,8 +76,6 @@ EXAMPLE_PROMPTS_3D = [
     ["Segment the visceral structures in the current image."],
     ["Can you identify any liver masses or tumors?"],
     ["Segment the entire image."],
-    ["What is the total number of [condition/abnormality] present in this image?"],
-    ["Is there evidence of any abnormalities in this image?"],
 ]
 
 EXAMPLE_PROMPTS_2D = [
