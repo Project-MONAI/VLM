@@ -489,7 +489,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
     img_file = CACHED_IMAGES.get(sv.image_url, None)
 
     if sv.image_url is None:
-        return None, sv, [[""]]
+        return None, sv, gr.Slider(0, 2, 1, 0, visible=False), [[""]]
 
     if sv.temp_working_dir is None:
         sv.temp_working_dir = tempfile.mkdtemp()
