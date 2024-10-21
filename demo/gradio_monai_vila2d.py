@@ -36,6 +36,7 @@ from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
 from llava.model.builder import load_pretrained_model
 from llava.utils import disable_torch_init
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -135,12 +136,12 @@ CSS_STYLES = (
 
 def cache_images():
     """Cache the image and return the file path"""
-    logger.debug(f"Caching the image")
+    logger.debug(f"Caching the image to {CACHED_DIR}")
     for _, image_url in IMAGES_URLS.items():
         CACHED_IMAGES[image_url] = save_image_url_to_file(image_url, CACHED_DIR)
         if CACHED_IMAGES[image_url].endswith(".nii.gz"):
             data = nib.load(CACHED_IMAGES[image_url]).get_fdata()
-            for slice_index in range(data.shape[2]):
+            for slice_index in tqdm(range(data.shape[2])):
                 image_filename = get_slice_filenames(CACHED_IMAGES[image_url], slice_index)[0]
                 compose = get_monai_transforms(
                     ["image"],
@@ -420,7 +421,7 @@ class M3Generator:
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
                     _prompt,
-                    image_path=os.path.join(sv.temp_working_dir, get_slice_filenames(img_file, sv.slice_index)[0]),
+                    image_path=os.path.join(CACHED_DIR, get_slice_filenames(img_file, sv.slice_index)[0]),
                 )
             else:
                 chat_history.append(_prompt, image_path=img_file)
