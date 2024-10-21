@@ -16,7 +16,7 @@ import os
 import tempfile
 from copy import deepcopy
 from glob import glob
-from shutil import rmtree, copyfile
+from shutil import copyfile, rmtree
 
 import gradio as gr
 import nibabel as nib
@@ -243,7 +243,9 @@ class ChatHistory:
             history_text_html = ""
             for content in contents:
                 if content["type"] == "text":
-                    history_text_html += colorcode_message(text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide)
+                    history_text_html += colorcode_message(
+                        text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide
+                    )
                 else:
                     history_text_html += colorcode_message(
                         data_url=image_to_data_url(content["image_path"], max_size=(300, 300)), show_all=True, role=role
@@ -407,7 +409,7 @@ class M3Generator:
 
         if not sv.interactive:
             # Do not process the prompt if the image is not provided
-            return None, sv, chat_history, "Please select an image", "Please select an image" 
+            return None, sv, chat_history, "Please select an image", "Please select an image"
 
         if sv.temp_working_dir is None:
             sv.temp_working_dir = tempfile.mkdtemp()
@@ -496,7 +498,13 @@ class M3Generator:
             download_file_path=download_pkg,
             interactive=True,
         )
-        return None, new_sv, chat_history, chat_history.get_html(show_all=False, sys_msgs_to_hide=sys_msgs_to_hide), chat_history.get_html(show_all=True)
+        return (
+            None,
+            new_sv,
+            chat_history,
+            chat_history.get_html(show_all=False, sys_msgs_to_hide=sys_msgs_to_hide),
+            chat_history.get_html(show_all=True),
+        )
 
 
 def input_image(image, sv: SessionVariables):
@@ -667,8 +675,12 @@ def create_demo(source, model_path, conv_mode, server_port):
 
         with gr.Row():
             with gr.Column():
-                image_dropdown = gr.Dropdown(label="Select an image", choices=["Please select .."] + list(IMG_URLS_OR_PATHS.keys()))
-                image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
+                image_dropdown = gr.Dropdown(
+                    label="Select an image", choices=["Please select .."] + list(IMG_URLS_OR_PATHS.keys())
+                )
+                image_input = gr.Image(
+                    label="Image", sources=[], placeholder="Please select an image from the dropdown list."
+                )
                 image_slider = gr.Slider(0, 2, 1, 0, visible=False)
 
                 with gr.Accordion("View Parameters", open=False):
@@ -703,7 +715,10 @@ def create_demo(source, model_path, conv_mode, server_port):
                 clear_btn = gr.Button("Clear Conversation")
                 with gr.Row(variant="compact"):
                     prompt_edit = gr.Textbox(
-                        label="TextPrompt", container=False, placeholder="Please ask a question about the current image or 2D slice", scale=2
+                        label="TextPrompt",
+                        container=False,
+                        placeholder="Please ask a question about the current image or 2D slice",
+                        scale=2,
                     )
                     submit_btn = gr.Button("Submit", scale=0)
                 examples = gr.Examples([[""]], prompt_edit)
