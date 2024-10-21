@@ -540,6 +540,8 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user"):
     if not show_all and role == "expert":
         return ""
     escaped_text = html.escape(text)
+    # replace newlines with <br> tags
+    escaped_text = escaped_text.replace("\n", "<br>")
     if data_url is not None:
         escaped_text += f'<img src="{data_url}">'
     if role == "user":
