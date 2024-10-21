@@ -70,10 +70,10 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. Start the Gradio demo:
     ```bash
-    cd demo
+    cd monai_vila2d/demo
     python gradio_monai_vila2d.py  \
-        --modelpath /data/checkpoints/<checkpoint-name> \
-        --convmode llama_3 # llama_3 for 8B and vicuna_v1 for 13B model \
+        --modelpath /data/checkpoints/<8B-checkpoint-name> \
+        --convmode llama_3 \
         --port 7860
     ```
 
