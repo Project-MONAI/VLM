@@ -142,15 +142,14 @@ def cache_images():
             data = nib.load(CACHED_IMAGES[image_url]).get_fdata()
             for slice_index in range(data.shape[2]):
                 image_filename = get_slice_filenames(CACHED_IMAGES[image_url], slice_index)[0]
-                if not os.path.exists(image_filename):
-                    compose = get_monai_transforms(
-                        ["image"],
-                        CACHED_DIR,
-                        modality="CT",  # TODO: Get the modality from the image/prompt/metadata
-                        slice_index=slice_index,
-                        image_filename=image_filename,
-                    )
-                    compose({"image": CACHED_IMAGES[image_url]})
+                compose = get_monai_transforms(
+                    ["image"],
+                    CACHED_DIR,
+                    modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                    slice_index=slice_index,
+                    image_filename=image_filename,
+                )
+                compose({"image": CACHED_IMAGES[image_url]})
 
 
 def cache_cleanup():
@@ -525,10 +524,10 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
             sv.slice_index = slice_index
 
         image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
-        if not os.path.exists(image_filename):
+        if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
             raise ValueError(f"Image file {image_filename} does not exist.")
         return (
-            os.path.join(sv.temp_working_dir, image_filename),
+            os.path.join(CACHED_DIR, image_filename),
             sv,
             gr.Slider(sv.idx_range[0], sv.idx_range[1], value=sv.slice_index, visible=True, interactive=True),
             gr.Dataset(samples=EXAMPLE_PROMPTS_3D),
