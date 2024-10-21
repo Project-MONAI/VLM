@@ -212,7 +212,7 @@ class ChatHistory:
 
         self.messages.append({"role": role, "content": new_contents})
 
-    def get_html(self, show_all=False):
+    def get_html(self, show_all: bool = False, sys_msgs_to_hide: list | None = None):
         """Returns the chat history as an HTML string to display"""
         history = []
 
@@ -222,7 +222,7 @@ class ChatHistory:
             history_text_html = ""
             for content in contents:
                 if content["type"] == "text":
-                    history_text_html += colorcode_message(text=content["text"], show_all=show_all, role=role)
+                    history_text_html += colorcode_message(text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide)
                 else:
                     history_text_html += colorcode_message(
                         data_url=image_to_data_url(content["image_path"], max_size=(300, 300)), show_all=True, role=role
@@ -395,11 +395,14 @@ class M3Generator:
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
         img_file = CACHED_IMAGES.get(sv.image_url, None)
+        sys_msgs_to_hide = []
         if isinstance(img_file, str):
             if "<image>" not in prompt:
                 _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
+                sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
             else:
                 _prompt = sv.sys_msg + mod_msg + prompt
+                sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -472,7 +475,7 @@ class M3Generator:
             download_file_path=download_pkg,
             interactive=True,
         )
-        return None, new_sv, chat_history, chat_history.get_html(show_all=False), chat_history.get_html(show_all=True)
+        return None, new_sv, chat_history, chat_history.get_html(show_all=False, sys_msgs_to_hide=sys_msgs_to_hide), chat_history.get_html(show_all=True)
 
 
 def input_image(image, sv: SessionVariables):
@@ -532,13 +535,17 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
     )
 
 
-def colorcode_message(text="", data_url=None, show_all=False, role="user"):
+def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_msgs_to_hide: list = None):
     """Color the text based on the role and return the HTML text"""
     logger.debug(f"Preparing the HTML text with {show_all} and role: {role}")
     # if content is not a data URL, escape the text
 
     if not show_all and role == "expert":
         return ""
+    if sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
+        for sys_msg in sys_msgs_to_hide:
+            text.replace(sys_msg, "")
+
     escaped_text = html.escape(text)
     # replace newlines with <br> tags
     escaped_text = escaped_text.replace("\n", "<br>")
