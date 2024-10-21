@@ -16,8 +16,6 @@ import os
 import re
 from io import BytesIO
 from pathlib import Path
-from typing import List
-from urllib.parse import urlparse
 
 import numpy as np
 import requests

@@ -16,6 +16,7 @@ import os
 import tempfile
 from copy import deepcopy
 from glob import glob
+from shutil import rmtree, copyfile
 
 import gradio as gr
 import nibabel as nib
@@ -61,8 +62,8 @@ logger.addHandler(ch)
 # Suppress logging from dependent libraries
 logging.getLogger("gradio").setLevel(logging.WARNING)
 
-# Sample images dictionary
-IMAGES_URLS = {
+# Sample images dictionary. It accepts either a URL or a local path.
+IMG_URLS_OR_PATHS = {
     "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
     "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
     "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_ce3d3d98-bf5170fa-8e962da1-97422442-6653c48a_v1.jpg",
@@ -137,29 +138,35 @@ CSS_STYLES = (
 def cache_images():
     """Cache the image and return the file path"""
     logger.debug(f"Caching the image to {CACHED_DIR}")
-    for _, image_url in IMAGES_URLS.items():
-        CACHED_IMAGES[image_url] = save_image_url_to_file(image_url, CACHED_DIR)
-        if CACHED_IMAGES[image_url].endswith(".nii.gz"):
-            data = nib.load(CACHED_IMAGES[image_url]).get_fdata()
+    for _, item in IMG_URLS_OR_PATHS.items():
+        if item.startswith("http"):
+            CACHED_IMAGES[item] = save_image_url_to_file(item, CACHED_DIR)
+        elif os.path.exists(item):
+            # move the file to the cache directory
+            file_name = os.path.basename(item)
+            CACHED_IMAGES[item] = os.path.join(CACHED_DIR, file_name)
+            if not os.path.isfile(CACHED_IMAGES[item]):
+                copyfile(item, CACHED_IMAGES[item])
+
+        if CACHED_IMAGES[item].endswith(".nii.gz"):
+            data = nib.load(CACHED_IMAGES[item]).get_fdata()
             for slice_index in tqdm(range(data.shape[2])):
-                image_filename = get_slice_filenames(CACHED_IMAGES[image_url], slice_index)[0]
-                compose = get_monai_transforms(
-                    ["image"],
-                    CACHED_DIR,
-                    modality="CT",  # TODO: Get the modality from the image/prompt/metadata
-                    slice_index=slice_index,
-                    image_filename=image_filename,
-                )
-                compose({"image": CACHED_IMAGES[image_url]})
+                image_filename = get_slice_filenames(CACHED_IMAGES[item], slice_index)[0]
+                if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
+                    compose = get_monai_transforms(
+                        ["image"],
+                        CACHED_DIR,
+                        modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                        slice_index=slice_index,
+                        image_filename=image_filename,
+                    )
+                    compose({"image": CACHED_IMAGES[item]})
 
 
 def cache_cleanup():
     """Clean up the cache"""
     logger.debug(f"Cleaning up the cache")
-    for _, cache_file_name in CACHED_IMAGES.items():
-        if os.path.exists(cache_file_name):
-            os.remove(cache_file_name)
-            print(f"Cache file {cache_file_name} cleaned up")
+    rmtree(CACHED_DIR)
 
 
 class ChatHistory:
@@ -502,7 +509,7 @@ def input_image(image, sv: SessionVariables):
 def update_image_selection(selected_image, sv: SessionVariables, slice_index=None):
     """Update the gradio components based on the selected image"""
     logger.debug(f"Updating display image for {selected_image}")
-    sv.image_url = IMAGES_URLS.get(selected_image, None)
+    sv.image_url = IMG_URLS_OR_PATHS.get(selected_image, None)
     img_file = CACHED_IMAGES.get(sv.image_url, None)
 
     if sv.image_url is None or img_file is None:
@@ -660,7 +667,7 @@ def create_demo(source, model_path, conv_mode, server_port):
 
         with gr.Row():
             with gr.Column():
-                image_dropdown = gr.Dropdown(label="Select an image", choices=["Please select .."] + list(IMAGES_URLS.keys()))
+                image_dropdown = gr.Dropdown(label="Select an image", choices=["Please select .."] + list(IMG_URLS_OR_PATHS.keys()))
                 image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
                 image_slider = gr.Slider(0, 2, 1, 0, visible=False)
 
