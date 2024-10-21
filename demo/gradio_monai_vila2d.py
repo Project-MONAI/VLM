@@ -542,9 +542,9 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
 
     if not show_all and role == "expert":
         return ""
-    if sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
+    if not show_all and sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
         for sys_msg in sys_msgs_to_hide:
-            text.replace(sys_msg, "")
+            text = text.replace(sys_msg, "")
 
     escaped_text = html.escape(text)
     # replace newlines with <br> tags
