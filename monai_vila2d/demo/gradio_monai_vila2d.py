@@ -543,7 +543,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
         return (
             os.path.join(CACHED_DIR, image_filename),
             sv,
-            gr.Slider(sv.idx_range[0], sv.idx_range[1], value=sv.slice_index, visible=True, interactive=True),
+            gr.Slider(sv.idx_range[0], sv.idx_range[1], value=sv.slice_index, step=1, visible=True, interactive=True),
             gr.Dataset(samples=EXAMPLE_PROMPTS_3D),
         )
 
