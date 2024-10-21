@@ -496,6 +496,7 @@ class M3Generator:
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
             download_file_path=download_pkg,
+            temp_working_dir=sv.temp_working_dir,
             interactive=True,
         )
         return (
@@ -522,9 +523,6 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
 
     if sv.image_url is None or img_file is None:
         return None, sv, gr.Slider(0, 2, 1, 0, visible=False), [[""]]
-
-    if sv.temp_working_dir is None:
-        sv.temp_working_dir = tempfile.mkdtemp()
 
     sv.interactive = True
     if img_file.endswith(".nii.gz"):
@@ -584,7 +582,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
     raise ValueError(f"Invalid role: {role}")
 
 
-def clear_one_conv(sv):
+def clear_one_conv(sv: SessionVariables):
     """
     Post-event hook indicating the session ended.It's called when `new_session_variables` finishes.
     Particularly, it resets the non-text parameters. So it excludes:
@@ -608,9 +606,11 @@ def clear_one_conv(sv):
     return sv, None, None, sv.temperature, sv.top_p, sv.max_tokens, d_btn, gr.Slider(0, 2, 1, 0, visible=False)
 
 
-def clear_all_convs():
+def clear_all_convs(sv: SessionVariables):
     """Clear and reset everything, Inputs/outputs are the gradio components."""
     logger.debug(f"Clearing all conversations")
+    if sv.temp_working_dir is not None:
+        rmtree(sv.temp_working_dir)
     new_sv = new_session_variables()
     # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text
     return (
@@ -755,7 +755,7 @@ def create_demo(source, model_path, conv_mode, server_port):
         # Reset button
         clear_btn.click(
             fn=clear_all_convs,
-            inputs=[],
+            inputs=[sv],
             outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, sys_message_text],
         )
 
