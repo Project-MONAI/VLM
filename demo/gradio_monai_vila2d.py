@@ -15,6 +15,7 @@ import logging
 import os
 import tempfile
 from copy import deepcopy
+from glob import glob
 
 import gradio as gr
 import nibabel as nib
@@ -137,6 +138,19 @@ def cache_images():
     logger.debug(f"Caching the image")
     for _, image_url in IMAGES_URLS.items():
         CACHED_IMAGES[image_url] = save_image_url_to_file(image_url, CACHED_DIR)
+        if CACHED_IMAGES[image_url].endswith(".nii.gz"):
+            data = nib.load(CACHED_IMAGES[image_url]).get_fdata()
+            for slice_index in range(data.shape[2]):
+                image_filename = get_slice_filenames(CACHED_IMAGES[image_url], slice_index)[0]
+                if not os.path.exists(image_filename):
+                    compose = get_monai_transforms(
+                        ["image"],
+                        CACHED_DIR,
+                        modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                        slice_index=slice_index,
+                        image_filename=image_filename,
+                    )
+                    compose({"image": CACHED_IMAGES[image_url]})
 
 
 def cache_cleanup():
@@ -500,9 +514,11 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
     sv.interactive = True
     if img_file.endswith(".nii.gz"):
         if slice_index is None:
-            data = nib.load(img_file).get_fdata()
-            sv.slice_index = data.shape[sv.axis] // 2
-            sv.idx_range = (0, data.shape[sv.axis] - 1)
+            slice_file_pttn = img_file.replace(".nii.gz", "*_img.jpg")
+            # glob the image files
+            slice_files = glob(slice_file_pttn)
+            sv.slice_index = len(slice_files) // 2
+            sv.idx_range = (0, len(slice_files) - 1)
         else:
             # Slice index is updated by the slidebar.
             # There is no need to update the idx_range.
@@ -510,14 +526,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
 
         image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
         if not os.path.exists(image_filename):
-            compose = get_monai_transforms(
-                ["image"],
-                sv.temp_working_dir,
-                modality="CT",  # TODO: Get the modality from the image/prompt/metadata
-                slice_index=sv.slice_index,
-                image_filename=image_filename,
-            )
-            compose({"image": img_file})
+            raise ValueError(f"Image file {image_filename} does not exist.")
         return (
             os.path.join(sv.temp_working_dir, image_filename),
             sv,
