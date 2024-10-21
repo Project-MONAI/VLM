@@ -752,6 +752,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                 image_slider,
             ],
         )
+        demo.queue()
         demo.launch(server_name="0.0.0.0", server_port=server_port)
 
 
