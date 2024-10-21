@@ -505,7 +505,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
     sv.image_url = IMAGES_URLS.get(selected_image, None)
     img_file = CACHED_IMAGES.get(sv.image_url, None)
 
-    if sv.image_url is None:
+    if sv.image_url is None or img_file is None:
         return None, sv, gr.Slider(0, 2, 1, 0, visible=False), [[""]]
 
     if sv.temp_working_dir is None:
@@ -662,7 +662,7 @@ def create_demo(source, model_path, conv_mode, server_port):
             with gr.Column():
                 image_dropdown = gr.Dropdown(label="Select an image", choices=["Please select .."] + list(IMAGES_URLS.keys()))
                 image_input = gr.Image(label="Image", sources=[], placeholder="Please select an image from the dropdown list.")
-                image_slider = gr.Slider(label="Slice Index", minimum=0, maximum=100, step=1, value=0, visible=False)
+                image_slider = gr.Slider(0, 2, 1, 0, visible=False)
 
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
