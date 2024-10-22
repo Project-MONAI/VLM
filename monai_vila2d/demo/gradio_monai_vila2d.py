@@ -712,9 +712,9 @@ def create_demo(source, model_path, conv_mode, server_port):
 
             with gr.Column():
                 with gr.Tab("In front of the scene"):
-                    history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
+                    history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts", max_height=600)
                 with gr.Tab("Behind the scene"):
-                    history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full")
+                    history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full", max_height=600)
                 image_download = gr.DownloadButton("Download the file", visible=False)
                 clear_btn = gr.Button("Clear Conversation")
                 with gr.Row(variant="compact"):
