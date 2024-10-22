@@ -275,6 +275,7 @@ class SessionVariables:
         self.temp_working_dir = None
         self.idx_range = (None, None)
         self.interactive = False
+        self.sys_msgs_to_hide = []
 
 
 def new_session_variables(**kwargs):
@@ -422,14 +423,14 @@ class M3Generator:
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
         img_file = CACHED_IMAGES.get(sv.image_url, None)
-        sys_msgs_to_hide = []
+
         if isinstance(img_file, str):
             if "<image>" not in prompt:
                 _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
-                sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
+                sv.sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
             else:
                 _prompt = sv.sys_msg + mod_msg + prompt
-                sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
+                sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -507,7 +508,7 @@ class M3Generator:
             None,
             new_sv,
             chat_history,
-            chat_history.get_html(show_all=False, sys_msgs_to_hide=sys_msgs_to_hide),
+            chat_history.get_html(show_all=False, sys_msgs_to_hide=sv.sys_msgs_to_hide),
             chat_history.get_html(show_all=True),
         )
 
