@@ -503,6 +503,7 @@ class M3Generator:
             download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
             interactive=True,
+            sys_msgs_to_hide=sv.sys_msgs_to_hide,
         )
         return (
             None,
