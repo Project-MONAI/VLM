@@ -9,6 +9,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+The implementation of TorchXRayVision expert model is adapted from the Get-Started example in TorchXRayVision:
+https://github.com/mlmed/torchxrayvision
+"""
+
 import re
 
 import skimage.io
@@ -142,8 +147,6 @@ class ExpertTXRV(BaseExpert):
 
         # Add color channel
         img = img[None, :, :]
-
-        # transform = torchvision.transforms.Compose([])
         img = xrv.datasets.XRayCenterCrop()(img)
 
         preds_label = {

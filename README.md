@@ -45,7 +45,7 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. **GPU Memory**: Ensure that the GPU has sufficient memory to run the models:
     - **VILA-M3**: 8B: ~18GB, 13B: ~30GB
-    - **CXR**: This expert loads various TorchXRayVision models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
+    - **CXR**: This expert loads various [TorchXRayVision](https://github.com/mlmed/torchxrayvision) models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
     - **VISTA3D**: (TBD)
     - **BRATS**: (TBD)
 
@@ -80,6 +80,9 @@ For details, see [here](./monai_vila2d/README.md).
         --convmode llama_3 \
         --port 7860
     ```
+
+1. Adding your own model
+    - This is still a work in progress. Please refer to the [README](./monai_vila2d/demo/experts/README.md) for more details.
 
 ## Contributing
 
