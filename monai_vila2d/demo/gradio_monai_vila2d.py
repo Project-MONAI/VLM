@@ -79,6 +79,7 @@ EXAMPLE_PROMPTS_3D = [
     ["Segment the visceral structures in the current image."],
     ["Can you identify any liver masses or tumors?"],
     ["Segment the entire image."],
+    ["Describe the image in detail"],
 ]
 
 EXAMPLE_PROMPTS_2D = [
@@ -90,6 +91,7 @@ EXAMPLE_PROMPTS_2D = [
     ["Is there evidence of cardiomegaly in this image?"],
     ["Is the atelectasis located on the left side or right side?"],
     ["What level is the cardiomegaly?"],
+    ["Describe the image in detail"],
 ]
 
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
