@@ -64,7 +64,6 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. Set the API keys for calling the expert models:
     ```bash
-    export api_key=<your nvcf key>
     export NIM_API_KEY=<your NIM key>
     ```
 
