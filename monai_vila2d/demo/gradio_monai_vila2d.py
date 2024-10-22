@@ -271,6 +271,7 @@ class SessionVariables:
         self.temp_working_dir = None
         self.idx_range = (None, None)
         self.interactive = False
+        self.eval_mode = False
 
 
 def new_session_variables(**kwargs):
@@ -479,6 +480,9 @@ class M3Generator:
                 instruction = ""
                 download_pkg = ""
 
+            if sv.eval_mode:
+                # We don't want the include the previous model_cards and let-me-trigger reply
+                chat_history = ChatHistory()
             chat_history.append(text_output, image_path=seg_file, role="expert")
             if instruction:
                 chat_history.append(instruction, role="expert")
@@ -664,6 +668,16 @@ def download_file():
     return [gr.DownloadButton(visible=False)]
 
 
+def update_eval_checkbox(eval_mode, sv):
+    """Update the eval mode"""
+    logger.debug(f"Updating the eval mode checkbox")
+    sv.eval_mode = eval_mode
+    if eval_mode:
+        # Remove the model cards
+        sv.sys_msg = ""
+    return sv
+
+
 def create_demo(source, model_path, conv_mode, server_port):
     """Main function to create the Gradio interface"""
     generator = M3Generator(source=source, model_path=model_path, conv_mode=conv_mode)
@@ -705,6 +719,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                         value=sv.value.sys_msg,
                         lines=10,
                     )
+                    eval_checkbox = gr.Checkbox(label="Eval mode", default=sv.value.eval_mode)
 
             with gr.Column():
                 with gr.Tab("In front of the scene"):
@@ -752,6 +767,7 @@ def create_demo(source, model_path, conv_mode, server_port):
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
         sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
         sys_message_text.change(fn=update_sys_message, inputs=[sys_message_text, sv], outputs=[sv])
+        eval_checkbox.change(fn=update_eval_checkbox, inputs=[eval_checkbox, sv], outputs=[sv])
         # Reset button
         clear_btn.click(
             fn=clear_all_convs,
