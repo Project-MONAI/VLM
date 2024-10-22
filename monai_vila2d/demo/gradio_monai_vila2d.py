@@ -719,7 +719,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                         value=sv.value.sys_msg,
                         lines=10,
                     )
-                    eval_checkbox = gr.Checkbox(label="Eval mode", default=sv.value.eval_mode)
+                    eval_checkbox = gr.Checkbox(label="Eval mode", value=sv.value.eval_mode)
 
             with gr.Column():
                 with gr.Tab("In front of the scene"):
