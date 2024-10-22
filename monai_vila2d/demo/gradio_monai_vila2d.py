@@ -99,28 +99,32 @@ CACHED_DIR = tempfile.mkdtemp()
 CACHED_IMAGES = {}
 
 TITLE = """
-    <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-        <p>
-        <img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="project monai" style="width: 50%; min-width: 500px; max-width: 800px; margin: auto; display: block;">
-        </p>
-        <div
-        style="
-            display: inline-flex;
-            align-items: center;
-            gap: 0.8rem;
-            font-size: 1.75rem;
-        "
-        >
-        <h1 style="font-weight: 900; margin-bottom: 7px;">
-            MONAI Multi-Modal Medical (M3) VLM Demo
-        </h1>
-        </div>
-        <p style="margin-bottom: 10px; font-size: 94%">
-        VILA-M3 is a vision-language model for medical applications that interprets medical images and text prompts to generate relevant responses.
-        Disclaimer: AI models generate responses and outputs based on complex algorithms and machine learning techniques, and those responses or outputs may be inaccurate, harmful, biased or indecent. By testing this model, you assume the risk of any harm caused by any response or output of the model. This model is for research purposes and not for clinical usage.
-        </p>
-
+<div style="text-align: center; max-width: 800px; margin: 0 auto; padding: 20px;">
+    <p>
+        <img src="https://raw.githubusercontent.com/Project-MONAI/MONAI/dev/docs/images/MONAI-logo-color.png" alt="Project MONAI logo" 
+            style="width: 50%; max-width: 600px; min-width: 300px; margin: auto; display: block;">
+    </p>
+    
+    <h1 style="font-weight: 900; font-size: 1.5rem; margin-bottom: 10px;">
+        MONAI Multi-Modal (M3) VLM Demo
+    </h1>
+    
+    <div style="font-size: 0.95rem; text-align: left; max-width: 800px; margin: 0 auto;">
+        <span>
+            VILA-M3 is a vision-language model for medical applications that interprets medical images and text prompts to generate relevant responses.
+        </span>
+        <details style="display: inline; cursor: pointer;">
+            <summary style="display: inline; font-weight: bold;">
+                <strong>DISCLAIMER</strong>
+            </summary>
+            <span style="font-size: 0.95rem;">
+                AI models generate responses and outputs based on complex algorithms and machine learning techniques, 
+                and those responses or outputs may be inaccurate, harmful, biased, or indecent. By testing this model, you assume the risk of any 
+                harm caused by any response or output of the model. This model is for research purposes and not for clinical usage.
+            </span>
+        </details>
     </div>
+</div>
 """
 
 CSS_STYLES = (
@@ -723,9 +727,9 @@ def create_demo(source, model_path, conv_mode, server_port):
 
             with gr.Column():
                 with gr.Tab("In front of the scene"):
-                    history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts")
+                    history_text = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts", max_height=600)
                 with gr.Tab("Behind the scene"):
-                    history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full")
+                    history_text_full = gr.HTML(HTML_PLACEHOLDER, label="Previous prompts full", max_height=600)
                 image_download = gr.DownloadButton("Download the file", visible=False)
                 clear_btn = gr.Button("Clear Conversation")
                 with gr.Row(variant="compact"):

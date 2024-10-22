@@ -39,10 +39,15 @@ For details, see [here](./monai_vila2d/README.md).
     To install these, run
     ```bash
     sudo apt-get update
-    sudo apt-get install -y python3.10 python3.10-venv python3.10-dev git
+    sudo apt-get install -y wget python3.10 python3.10-venv python3.10-dev git
     ```
     NOTE: The commands are tailored for the Docker image `nvidia/cuda:12.2.2-devel-ubuntu22.04`. If using a different setup, adjust the commands accordingly.
 
+1. **GPU Memory**: Ensure that the GPU has sufficient memory to run the models:
+    - **VILA-M3**: 8B: ~18GB, 13B: ~30GB
+    - **CXR**: This expert loads various [TorchXRayVision](https://github.com/mlmed/torchxrayvision) models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
+    - **VISTA3D**: (TBD)
+    - **BRATS**: (TBD)
 
 #### Setup Environment
 
@@ -64,7 +69,6 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. Set the API keys for calling the expert models:
     ```bash
-    export api_key=<your nvcf key>
     export NIM_API_KEY=<your NIM key>
     ```
 
@@ -76,6 +80,9 @@ For details, see [here](./monai_vila2d/README.md).
         --convmode llama_3 \
         --port 7860
     ```
+
+1. Adding your own model
+    - This is still a work in progress. Please refer to the [README](./monai_vila2d/demo/experts/README.md) for more details.
 
 ## Contributing
 

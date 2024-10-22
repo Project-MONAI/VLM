@@ -9,21 +9,92 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+"""
+The implementation of TorchXRayVision expert model is adapted from the Get-Started example in TorchXRayVision:
+https://github.com/mlmed/torchxrayvision
+"""
+
 import re
 
-import requests
+import skimage.io
+import torch
+import torchxrayvision as xrv
 from experts.base_expert import BaseExpert
+
+MODEL_NAMES = [
+    "densenet121-res224-all",
+    "densenet121-res224-chex",
+    "densenet121-res224-mimic_ch",
+    "densenet121-res224-mimic_nb",
+    "densenet121-res224-nih",
+    "densenet121-res224-pc",
+    "densenet121-res224-rsna",
+    "resnet50-res512-all",
+]
+
+# Taken from https://github.com/mlmed/torchxrayvision/blob/master/torchxrayvision/models.py
+valid_labels_model = {
+    "densenet121-res224-all": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+    "densenet121-res224-chex": ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+    "densenet121-res224-mimic_ch": ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+    "densenet121-res224-mimic_nb":  ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+    "densenet121-res224-nih": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', '', '', '', ''],
+    "densenet121-res224-pc": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', '', 'Fracture', '', ''],
+    "densenet121-res224-rsna": ['', '', '', '', '', '', '', '', 'Pneumonia', '', '', '', '', '', '', '', 'Lung Opacity', ''],
+    "resnet50-res512-all": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+}
+
+
+# Copied from https://github.com/Project-MONAI/VLM/blob/b74d7e444c6604ea83846b67bb98b5172a7e5495/monai_vila2d/data_prepare/experts/torchxrayvision/torchxray_cls.py#L47-L54
+group_0 = ["resnet50-res512-all"]
+group_1 = [
+    "densenet121-res224-all",
+    "densenet121-res224-nih",
+    "densenet121-res224-chex",
+    "densenet121-res224-mimic_ch",
+    "densenet121-res224-mimic_nb",
+    "densenet121-res224-rsna",
+    "densenet121-res224-pc",
+    "resnet50-res512-all",
+]
+group_2 = [
+    "densenet121-res224-all",
+    "densenet121-res224-chex",
+    "densenet121-res224-pc",
+    "resnet50-res512-all",
+]
+group_4 = [
+    "densenet121-res224-all",
+    "densenet121-res224-nih",
+    "densenet121-res224-chex",
+    "resnet50-res512-all",
+]
+
+cls_models = {
+    "Fracture": group_4,
+    "Pneumothorax": group_0,
+    "Lung Opacity": group_1,
+    "Atelectasis": group_2,
+    "Cardiomegaly": group_2,
+    "Consolidation": group_2,
+    "Edema": group_2,
+    "Effusion": group_2,
+}
 
 
 class ExpertTXRV(BaseExpert):
     """Expert model for the TorchXRayVision model."""
 
-    NIM_CXR = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/5ac6a152-6d3f-4691-aef8-9e656557ee45"
-
     def __init__(self) -> None:
         """Initialize the CXR expert model."""
         self.model_name = "CXR"
+        self.models = {}
+        for name in MODEL_NAMES:
+            if "densenet" in name:
+                self.models[name] = xrv.models.DenseNet(weights=name).to("cuda")
+            elif "resnet" in name:
+                self.models[name] = xrv.models.ResNet(weights=name).to("cuda")
+
 
     def classification_to_string(self, outputs):
         """Format the classification outputs to a string."""
@@ -64,19 +135,43 @@ class ExpertTXRV(BaseExpert):
         Returns:
             tuple: The classification string, file path, and the next step instruction.
         """
+    
+        img = skimage.io.imread(image_url)
+        img = xrv.datasets.normalize(img, 255)
 
-        api_key = os.getenv("api_key", "Invalid")
-        if api_key == "Invalid":
-            raise ValueError("API key not found. Please set the 'api_key' environment variable.")
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "accept": "application/json",
+        # Check that images are 2D arrays
+        if len(img.shape) > 2:
+            img = img[:, :, 0]
+        elif len(img.shape) < 2:
+            raise ValueError("error, dimension lower than 2 for image")  # FIX TBD
+
+        # Add color channel
+        img = img[None, :, :]
+        img = xrv.datasets.XRayCenterCrop()(img)
+
+        preds_label = {
+            label: []
+            for label in xrv.datasets.default_pathologies
         }
-        response = requests.post(self.NIM_CXR, headers=headers, json={"image": image_url})
-        response.raise_for_status()
+
+        with torch.no_grad():
+            img = torch.from_numpy(img).unsqueeze(0).to("cuda")
+            for name, model in self.models.items():
+                preds = model(img).cpu()
+                for k, v in zip(xrv.datasets.default_pathologies, preds[0].detach().numpy()):
+                    # TODO: Exclude invalid labels, which may be different from training
+                    # if k not in valid_labels_model[name]:
+                    #     continue
+                    # skip if k is one of the 8 pre-selected classes but the model isn't in the group
+                    if k in cls_models and name not in cls_models[k]:
+                        continue
+                    preds_label[k].append(float(v))
+            output = {
+                k: float(sum(v) / len(v))
+                for k, v in preds_label.items()
+            }
         return (
-            self.classification_to_string(response.json()),
+            self.classification_to_string(output),
             None,
             "Use this result to respond to this prompt:\n" + prompt,
             "",  # no file needs to be downloaded
