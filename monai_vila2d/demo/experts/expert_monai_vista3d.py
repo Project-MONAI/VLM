@@ -12,24 +12,36 @@
 import json
 import os
 import re
-from io import BytesIO
+import sys
 from pathlib import Path
 from shutil import move
 from zipfile import ZipFile
 
-import requests
 from experts.base_expert import BaseExpert
 from experts.utils import get_monai_transforms, get_slice_filenames
+from monai.bundle import create_workflow
 
 
 class ExpertVista3D(BaseExpert):
     """Expert model for VISTA-3D."""
 
-    NIM_VISTA3D = "https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d"
-
     def __init__(self) -> None:
         """Initialize the VISTA-3D expert model."""
         self.model_name = "VISTA3D"
+        self.bundle_root = os.path.expanduser("~//.cache/torch/hub/bundle/vista3d_v0.5.4")
+        self.result_dir = "inference_results"
+        sys.path = [self.bundle_root] + sys.path
+        self.workflow = create_workflow(
+            workflow_type="infer",
+            bundle_root=self.bundle_root,
+            config_file=os.path.join(self.bundle_root, f"configs/inference.json"),
+            logging_file=os.path.join(self.bundle_root, "configs/logging.conf"),
+            meta_file=os.path.join(self.bundle_root, "configs/metadata.json"),
+            output_dtype="uint8",
+            seperate_folder = False,
+            output_ext = ".nrrd",
+            output_dir = self.result_dir,
+        )
 
     def label_id_to_name(self, label_id: int, label_dict: dict):
         """
@@ -46,38 +58,6 @@ class ExpertVista3D(BaseExpert):
                     if label_id == label_id_:
                         return label_name
         return None
-
-    def save_zipped_seg_to_file(
-        self,
-        zip_response: requests.Response,
-        output_dir: Path,
-        output_name: str = "segmentation",
-        output_ext: str = ".nrrd",
-    ):
-        """
-        Save the segmentation file from the zip response to the file.
-
-        Args:
-            zip_response: the zip response.
-            output_dir: the output directory.
-            output_name: the output name.
-            output_ext: the output extension.
-        """
-        output_dir = Path(output_dir)
-        if not output_dir.exists():
-            os.makedirs(output_dir)
-        with ZipFile(BytesIO(zip_response.content)) as zip_file:
-            zip_file.extractall(output_dir)
-
-        file_list = os.listdir(output_dir)
-        for f in file_list:
-            f = Path(f)
-            file_path = output_dir / f
-            if file_path.exists() and f.suffix == output_ext:
-                move(file_path, output_dir / f"{output_name}{output_ext}")
-                return output_dir / f"{output_name}{output_ext}"
-
-        raise FileNotFoundError(f"Segmentation file not found in {output_dir}")
 
     def segmentation_to_string(
         self,
@@ -204,23 +184,19 @@ class ExpertVista3D(BaseExpert):
         if api_key == "Invalid":
             raise ValueError(f"Expert model API key not found to trigger {self.NIM_VISTA3D}")
 
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "accept": "application/json",
-        }
 
-        payload = {"image": image_url}
+        input_data = {"image": image_url}
         if vista3d_prompts is not None:
-            payload["prompts"] = vista3d_prompts
+            input_data["prompts"] = vista3d_prompts
 
-        response = requests.post(self.NIM_VISTA3D, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise requests.exceptions.HTTPError(
-                f"Error triggering POST to {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}"
-            )
-
-        seg_file = self.save_zipped_seg_to_file(response, output_dir)
+        self.workflow.parser.ref_resolver.items["dataset"].config["data"][0] = input_data
+        self.workflow.evaluator.run()
+        output_root_dir = os.path.join(self.bundle_root, self.result_dir)
+        if not os.path.exists(output_root_dir):
+            raise ValueError("VISTA-3D model failed to run.")
+        output_file = os.listdir(output_root_dir)[0]
+        seg_file = os.path.join(output_root_dir, "segmentation.nrrd")
+        move(output_file, seg_file)
 
         text_output = self.segmentation_to_string(
             output_dir,

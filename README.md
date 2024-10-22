@@ -64,12 +64,7 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. Navigate to the demo directory:
     ```bash
-    cd demo
-    ```
-
-1. Set the API keys for calling the expert models:
-    ```bash
-    export NIM_API_KEY=<your NIM key>
+    cd monai_vila2d/demo
     ```
 
 1. Start the Gradio demo:

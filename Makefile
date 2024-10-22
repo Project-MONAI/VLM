@@ -1,9 +1,8 @@
-demo_monai_vila2d: cxr_download
+demo_monai_vila2d
 	cd thirdparty/VILA; \
 	./environment_setup.sh
 	pip install -U python-dotenv deepspeed gradio monai[nibabel,pynrrd,skimage] torchxrayvision
-
-cxr_download:
+    # Download the pre-trained models for the TorchXRayVision models
 	mkdir -p $(HOME)/.torchxrayvision/models_data/ \
     && wget https://github.com/mlmed/torchxrayvision/releases/download/v1/nih-pc-chex-mimic_ch-google-openi-kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
     -O $(HOME)/.torchxrayvision/models_data/nih-pc-chex-mimic_ch-google-openi-kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
@@ -21,3 +20,7 @@ cxr_download:
     -O $(HOME)/.torchxrayvision/models_data/kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
     && wget https://github.com/mlmed/torchxrayvision/releases/download/v1/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt \
     -O $(HOME)/.torchxrayvision/models_data/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt
+    # Download the pre-trained models for the VISTA-3D model
+    mkdir -p $(HOME)/.cache/torch/hub/bundle \
+    && python -m monai.bundle download vista3d --version 0.5.4 --bundle_dir $(HOME)/.cache/torch/hub/bundle \
+    && unzip $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4.zip -d $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4
