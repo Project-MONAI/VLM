@@ -15,7 +15,6 @@ import re
 import sys
 from pathlib import Path
 from shutil import move
-from zipfile import ZipFile
 
 from experts.base_expert import BaseExpert
 from experts.utils import get_monai_transforms, get_slice_filenames
@@ -31,16 +30,20 @@ class ExpertVista3D(BaseExpert):
         self.bundle_root = os.path.expanduser("~//.cache/torch/hub/bundle/vista3d_v0.5.4")
         self.result_dir = "inference_results"
         sys.path = [self.bundle_root] + sys.path
+        override = {
+            "dataset#data": [{}],
+            "output_dtype": "uint8",
+            "seperate_folder": False,
+            "output_ext": ".nrrd",
+            "output_dir": self.result_dir,
+        }
         self.workflow = create_workflow(
             workflow_type="infer",
             bundle_root=self.bundle_root,
             config_file=os.path.join(self.bundle_root, f"configs/inference.json"),
             logging_file=os.path.join(self.bundle_root, "configs/logging.conf"),
             meta_file=os.path.join(self.bundle_root, "configs/metadata.json"),
-            output_dtype="uint8",
-            seperate_folder = False,
-            output_ext = ".nrrd",
-            output_dir = self.result_dir,
+            **override,
         )
 
     def label_id_to_name(self, label_id: int, label_dict: dict):
