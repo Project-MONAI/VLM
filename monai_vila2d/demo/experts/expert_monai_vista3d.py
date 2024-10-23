@@ -27,7 +27,7 @@ class ExpertVista3D(BaseExpert):
     def __init__(self) -> None:
         """Initialize the VISTA-3D expert model."""
         self.model_name = "VISTA3D"
-        self.bundle_root = os.path.expanduser("~//.cache/torch/hub/bundle/vista3d_v0.5.4")
+        self.bundle_root = os.path.expanduser("~/.cache/torch/hub/bundle/vista3d_v0.5.4")
         self.result_dir = "inference_results"
         sys.path = [self.bundle_root] + sys.path
         override = {

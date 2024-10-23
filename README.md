@@ -34,7 +34,7 @@ For details, see [here](./monai_vila2d/README.md).
         ```
     - **Manual Installation (not recommended)**: Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
 
-1. **Python 3.10** and **Git**
+1. **Python 3.10** **Git** **Wget** and **Unzip**:
     
     To install these, run
     ```bash
