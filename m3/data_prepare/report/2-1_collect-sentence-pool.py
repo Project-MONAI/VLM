@@ -22,7 +22,7 @@ if not openai.api_key:
     raise ValueError("The OpenAI API key is not set. Please set it as an environment variable 'OPENAI_API_KEY'.")
 
 # Constants
-MODEL_NAME = "meta/llama-3.1-8b-instruct"
+MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
 TEXT_FILENAME = "./sentences_test_slim.txt"
 TEMPLATES_FILENAME = "./templates_sentences_test_slim.txt"
 BATCH_SIZE = 100
