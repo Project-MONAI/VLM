@@ -39,19 +39,19 @@ For details, see [here](./monai_vila2d/README.md).
     To install these, run
     ```bash
     sudo apt-get update
-    sudo apt-get install -y wget python3.10 python3.10-venv python3.10-dev git
+    sudo apt-get install -y wget python3.10 python3.10-venv python3.10-dev git unzip
     ```
     NOTE: The commands are tailored for the Docker image `nvidia/cuda:12.2.2-devel-ubuntu22.04`. If using a different setup, adjust the commands accordingly.
 
 1. **GPU Memory**: Ensure that the GPU has sufficient memory to run the models:
     - **VILA-M3**: 8B: ~18GB, 13B: ~30GB
-    - **CXR**: This expert loads various [TorchXRayVision](https://github.com/mlmed/torchxrayvision) models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
-    - **VISTA3D**: This expert model is based on the [VISTA3D](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/monaitoolkit/models/monai_vista3d). The memory requirement is roughly 12GB, and peak memory usage can be higher, depending on the input size of the 3D volume.
+    - **CXR**: This expert dynamically loads various [TorchXRayVision](https://github.com/mlmed/torchxrayvision) models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
+    - **VISTA3D**: This expert model dynamically loads the [VISTA3D](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/monaitoolkit/models/monai_vista3d) model to segment a 3D-CT volume. The memory requirement is roughly 12GB, and peak memory usage can be higher, depending on the input size of the 3D volume.
     - **BRATS**: (TBD)
 
 #### Setup Environment
 
-1. Clone the repository and set up the environment:
+1. Clone the repository, set up the environment, and download the experts' checkpoints:
     ```bash
     git clone https://github.com/Project-MONAI/VLM --recursive
     cd VLM
@@ -69,14 +69,13 @@ For details, see [here](./monai_vila2d/README.md).
 
 1. Start the Gradio demo:
     ```bash
-    cd monai_vila2d/demo
     python gradio_monai_vila2d.py  \
         --modelpath /data/checkpoints/<8B-checkpoint-name> \
         --convmode llama_3 \
         --port 7860
     ```
 
-1. Adding your own model
+1. Adding your own expert model
     - This is still a work in progress. Please refer to the [README](./monai_vila2d/demo/experts/README.md) for more details.
 
 ## Contributing

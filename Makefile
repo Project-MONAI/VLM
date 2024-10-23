@@ -18,7 +18,7 @@ demo_monai_vila2d:
     && wget https://github.com/mlmed/torchxrayvision/releases/download/v1/kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
     -O $(HOME)/.torchxrayvision/models_data/kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
     && wget https://github.com/mlmed/torchxrayvision/releases/download/v1/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt \
-    -O $(HOME)/.torchxrayvision/models_data/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt \
+    -O $(HOME)/.torchxrayvision/models_data/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt; \
 	mkdir -p $(HOME)/.cache/torch/hub/bundle \
 	&& python -m monai.bundle download vista3d --version 0.5.4 --bundle_dir $(HOME)/.cache/torch/hub/bundle \
 	&& unzip $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4.zip -d $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4
