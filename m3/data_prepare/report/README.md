@@ -43,15 +43,15 @@ Here's an example of the text before and after conversion:
 
 - **Before conversion**:
     ```text
-    The patient shows evidence of moderate cardiomegaly. There is slight haziness in the lower lung fields, likely indicating early stages of pulmonary edema. Recommend echocardiogram for further evaluation.
+    Lungs are low in volume. Congestion of the pulmonary vasculature, small bilateral pleural effusions and presence of septal lines reflects mild pulmonary edema. Consolidations in the right mid lung and retrocardiac location could reflect a concurrent pneumonia. Cardiac size is top normal with a normal cardiomediastinal silhouette.
     ```
 
 - **After conversion**:
     ```text
-    The patient has moderate enlargement of the heart. There is mild cloudiness in the lower lung regions, suggesting early pulmonary edema. An echocardiogram is recommended for further assessment.
+    The cardiac silhouette is at the upper limits of normal in size. The lungs are low in volume. There is mild pulmonary vascular congestion. No pleural effusions. No focal consolidation is seen. Consolidations in the right mid lung and retrocardiac location could reflect a concurrent pneumonia.
     ```
 
-In this example, the LLM standardizes medical terms like “cardiomegaly” to “enlargement of the heart” and simplifies other phrases like “slight haziness” to “mild cloudiness,” ensuring consistency and clarity in the text for better model training.
+In this example, the LLM standardizes sentences like “Lungs are low in volume.” to “The lungs are low in volume.” and keep sentences like “Consolidations in the right mid lung and retrocardiac location could reflect a concurrent pneumonia.” that cannot be expressed by the sentence pool.
 
 ### 3. Convert Data to VLM Model Format
 
