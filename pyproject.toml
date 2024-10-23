@@ -6,7 +6,8 @@ exclude = '''
     build
   | docs
   | setup\.py
-  | venv.*
+  | thirdparty
+  | \.venv.*
   | .*test_.*
   | \.mypy_cache
   | \.vscode
@@ -24,7 +25,8 @@ skip_glob = [
   "build/*",
   "docs/*",
   "setup.py",
-  "venv*/",
+  "thirdparty/*",
+  ".venv*/",
   "*test_*",
   "./.vscode/*",
 ]
