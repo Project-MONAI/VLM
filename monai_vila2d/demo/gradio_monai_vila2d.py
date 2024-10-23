@@ -66,9 +66,9 @@ logging.getLogger("gradio").setLevel(logging.WARNING)
 IMG_URLS_OR_PATHS = {
     "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
     "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
-    "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_ce3d3d98-bf5170fa-8e962da1-97422442-6653c48a_v1.jpg",
-    "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_fcb77615-ceca521c-c8e4d028-0d294832-b97b7d77_v1.jpg",
-    "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_6cbf5aa1-71de2d2b-96f6b460-24227d6e-6e7a7e1d_v1.jpg",
+    "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_8e067d88-2ea4ee8d-21db2c6b-f78701cb-91ad53f9_v1.jpg",
+    "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_51e9421b-c2f395da-5dd48889-7e307aca-1472d6a6_v1.jpg",
+    "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_c2af2ab3-6a11cbae-d9fa4d64-21ab221e-cf6f2146_v1.jpg",
 }
 
 SYS_MSG = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
@@ -79,6 +79,11 @@ EXAMPLE_PROMPTS_3D = [
     ["Segment the visceral structures in the current image."],
     ["Can you identify any liver masses or tumors?"],
     ["Segment the entire image."],
+    ["What's in the scan?"],
+    ["Segment the muscular structures in this image."],
+    ["Could you please isolate the cardiovascular system in this image?"],
+    ["Separate the gastrointestinal region from the surrounding tissue in this image."],
+    ["Can you assist me in segmenting the bony structures in this image?"],
     ["Describe the image in detail"],
 ]
 
@@ -108,7 +113,7 @@ TITLE = """
     </p>
     
     <h1 style="font-weight: 900; font-size: 1.5rem; margin-bottom: 10px;">
-        MONAI Multi-Modal (M3) VLM Demo
+        MONAI Multi-modal Model (M3) VLM Demo
     </h1>
     
     <div style="font-size: 0.95rem; text-align: left; max-width: 800px; margin: 0 auto;">
