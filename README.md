@@ -10,7 +10,7 @@ The repository provides a collection of vision language models, benchmarks, and 
 **VILA-M3** is a *vision language model* designed specifically for medical applications. 
 It focuses on addressing the unique challenges faced by general-purpose vision-language models when applied to the medical domain.
 
-For details, see [here](./monai_vila2d/README.md).
+For details, see [here](m3/README.md).
 
 
 ### Local Demo
@@ -57,26 +57,26 @@ For details, see [here](./monai_vila2d/README.md).
     cd VLM
     python3.10 -m venv .venv
     source .venv/bin/activate
-    make demo_monai_vila2d
+    make demo_m3
     ```
 
 #### Running the Gradio Demo
 
 1. Navigate to the demo directory:
     ```bash
-    cd monai_vila2d/demo
+    cd m3/demo
     ```
 
 1. Start the Gradio demo:
     ```bash
-    python gradio_monai_vila2d.py  \
+    python gradio_m3.py  \
         --modelpath /data/checkpoints/<8B-checkpoint-name> \
         --convmode llama_3 \
         --port 7860
     ```
 
 1. Adding your own expert model
-    - This is still a work in progress. Please refer to the [README](./monai_vila2d/demo/experts/README.md) for more details.
+    - This is still a work in progress. Please refer to the [README](m3/demo/experts/README.md) for more details.
 
 ## Contributing
 

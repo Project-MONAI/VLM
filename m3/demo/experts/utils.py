@@ -25,7 +25,7 @@ from PIL import Image
 from PIL import Image as PILImage
 from PIL.Image import Image
 
-logger = logging.getLogger("gradio_monai_vila2d")
+logger = logging.getLogger("gradio_m3")
 
 
 MODALITY_MAP = {

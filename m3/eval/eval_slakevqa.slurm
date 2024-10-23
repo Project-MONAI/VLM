@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=radvqa_eval
+#SBATCH --job-name=slakevqa_eval
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:2
 #SBATCH --time=1:00:00
@@ -40,7 +40,7 @@ export CONV_MODE=$3
 export GENERATION_CONFIG='{"max_new_tokens":1024,"do_sample":false,"temperature":0}'
 
 
-srun -o job_radvqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
+srun -o job_slakevqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
      --container-mounts=$CODE:/data/code,$DATASETS:/data/datasets,$MODEL_PATH:/data/model_path \
      --no-container-mount-home \
      --container-remap-root \
@@ -54,9 +54,9 @@ srun -o job_radvqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
 	export PYTHONPATH=/data/code/VILA_github
 	echo "PYTHONPATH is $PYTHONPATH"
 
-	DATA_PATH="/data/datasets/vnath/datasets/radvqa/radvqa_test_instruct.json"
-	IMAGE_DIR="/data/datasets/vnath/datasets/radvqa/VQA_RAD_Image_Folder"
-    OUTPUT_ROOT="/data/code/eval/$OUTPUT_FOLDER_NAME/radvqa"
+	DATA_PATH="/data/datasets/vnath/datasets/slake/slake_test_instruct.json"
+	IMAGE_DIR="/data/datasets/vnath/datasets/slake/imgs"
+    OUTPUT_ROOT="/data/code/eval/$OUTPUT_FOLDER_NAME/slakevqa"
 	OUTPUT_PATH="$OUTPUT_ROOT/outputs.jsonl"
 	RESULT_PATH="$OUTPUT_ROOT/results.json"
 
@@ -70,10 +70,10 @@ srun -o job_radvqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
             --chunk-idx 0 \
             --single-pred-prompt \
             --generation-config "$GENERATION_CONFIG" \
-            --conv-mode $CONV_MODE 
+            --conv-mode $CONV_MODE
 
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/metric_radvqa.py \
+	python /data/code/monai_vlm/m3/eval/scripts/metric_slakevqa.py \
 		--input $DATA_PATH \
 		--answers $OUTPUT_PATH \
 		--output $RESULT_PATH \

@@ -45,7 +45,7 @@ valid_labels_model = {
 }
 
 
-# Copied from https://github.com/Project-MONAI/VLM/blob/b74d7e444c6604ea83846b67bb98b5172a7e5495/monai_vila2d/data_prepare/experts/torchxrayvision/torchxray_cls.py#L47-L54
+# Copied from https://github.com/Project-MONAI/VLM/blob/b74d7e444c6604ea83846b67bb98b5172a7e5495/m3/data_prepare/experts/torchxrayvision/torchxray_cls.py#L47-L54
 group_0 = ["resnet50-res512-all"]
 group_1 = [
     "densenet121-res224-all",

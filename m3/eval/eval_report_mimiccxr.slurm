@@ -57,7 +57,7 @@ srun -o job_report_mimiccxr_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CO
     apt-get update
     apt-get install -y default-jre
     python -m pip show pycocoevalcap || python -m pip install pycocoevalcap
-    bash /data/code/monai_vlm/monai_vila2d/eval/scripts/report/replace_script.sh pycocoevalcap eval.py  /data/code/monai_vlm/monai_vila2d/eval/scripts/report/eval.py
+    bash /data/code/monai_vlm/m3/eval/scripts/report/replace_script.sh pycocoevalcap eval.py  /data/code/monai_vlm/m3/eval/scripts/report/eval.py
 
 
     cd /data/code/VILA_github  
@@ -70,56 +70,56 @@ srun -o job_report_mimiccxr_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CO
 
     mkdir -p $OUTPUT_PATH
 
-    CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+    CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_0 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE &
 
-     CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_1 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE &
 
-     CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_2 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE &            
 
-     CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_3 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE & 
 
-     CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_4 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE & 
 
-     CUDA_VISIBLE_DEVICES=5 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=5 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_5 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE & 
 
-     CUDA_VISIBLE_DEVICES=6 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=6 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_6 \
         --images-folder $IMAGE_DIR \
         --output-folder $OUTPUT_PATH \
         --conv-mode $CONV_MODE & 
 
-     CUDA_VISIBLE_DEVICES=7 python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/report_mimiccxr_infer.py \
+     CUDA_VISIBLE_DEVICES=7 python /data/code/monai_vlm/m3/eval/scripts/report/report_mimiccxr_infer.py \
         --model-path /data/model_path \
         --image-list-file /data/datasets/vlm/lists/part_7 \
         --images-folder $IMAGE_DIR \
@@ -128,7 +128,7 @@ srun -o job_report_mimiccxr_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CO
 
     wait
 
-    python /data/code/monai_vlm/monai_vila2d/eval/scripts/report/compute_metrics_caption.py \
+    python /data/code/monai_vlm/m3/eval/scripts/report/compute_metrics_caption.py \
         --gt_dir /data/datasets/vlm/vila/text_gt/test_1 \
         --pred_dir $OUTPUT_PATH \
         --output $RESULT_PATH 

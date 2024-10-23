@@ -128,7 +128,7 @@ srun -o job_mimicvqa_${OUTPUT_FOLDER_NAME}_eval.log \
     wait
 
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/mimic_vqa/metric_mimicvqa.py \
+	python /data/code/monai_vlm/m3/eval/scripts/mimic_vqa/metric_mimicvqa.py \
 	--input $GT_ROOT \
 	--answers $OUTPUT_ROOT \
 	--output $RESULT_PATH \

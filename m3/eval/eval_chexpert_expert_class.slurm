@@ -57,15 +57,15 @@ srun -o job_chexpert_expert_class_${OUTPUT_FOLDER_NAME}_eval.log --container-ima
 
 	mkdir -p $OUTPUT_PATH
 
-	CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chexpert.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chexpert.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chexpert.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chexpert.py --idx 4 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-    CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chexpert.py --idx 5 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chexpert.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chexpert.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chexpert.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chexpert.py --idx 4 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+    CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chexpert.py --idx 5 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
 
     wait
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/metric_chexpert.py --answers $OUTPUT_PATH --output $RESULT_PATH
+	python /data/code/monai_vlm/m3/eval/scripts/classification/metric_chexpert.py --answers $OUTPUT_PATH --output $RESULT_PATH
 
     '
 

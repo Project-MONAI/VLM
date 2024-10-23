@@ -1,4 +1,4 @@
-demo_monai_vila2d:
+demo_m3:
 	cd thirdparty/VILA; \
 	./environment_setup.sh
 	pip install -U python-dotenv deepspeed gradio monai[nibabel,pynrrd,skimage,fire,ignite] torchxrayvision
