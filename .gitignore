@@ -88,3 +88,6 @@ venv.bak/
 
 # Data files
 data/
+
+# Logs
+*.log

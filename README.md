@@ -46,7 +46,7 @@ For details, see [here](./monai_vila2d/README.md).
 1. **GPU Memory**: Ensure that the GPU has sufficient memory to run the models:
     - **VILA-M3**: 8B: ~18GB, 13B: ~30GB
     - **CXR**: This expert loads various [TorchXRayVision](https://github.com/mlmed/torchxrayvision) models and performs ensemble predictions. The memory requirement is roughly 1.5GB in total.
-    - **VISTA3D**: This expert model is based on the [VISTA3D](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/monaitoolkit/models/monai_vista3d).
+    - **VISTA3D**: This expert model is based on the [VISTA3D](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/monaitoolkit/models/monai_vista3d). The memory requirement is roughly 12GB, and peak memory usage can be higher, depending on the input size of the 3D volume.
     - **BRATS**: (TBD)
 
 #### Setup Environment
