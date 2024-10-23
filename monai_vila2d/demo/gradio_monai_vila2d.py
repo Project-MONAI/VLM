@@ -79,6 +79,7 @@ EXAMPLE_PROMPTS_3D = [
     ["Segment the visceral structures in the current image."],
     ["Can you identify any liver masses or tumors?"],
     ["Segment the entire image."],
+    ["Describe the image in detail"],
 ]
 
 EXAMPLE_PROMPTS_2D = [
@@ -90,6 +91,7 @@ EXAMPLE_PROMPTS_2D = [
     ["Is there evidence of cardiomegaly in this image?"],
     ["Is the atelectasis located on the left side or right side?"],
     ["What level is the cardiomegaly?"],
+    ["Describe the image in detail"],
 ]
 
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
@@ -275,6 +277,7 @@ class SessionVariables:
         self.temp_working_dir = None
         self.idx_range = (None, None)
         self.interactive = False
+        self.sys_msgs_to_hide = []
 
 
 def new_session_variables(**kwargs):
@@ -422,14 +425,14 @@ class M3Generator:
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
         img_file = CACHED_IMAGES.get(sv.image_url, None)
-        sys_msgs_to_hide = []
+
         if isinstance(img_file, str):
             if "<image>" not in prompt:
                 _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
-                sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
+                sv.sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
             else:
                 _prompt = sv.sys_msg + mod_msg + prompt
-                sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
+                sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -502,12 +505,13 @@ class M3Generator:
             download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
             interactive=True,
+            sys_msgs_to_hide=sv.sys_msgs_to_hide,
         )
         return (
             None,
             new_sv,
             chat_history,
-            chat_history.get_html(show_all=False, sys_msgs_to_hide=sys_msgs_to_hide),
+            chat_history.get_html(show_all=False, sys_msgs_to_hide=sv.sys_msgs_to_hide),
             chat_history.get_html(show_all=True),
         )
 
