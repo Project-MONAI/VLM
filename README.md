@@ -15,6 +15,10 @@ For details, see [here](m3/README.md).
 
 ### Local Demo
 
+<p align="center">
+  <img src="m3/docs/images/gradio_app_ct.png" width="95%"/>
+</p>
+
 #### Prerequisites
 
 1. **Linux Operating System**
