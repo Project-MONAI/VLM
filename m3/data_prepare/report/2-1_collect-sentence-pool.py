@@ -11,6 +11,8 @@
 
 import os
 import logging
+import json
+
 import openai
 
 logging.basicConfig(level=logging.INFO)
@@ -23,20 +25,21 @@ if not openai.api_key:
 
 # Constants
 MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
-TEXT_FILENAME = "./sentences_test_slim.txt"
-TEMPLATES_FILENAME = "./templates_sentences_test_slim.txt"
+INPUT_JSON_FILENAME = "mimic_annotation.json"
+TEMPLATES_FILENAME = "sentence-pool.txt"
 BATCH_SIZE = 100
 
 
 def load_file_lines(file_path):
     """
-    Load the lines from a file, stripping newline characters.
+    Load the sentences from the 'report' fields of the 'test' section in a JSON file.
+    The sentences will be split by period signs.
 
     Args:
-        file_path (str): Path to the file to load.
+        file_path (str): Path to the JSON file containing the reports.
 
     Returns:
-        list: A list of lines, each stripped of newline characters.
+        list: A list of sentences extracted from the reports.
 
     Raises:
         FileNotFoundError: If the file at `file_path` is not found.
@@ -44,13 +47,22 @@ def load_file_lines(file_path):
     """
     try:
         with open(file_path, "r") as file:
-            lines = file.readlines()
-        return [line.strip() for line in lines]
+            data = json.load(file)
+            sentences = []
+
+            # Extract reports from the 'test' section
+            for item in data.get("test", []):
+                report = item.get("report", "")
+
+                # Split the report into sentences based on periods
+                sentences.extend([sentence.strip() for sentence in report.split(".") if sentence.strip()])
+
+            return sentences
     except FileNotFoundError:
         logger.error(f"File not found: {file_path}")
         raise
     except Exception as e:
-        logger.error(f"Error reading file {file_path}: {e}")
+        logger.error(f"Error reading or parsing JSON file {file_path}: {e}")
         raise
 
 
@@ -125,26 +137,26 @@ def save_template(new_template, output_path):
 
 def main():
     """
-    Main function to load data, call the OpenAI API, and save the processed templates.
+    Main function to load data, call the OpenAI API, and save processed templates.
 
-    The function loads sentences from a file, splits them into chunks, processes them with the OpenAI API,
-    and then saves the processed templates back to a file. Templates are loaded if present, and API results
-    are logged during the process.
+    The function loads sentences from the JSON file, splits them into chunks, processes them with the OpenAI API,
+    and then saves the processed templates back to a file.
     """
     try:
-        lines = load_file_lines(TEXT_FILENAME)
+        # Load sentences from the JSON file
+        sentences = load_file_lines(INPUT_JSON_FILENAME)
 
-        # Load templates if the file exists
+        # Initialize an empty templates string (for now, not loading any existing templates)
         templates = ""
-        if os.path.exists(TEMPLATES_FILENAME):
-            templates = load_file_lines(TEMPLATES_FILENAME)
 
-        for i in range(0, len(lines), BATCH_SIZE):
-            chunk = lines[i : i + BATCH_SIZE]
-            logger.info(f"Processing chunk {i // BATCH_SIZE + 1} of {len(lines) // BATCH_SIZE + 1}")
+        for i in range(0, len(sentences), BATCH_SIZE):
+            chunk = sentences[i : i + BATCH_SIZE]
+            logger.info(f"Processing chunk {i // BATCH_SIZE + 1} of {len(sentences) // BATCH_SIZE + 1}")
 
             new_template = make_api_call(chunk, templates)
             save_template(new_template, TEMPLATES_FILENAME)
+
+            templates = new_template
 
     except Exception as e:
         logger.error(f"An error occurred during execution: {e}")

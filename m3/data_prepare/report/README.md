@@ -22,9 +22,7 @@ In medical AI applications, particularly for **medical report generation**, prep
 
 ### 1. Download Datasets
 
-In the first step, the script will download the required medical datasets. This includes images (e.g., X-rays, MRIs) and their corresponding textual reports (e.g., diagnosis, findings). The dataset is vital for training the VLM model to accurately generate medical reports from image inputs.
-
-The generation of medical reports is grounded in the MIMIC-CXR-JPG database, specializing in chest X-ray imaging.
+We are utilizing the MIMIC Chest X-ray JPG ([MIMIC-CXR-JPG](https://physionet.org/content/mimic-cxr-jpg/2.1.0/)) Database v2.0.0 for the task of medical report generation. This publicly available dataset includes 377,110 chest radiograph images in JPG format, along with structured labels derived from 227,827 free-text radiology reports. Derived from MIMIC-CXR, it provides a processed version of the original DICOM images, with standardized data splits and image labels. The dataset is de-identified in accordance with HIPAA Safe Harbor requirements, ensuring the removal of protected health information (PHI), and is designed to facilitate research in medical image analysis, natural language processing, and decision support.
 To refine the quality of the reports and eliminate noise, we utilize an enhanced text version developed by [DCL](https://github.com/mlii0117/DCL), and subsequently apply additional cleansing procedures to further optimize report accuracy.
 
 ### 2. Convert Text Using LLM
@@ -35,9 +33,17 @@ This step involves two sub-steps where the LLM helps in processing the textual r
 
 Before performing the text conversion, the LLM will be used to analyze the dataset and collect a sample pool of sentences. This pool will consist of commonly occurring phrases or structures found in the medical reports. These standardized phrases guide the text transformation process to ensure consistent input for report generation.
 
+```bash
+python 2-1_collect-sentence-pool.py
+```
+
 #### 2.2 Use LLM and Sentence Pool to Convert Text
 
 In this step, the LLM uses the previously collected sample sentence pool to convert the original medical report text into a standardized format. The LLM will replace or reformat certain sentences and medical terminology to ensure the text is uniform and ready for training the VLM model to generate reliable and coherent medical reports.
+
+```bash
+python 2-2_convert-text.py
+```
 
 Here's an example of the text before and after conversion:
 
@@ -56,3 +62,7 @@ In this example, the LLM standardizes sentences like “Lungs are low in volume.
 ### 3. Convert Data to VLM Model Format
 
 Finally, the processed text and images are converted into a specific format required for the VLM model. This ensures the data is correctly aligned with the model’s input requirements, allowing the model to generate accurate and high-quality medical reports from the prepared data.
+
+```bash
+python 3_convert-data-format.py
+```

@@ -13,6 +13,7 @@ import base64
 import os
 import pickle
 import logging
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -67,83 +68,71 @@ def save_dataset(dataset_type, dataset_name, save_path, data):
         raise
 
 
-def load_file_paths(list_filepath):
+def process_data(image_dir, text_dir, output_dir, annotation_file):
     """
-    Load file paths from the provided list file.
-
-    Args:
-        list_filepath (str): Path to the list file containing file names.
-
-    Returns:
-        list: List of file paths.
-    """
-    try:
-        with open(list_filepath, "r") as file:
-            filepaths = file.readlines()
-        return [path.strip() for path in filepaths]
-    except FileNotFoundError:
-        logger.error(f"List file not found: {list_filepath}")
-        raise
-    except Exception as e:
-        logger.error(f"Error reading list file {list_filepath}: {e}")
-        raise
-
-
-def main(image_dir, text_dir, output_dir, list_filepath):
-    """
-    Main function to process images and corresponding reports and save them in a dataset.
+    Process the images and corresponding reports and save them in a dataset.
 
     Args:
         image_dir (str): Directory containing the images.
         text_dir (str): Directory containing the reference reports.
         output_dir (str): Directory to save the processed dataset.
-        list_filepath (str): Path to the list file containing image and report filenames.
+        annotation_file (str): Path to the mimic_annotation.json file.
     """
-    # Load the file paths
+    # Load the JSON annotation file
     try:
-        filepaths = load_file_paths(list_filepath)
+        with open(annotation_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        logger.error(f"Annotation file not found: {annotation_file}")
+        return
     except Exception as e:
-        logger.error(f"Failed to load file paths: {e}")
+        logger.error(f"Error reading annotation file {annotation_file}: {e}")
         return
 
-    num_cases = len(filepaths)
+    # Only process the "train" section of the data
+    train_data = data.get("train", [])
+    num_cases = len(train_data)
     data_dict = []
 
-    for _i, file_name in enumerate(filepaths):
-        logger.info(f"Processing {_i + 1}/{num_cases}: {file_name}")
+    for _i, item in enumerate(train_data):
+        logger.info(f"Processing {_i + 1}/{num_cases}: {item['id']}")
 
-        image_filepath = os.path.join(image_dir, file_name.replace(".txt", ""))
-        text_filepath = os.path.join(text_dir, file_name)
+        report = item.get("report", "")
+        image_paths = item.get("image_path", [])
 
-        # Check if the image file exists
-        if not os.path.exists(image_filepath):
-            logger.warning(f"Image file not found, skipping: {image_filepath}")
-            continue
+        # Process each image in the "image_path" list
+        for image_path in image_paths:
+            # Construct the full image path
+            full_image_path = os.path.join(image_dir, image_path)
 
-        # Encode image to base64
-        image_base64_str = encode_image_to_base64(image_filepath)
-        if image_base64_str is None:
-            logger.warning(f"Failed to encode image, skipping: {image_filepath}")
-            continue
+            # Encode image to base64
+            image_base64_str = encode_image_to_base64(full_image_path)
+            if image_base64_str is None:
+                logger.warning(f"Failed to encode image, skipping: {full_image_path}")
+                continue
 
-        # Read the corresponding text report
-        try:
-            with open(text_filepath, "r") as file:
-                reference_report = file.read()
-        except FileNotFoundError:
-            logger.error(f"Text file not found: {text_filepath}")
-            continue
-        except Exception as e:
-            logger.error(f"Error reading text file {text_filepath}: {e}")
-            continue
+            # Construct the corresponding text file path (replacing ".jpg" with ".txt")
+            text_filename = os.path.basename(image_path).replace(".jpg", ".txt")
+            full_text_path = os.path.join(text_dir, text_filename)
 
-        # Create a data entry
-        data_entry = {
-            "question": "Describe the image in detail.",
-            "image": [image_base64_str],
-            "answer": reference_report,
-        }
-        data_dict.append(data_entry)
+            # Read the corresponding text report
+            try:
+                with open(full_text_path, "r") as file:
+                    reference_report = file.read()
+            except FileNotFoundError:
+                logger.error(f"Text file not found: {full_text_path}")
+                continue
+            except Exception as e:
+                logger.error(f"Error reading text file {full_text_path}: {e}")
+                continue
+
+            # Create a data entry
+            data_entry = {
+                "question": "Describe the image in detail.",
+                "image": [image_base64_str],
+                "answer": reference_report,
+            }
+            data_dict.append(data_entry)
 
     # Save the processed dataset
     try:
@@ -153,14 +142,14 @@ def main(image_dir, text_dir, output_dir, list_filepath):
 
 
 if __name__ == "__main__":
-    IMAGE_DIR = "./images"
-    TEXT_DIR = "./text_gt"
-    OUTPUT_DIR = "./gt"
-    LIST_FILEPATH = "./list.txt"
+    IMAGE_DIR = "/path/to/images"  # Image directory
+    TEXT_DIR = "./report_new"  # Text directory
+    OUTPUT_DIR = "./gt"  # Output directory
+    INPUT_JSON_FILENAME = "mimic_annotation.json"  # Path to mimic_annotation.json
 
     # Ensure the output directory exists
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
     # Run the main processing function
-    main(IMAGE_DIR, TEXT_DIR, OUTPUT_DIR, LIST_FILEPATH)
+    process_data(IMAGE_DIR, TEXT_DIR, OUTPUT_DIR, INPUT_JSON_FILENAME)

@@ -10,10 +10,10 @@
 # limitations under the License.
 
 import os
-import sys
-import random
 import logging
+import json
 import openai
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,9 +26,34 @@ if not openai.api_key:
 
 # Constants
 MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
-INPUT_DIR = "/workspace/vlm/text_gt/dcl/train_1"
-OUTPUT_DIR = "/workspace/vlm/text_gt/dcl/train_1_update"
-TEMPLATES_FILENAME = "./templates_sentences_test_slim.txt"
+INPUT_JSON_FILENAME = "mimic_annotation.json"
+OUTPUT_DIR = "./report_new"
+TEMPLATES_FILENAME = "sentence-pool.txt"
+
+
+def load_json_data(file_path):
+    """
+    Load data from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file.
+
+    Returns:
+        dict: The parsed JSON content.
+
+    Raises:
+        FileNotFoundError: If the file at `file_path` is not found.
+        Exception: For any other error encountered while reading the file.
+    """
+    try:
+        with open(file_path, "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        logger.error(f"File not found: {file_path}")
+        raise
+    except Exception as e:
+        logger.error(f"Error reading or parsing JSON file {file_path}: {e}")
+        raise
 
 
 def load_templates(file_path):
@@ -74,42 +99,34 @@ def initialize_output_directory(output_dir):
         raise
 
 
-def process_files(filenames, templates, output_dir):
+def process_files(data, templates, output_dir):
     """
-    Process each file in the provided list of filenames and call the OpenAI API.
+    Process all files found under the "train" and "test" keys in the JSON file,
+    retrieve the reports, generate new reports using OpenAI API, and save the results.
 
     Args:
-        filenames (list): A list of filenames to process.
+        data (dict): The loaded JSON data.
         templates (str): The template content to be used for generating reports.
         output_dir (str): The directory where the processed files will be saved.
 
     Raises:
-        Exception: If there are issues reading files or calling the OpenAI API.
+        Exception: If there are issues calling the OpenAI API or saving files.
     """
-    for _i, filename in enumerate(filenames):
-        # Skip files based on the command-line arguments
-        if _i % int(sys.argv[2]) != int(sys.argv[1]):
-            continue
+    # Process both "train" and "test" sets
+    for split in ["train", "test"]:
+        for item in data.get(split, []):
+            report = item.get("report", "")
+            image_paths = item.get("image_path", [])
 
-        logger.info(f"Processing file {_i + 1}/{len(filenames)}: {filename}")
+            # Generate new report
+            new_report = generate_new_report(templates, report)
 
-        output_path = os.path.join(output_dir, filename)
-        if os.path.exists(output_path):
-            logger.info(f"File already processed: {output_path}")
-            continue
-
-        try:
-            with open(os.path.join(INPUT_DIR, filename), "r") as file:
-                report = file.read()
-        except FileNotFoundError:
-            logger.error(f"File not found: {filename}")
-            continue
-        except Exception as e:
-            logger.error(f"Error reading file {filename}: {e}")
-            continue
-
-        new_report = generate_new_report(templates, report)
-        save_report(new_report, output_path)
+            # Save each report with a new filename derived from the image_path
+            for image_path in image_paths:
+                # Extract the basename of the .jpg file and replace .jpg with .txt
+                filename = os.path.basename(image_path).replace(".jpg", ".txt")
+                output_path = os.path.join(output_dir, filename)
+                save_report(new_report, output_path)
 
 
 def generate_new_report(templates, report):
@@ -174,25 +191,24 @@ def save_report(new_report, output_path):
 
 def main():
     """
-    Main function to load templates, shuffle file names, and process the files.
+    Main function to load JSON data, templates, and process the files.
 
-    This function orchestrates the steps of loading template content, shuffling the list of
-    files to be processed, and calling functions to process each file using the OpenAI API. The
-    results are saved to the output directory.
+    This function orchestrates the steps of loading the JSON content, processing each item
+    in both "train" and "test" sets, generating new reports using the OpenAI API, and saving the
+    results in the output directory.
     """
     try:
+        # Load JSON data
+        data = load_json_data(INPUT_JSON_FILENAME)
+
         # Load templates
         templates = load_templates(TEMPLATES_FILENAME)
-
-        # Shuffle file names
-        filenames = os.listdir(INPUT_DIR)
-        random.shuffle(filenames)
 
         # Create output directory
         initialize_output_directory(OUTPUT_DIR)
 
         # Process files
-        process_files(filenames, templates, OUTPUT_DIR)
+        process_files(data, templates, OUTPUT_DIR)
 
     except Exception as e:
         logger.error(f"An error occurred during execution: {e}")
