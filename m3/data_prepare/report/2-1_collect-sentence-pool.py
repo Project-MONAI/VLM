@@ -25,6 +25,10 @@ if not openai.api_key:
 
 # Constants
 MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
+# model names are from the following URL:
+#     https://build.nvidia.com/meta/llama-3_1-8b-instruct
+#     https://build.nvidia.com/meta/llama-3_1-70b-instruct
+
 INPUT_JSON_FILENAME = "mimic_annotation.json"
 TEMPLATES_FILENAME = "sentence-pool.txt"
 BATCH_SIZE = 100

@@ -32,7 +32,10 @@ We are utilizing large language models (LLMs), such as Llama 3.1, to process our
 
 #### 2.1 Collect a Sample Sentence Pool
 
-Before performing the text conversion, the LLM will be used to analyze the dataset and collect a sample pool of sentences. This pool will consist of commonly occurring phrases or structures found in the medical reports. These standardized phrases guide the text transformation process to ensure consistent input for report generation.
+Before performing the text conversion, the LLM will be used to analyze the dataset and collect a sample pool of sentences.
+This pool will consist of commonly occurring phrases or structures found in the medical reports.
+These standardized phrases guide the text transformation process to ensure consistent input for report generation.
+An example of the sentence pool is shown in the file `sentence-pool.txt`.
 
 ```bash
 python 2-1_collect-sentence-pool.py
