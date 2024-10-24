@@ -43,35 +43,61 @@ The resulting expert model output will be fed back to the VLM for generating the
 ## Performance
 
 ### VQA Benchmarks
-|                   | Average |
-|-------------------|---------|
-| VILA-M3-3B        |         |
-| Llama3-VILA-M3-8B |         |
-| VILA-M3-13B       |         |
+|     Model                 |     Type             | VQA-RAD*  | SLAKE-VQA | Path-VQA | Average  |
+|---------------------------|----------------------|-----------|-----------|----------|----------|
+|     Llava-Med             |     Task-specific    | *84.2*    | *86.8*    | *91.7*   | *87.6*   |
+|     Med-Gemini-1.5T       |     Generalist       | 78.8      | **84.8**  | 83.3     | 82.3     |
+|     Llama3-VILA-M3-3B     |     Generalist       | 78.2      | 79.8      | 87.9     | 82.0     |
+|     Llama3-VILA-M3-8B     |     Generalist       | **84.5**  | 84.5      | 90.0     | **86.3** |
+|     Llama3-VILA-M3-13B    |     Generalist       | 80.5      | 83.2      | **91.0** | 84.9     |
+
+*Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Report Generation Benchmarks
-|                   | Average |
-|-------------------|---------|
-| VILA-M3-3B        |         |
-| Llama3-VILA-M3-8B |         |
-| VILA-M3-13B       |         |
+|     Model                 |     Type             | BLUE-4*  | ROUGE*   | GREEN*   |
+|---------------------------|----------------------|----------|----------|----------|
+|     Llava-Med             |     Task-specific    | *1.0*    | *13.3*   | -        |
+|     Med-Gemini-1.5T       |     Generalist       | 20.5     | 28.3     | -        |
+|     Llama3-VILA-M3-3B     |     Generalist       | 20.2     | 31.7     | 39.4     |
+|     Llama3-VILA-M3-8B     |     Generalist       | 21.5     | **32.3** | 40.0     |
+|     Llama3-VILA-M3-13B    |     Generalist       | **21.6** | 32.1     | 39.3     |
+
+*Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Classification Benchmarks
-|                   | Average |
-|-------------------|---------|
-| VILA-M3-3B        |         |
-| Llama3-VILA-M3-8B |         |
-| VILA-M3-13B       |         |
-
+| Expert info               | w/o          | w/o        | with         | with       |
+|---------------------------|--------------|------------|--------------|------------|
+|     Model                 | ChestX-ray14 | CheXpert   | ChestX-ray14 | CheXpert   |
+|     Med-Gemini-1.5T       | 46.7         | 48.3       | -            | -          |
+|     TorchXRayVision       | -            | -          | 50           | 51.5       |
+|     Llama3-VILA-M3-3B     | 48.4         | 57.4       | **51.3**     | 60.8       |
+|     Llama3-VILA-M3-8B     | 45.9         | **61.4**   | 50.7         | 60.4       |
+|     Llama3-VILA-M3-13B    | **49.9**     | 55.8       | 51.2         | **61.5**   |
 
 ## Demo
-An interactive demo is provided in ...
+For and interactive demo, please access here.
+The code to run the demo locally is described [here](../README.md#local-demo).
 
 ## Data preparation
 To prepare the datasets for training and evaluation, follow the instructions in [data_prepare](./data_prepare).
 
 ## Training
 To replicate our fine-tuning procedure, utilize the provided scripts.
+
+For our released checkpoints, we use a slurm cluster environment.
+- VILA training code with Torch distributed
+- 4 nodes with 8xA100 GPUs (80 GB each)
+- Cosine learning rate decay with warmup
+
+<p align="left">
+  <img src="docs/images/training.png" width="50%"/>
+</p>
+
+|     # Parameters    |     Training time    |
+|---------------------|----------------------|
+|     3 billion       |     5.5 hours        |
+|     8 billion       |     11.0 hours       |
+|     13 billion      |     19.5 hours       |
 
 ## Evaluation
 To evaluate a model on the above benchmarks, follow the instructions in [eval](./eval/README.md)
