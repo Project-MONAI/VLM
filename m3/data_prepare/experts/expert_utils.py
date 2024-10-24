@@ -72,3 +72,32 @@ def add_expert_conversation(conv, preds):
     new_conv.extend(conv[1::])
 
     return new_conv
+
+
+def add_brats_expert_conversation(conv, trigger="This looks like an MRI image sequence. Let me first trigger <BRATS()>."):
+    """Adds expert conversation to the conversation."""
+    # Keep first question
+    assert conv[0]["from"] == "human"
+    first_prompt = conv[0]["value"]
+
+    new_conv = list()
+    first_prompt = first_prompt.replace("\n<image>", "")
+    first_prompt = first_prompt.replace("<image>", "")
+    new_conv.append(
+        {
+            "from": "human",
+            "value": model_list
+            + f"T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> These are different MRI modalities.\n"
+            + first_prompt,
+        }
+    )
+    new_conv.append({"from": "gpt", "value": trigger})
+    new_conv.append(
+        {
+            "from": "human",
+            "value": f"The results are <segmentation>. The colors in this image describe\nyellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor\nUse this result to respond to this prompt:\n{first_prompt}.",
+        }
+    )
+    new_conv.extend(conv[1::])
+
+    return new_conv

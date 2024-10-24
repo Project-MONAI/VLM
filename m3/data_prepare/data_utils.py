@@ -33,7 +33,7 @@ colors = (
 )
 
 
-def read_txt(filename):
+def read_txt(filename, ignore_newline=True):
     """Reads a text file and returns a list of lines."""
     assert ".txt" in filename
     with open(filename, "r") as f:

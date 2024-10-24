@@ -34,14 +34,166 @@ MODEL_NAMES = [
 
 # Taken from https://github.com/mlmed/torchxrayvision/blob/master/torchxrayvision/models.py
 valid_labels_model = {
-    "densenet121-res224-all": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
-    "densenet121-res224-chex": ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
-    "densenet121-res224-mimic_ch": ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
-    "densenet121-res224-mimic_nb":  ['Atelectasis', 'Consolidation', '', 'Pneumothorax', 'Edema', '', '', 'Effusion', 'Pneumonia', '', 'Cardiomegaly', '', '', '', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
-    "densenet121-res224-nih": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', '', '', '', ''],
-    "densenet121-res224-pc": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', '', 'Fracture', '', ''],
-    "densenet121-res224-rsna": ['', '', '', '', '', '', '', '', 'Pneumonia', '', '', '', '', '', '', '', 'Lung Opacity', ''],
-    "resnet50-res512-all": ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'Lung Lesion', 'Fracture', 'Lung Opacity', 'Enlarged Cardiomediastinum'],
+    "densenet121-res224-all": [
+        "Atelectasis",
+        "Consolidation",
+        "Infiltration",
+        "Pneumothorax",
+        "Edema",
+        "Emphysema",
+        "Fibrosis",
+        "Effusion",
+        "Pneumonia",
+        "Pleural_Thickening",
+        "Cardiomegaly",
+        "Nodule",
+        "Mass",
+        "Hernia",
+        "Lung Lesion",
+        "Fracture",
+        "Lung Opacity",
+        "Enlarged Cardiomediastinum",
+    ],
+    "densenet121-res224-chex": [
+        "Atelectasis",
+        "Consolidation",
+        "",
+        "Pneumothorax",
+        "Edema",
+        "",
+        "",
+        "Effusion",
+        "Pneumonia",
+        "",
+        "Cardiomegaly",
+        "",
+        "",
+        "",
+        "Lung Lesion",
+        "Fracture",
+        "Lung Opacity",
+        "Enlarged Cardiomediastinum",
+    ],
+    "densenet121-res224-mimic_ch": [
+        "Atelectasis",
+        "Consolidation",
+        "",
+        "Pneumothorax",
+        "Edema",
+        "",
+        "",
+        "Effusion",
+        "Pneumonia",
+        "",
+        "Cardiomegaly",
+        "",
+        "",
+        "",
+        "Lung Lesion",
+        "Fracture",
+        "Lung Opacity",
+        "Enlarged Cardiomediastinum",
+    ],
+    "densenet121-res224-mimic_nb": [
+        "Atelectasis",
+        "Consolidation",
+        "",
+        "Pneumothorax",
+        "Edema",
+        "",
+        "",
+        "Effusion",
+        "Pneumonia",
+        "",
+        "Cardiomegaly",
+        "",
+        "",
+        "",
+        "Lung Lesion",
+        "Fracture",
+        "Lung Opacity",
+        "Enlarged Cardiomediastinum",
+    ],
+    "densenet121-res224-nih": [
+        "Atelectasis",
+        "Consolidation",
+        "Infiltration",
+        "Pneumothorax",
+        "Edema",
+        "Emphysema",
+        "Fibrosis",
+        "Effusion",
+        "Pneumonia",
+        "Pleural_Thickening",
+        "Cardiomegaly",
+        "Nodule",
+        "Mass",
+        "Hernia",
+        "",
+        "",
+        "",
+        "",
+    ],
+    "densenet121-res224-pc": [
+        "Atelectasis",
+        "Consolidation",
+        "Infiltration",
+        "Pneumothorax",
+        "Edema",
+        "Emphysema",
+        "Fibrosis",
+        "Effusion",
+        "Pneumonia",
+        "Pleural_Thickening",
+        "Cardiomegaly",
+        "Nodule",
+        "Mass",
+        "Hernia",
+        "",
+        "Fracture",
+        "",
+        "",
+    ],
+    "densenet121-res224-rsna": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Pneumonia",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Lung Opacity",
+        "",
+    ],
+    "resnet50-res512-all": [
+        "Atelectasis",
+        "Consolidation",
+        "Infiltration",
+        "Pneumothorax",
+        "Edema",
+        "Emphysema",
+        "Fibrosis",
+        "Effusion",
+        "Pneumonia",
+        "Pleural_Thickening",
+        "Cardiomegaly",
+        "Nodule",
+        "Mass",
+        "Hernia",
+        "Lung Lesion",
+        "Fracture",
+        "Lung Opacity",
+        "Enlarged Cardiomediastinum",
+    ],
 }
 
 
@@ -95,7 +247,6 @@ class ExpertTXRV(BaseExpert):
             elif "resnet" in name:
                 self.models[name] = xrv.models.ResNet(weights=name).to("cuda")
 
-
     def classification_to_string(self, outputs):
         """Format the classification outputs to a string."""
 
@@ -135,7 +286,7 @@ class ExpertTXRV(BaseExpert):
         Returns:
             tuple: The classification string, file path, and the next step instruction.
         """
-    
+
         img = skimage.io.imread(image_url)
         img = xrv.datasets.normalize(img, 255)
 
@@ -149,10 +300,7 @@ class ExpertTXRV(BaseExpert):
         img = img[None, :, :]
         img = xrv.datasets.XRayCenterCrop()(img)
 
-        preds_label = {
-            label: []
-            for label in xrv.datasets.default_pathologies
-        }
+        preds_label = {label: [] for label in xrv.datasets.default_pathologies}
 
         with torch.no_grad():
             img = torch.from_numpy(img).unsqueeze(0).to("cuda")
@@ -166,10 +314,7 @@ class ExpertTXRV(BaseExpert):
                     if k in cls_models and name not in cls_models[k]:
                         continue
                     preds_label[k].append(float(v))
-            output = {
-                k: float(sum(v) / len(v))
-                for k, v in preds_label.items()
-            }
+            output = {k: float(sum(v) / len(v)) for k, v in preds_label.items()}
         return (
             self.classification_to_string(output),
             None,

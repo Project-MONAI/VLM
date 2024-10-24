@@ -118,3 +118,4 @@ TBD
 - Our models are fine-tuned using [VILA code and base models](https://github.com/NVlabs/VILA).
 - We thank the data providers of all the healthcare datasets detailed in [data_prepare](./data_prepare).
 - The `Medical-Diff-VQA` data preparation and evaluation scripts were contributed by the authors of the [D-RAX paper](https://arxiv.org/abs/2407.02604).
+- We thank the developers of expert models used for training and evaluating VILA-M3: [TorchXRayVision](https://github.com/mlmed/torchxrayvision) and models from the [MONAI Model Zoo](https://monai.io/model-zoo.html).
