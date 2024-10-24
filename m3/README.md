@@ -34,6 +34,12 @@ The resulting expert model output will be fed back to the VLM for generating the
   <img src="docs/images/MONAI-VLM_Overview.svg" width="95%"/>
 </p>
 
+Model cards that describe available expert models for VILA-M3 to choose from are structured in the following way
+<p align="left">
+  <img src="docs/images/model_cards.png" width="60%"/>
+</p>
+
+For an example, see the [code](./data_prepare/experts/expert_utils.py) used for generating [training data](./data_prepare/experts/README.md).
 
 ## 💡 News
 
@@ -105,7 +111,7 @@ To evaluate a model on the above benchmarks, follow the instructions in [eval](.
 ## 🔒 License
 
 - The code in this repository is released under [Apache 2.0 license](../LICENSE).
-- The fine-tuned weights are released under the [CC-BY-NC-SA-4.0 license](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en).
+- The fine-tuned weights are released under ... (TBD)
 
 ## Citations
 
@@ -113,7 +119,7 @@ To evaluate a model on the above benchmarks, follow the instructions in [eval](.
 TBD
 ```
 
-# Acknowledgement
+# Acknowledgements
 
 - Our models are fine-tuned using [VILA code and base models](https://github.com/NVlabs/VILA).
 - We thank the data providers of all the healthcare datasets detailed in [data_prepare](./data_prepare).
