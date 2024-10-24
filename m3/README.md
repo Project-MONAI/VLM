@@ -50,15 +50,17 @@ The resulting expert model output will be fed back to the VLM for generating the
 |     Llama3-VILA-M3-3B     |     Generalist       | 78.2      | 79.8      | 87.9     | 82.0     |
 |     Llama3-VILA-M3-8B     |     Generalist       | **84.5**  | 84.5      | 90.0     | **86.3** |
 |     Llama3-VILA-M3-13B    |     Generalist       | 80.5      | 83.2      | **91.0** | 84.9     |
+*Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Report Generation Benchmarks
-|     Model                 |     Type             | BLUE-4*  | ROUGE*   |
-|---------------------------|----------------------|----------|----------|
-|     Llava-Med             |     Task-specific    | *1.0*    | *13.3*   |
-|     Med-Gemini-1.5T       |     Generalist       | 20.5     | 28.3     |
-|     Llama3-VILA-M3-3B     |     Generalist       | 20.2     | 31.7     |
-|     Llama3-VILA-M3-8B     |     Generalist       | 21.5     | **32.3** |
-|     Llama3-VILA-M3-13B    |     Generalist       | **21.6** | 32.1     |
+|     Model                 |     Type             | BLUE-4*  | ROUGE*   | GREEN*   |
+|---------------------------|----------------------|----------|----------|----------|
+|     Llava-Med             |     Task-specific    | *1.0*    | *13.3*   | -        |
+|     Med-Gemini-1.5T       |     Generalist       | 20.5     | 28.3     | -        |
+|     Llama3-VILA-M3-3B     |     Generalist       | 20.2     | 31.7     | 39.4     |
+|     Llama3-VILA-M3-8B     |     Generalist       | 21.5     | **32.3** | 40.0     |
+|     Llama3-VILA-M3-13B    |     Generalist       | **21.6** | 32.1     | 39.3     |
+*Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Classification Benchmarks
 | Expert info               | w/o          | w/o        | with         | with       |
@@ -69,7 +71,6 @@ The resulting expert model output will be fed back to the VLM for generating the
 |     Llama3-VILA-M3-3B     | 48.4         | 57.4       | **51.3**     | 60.8       |
 |     Llama3-VILA-M3-8B     | 45.9         | **61.4**   | 50.7         | 60.4       |
 |     Llama3-VILA-M3-13B    | **49.9**     | 55.8       | 51.2         | **61.5**   |
-
 
 ## Demo
 For and interactive demo, please access here.
