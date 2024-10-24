@@ -22,7 +22,7 @@ from llava.model.builder import load_pretrained_model
 from monai.bundle.config_parser import ConfigParser
 from monai.utils import look_up_option
 from prompts import has_placeholder, replace, templates
-from run_vila import eval_model
+from run_vila import eval_model, eval_text_model
 from torchxray_cls import all_models, cls_models
 
 cls = {1: "atelectasis", 2: "cardiomegaly", 3: "consolidation", 4: "edema", 5: "pleural effusion"}
@@ -41,7 +41,7 @@ def batch_run(exp_id, mpath, conv_mode, folder_name, p_mode="binary"):
         if not has_placeholder(prompt, "<choices>"):
             warnings.warn("Prompt template does not contain <choices> placeholder", stacklevel=2)
         prompt = replace(prompt, "<choices>", choices)
-    elif p_mode == "binary" or p_mode == "binary_conv":  # using class specific binary prompts
+    elif p_mode in ("binary", "binary_conv", "text_only"):  # using class specific binary prompts
         out_csv = os.path.join(f"{folder_name}", f"test_vila_chexpert_{cls[exp_id].lower().replace(' ', '_')}.csv")
         if not has_placeholder(prompt, "<class_name>"):
             warnings.warn("Prompt template does not contain <class_name> placeholder", stacklevel=2)
@@ -110,7 +110,10 @@ def batch_run(exp_id, mpath, conv_mode, folder_name, p_mode="binary"):
         vlm_args.conv = conv
 
         vlm_args.image_file = os.path.join(image_base_dir, fname, "view1_frontal.jpg")
-        res = eval_model(vlm_args)
+        if p_mode != "text_only":
+            res = eval_model(vlm_args)
+        else:
+            res = eval_text_model(vlm_args)
         if res is None:
             res = ""
         res = res.replace(",", ".").replace("\n", ". ")  # comma is reserved for csv

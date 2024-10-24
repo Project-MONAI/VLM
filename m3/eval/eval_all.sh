@@ -36,6 +36,7 @@ sbatch eval_pathvqa.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE
 sbatch eval_mimicvqa.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 
 
 sbatch eval_report_mimiccxr.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 
+sbatch eval_report_mimiccxr_expert.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 
 
 sbatch eval_chestxray14_class.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 
 sbatch eval_chexpert_class.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 

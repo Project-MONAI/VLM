@@ -3,11 +3,11 @@
 #SBATCH --job-name=chestxray14_class_eval
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:8
-#SBATCH --time=2:00:00
+#SBATCH --time=4:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --exclusive
 #SBATCH --dependency=singleton
-#SBATCH -A healthcareeng_monai
+#SBATCH -A monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");

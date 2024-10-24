@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CONTAINER='/lustre/fsw/portfolios/healthcareeng/users/hroth/cache/image_vila_internal_pt2407.sqsh'
-export DATASETS='/lustre/fsw/portfolios/healthcareeng/projects/healthcareeng_monai/VLM/datasets'
-export CODE='/lustre/fsw/portfolios/healthcareeng/projects/healthcareeng_monai/VLM/code'
+export CONTAINER='/path/to/container.sqsh'
+export DATASETS='/path/to/datasets'
+export CODE='/path/to/code'
 
 echo "Setting environment variables:"
 echo "CONTAINER: $CONTAINER"
