@@ -3,7 +3,7 @@
 #SBATCH --job-name=chestxray14_expert_class_eval
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:8
-#SBATCH --time=2:00:00
+#SBATCH --time=4:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --exclusive
 #SBATCH -A healthcareeng_monai
@@ -60,14 +60,14 @@ srun -o job_chestxray14_expert_class_${OUTPUT_FOLDER_NAME}_eval.log --container-
 
 	mkdir -p $OUTPUT_PATH
 
-	CUDA_VISIBLE_DEVICES=0,1 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chestxray14.py --idx 0 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=2,3 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chestxray14.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=4,5 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chestxray14.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=6,7 python /data/code/monai_vlm/m3/eval/scripts/classification/expert_infer_chestxray14.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=0,1 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chestxray14.py --idx 0 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=2,3 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chestxray14.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=4,5 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chestxray14.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=6,7 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/expert_infer_chestxray14.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
 
     wait
 
-	python /data/code/monai_vlm/m3/eval/scripts/classification/metric_chestxray14.py --answers $OUTPUT_PATH --output $RESULT_PATH
+	python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/metric_chestxray14.py --answers $OUTPUT_PATH --output $RESULT_PATH
 
     '
 

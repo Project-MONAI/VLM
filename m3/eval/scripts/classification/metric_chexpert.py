@@ -31,10 +31,13 @@ def extract_answer(text, fall_back=None):
         text = text.replace("answer:", "").strip()
     if "a: " in text:
         text = text.replace("a: ", "").strip()
-    s = re.search(r"\(.*\)", text)
+    s = re.search(r"(yes|no)", text)
     if s is not None:
-        text = s.group(0)[1:-1]
-    s = re.search(r"(yes|no|a|b|c|d)", text)
+        text = s.group(0)
+    s = re.search(r"\(.[\S ]*\)", text)
+    if s is not None:
+        text = s.group(0)[1:-1].strip()
+    s = re.search(r"(a|b|c|d)", text)
     if s is not None:
         text = s.group(0)
     single_char = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "yes": 1, "no": 0}

@@ -73,7 +73,7 @@ srun -o job_radvqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
             --conv-mode $CONV_MODE 
 
 
-	python /data/code/monai_vlm/m3/eval/scripts/metric_radvqa.py \
+	python /data/code/monai_vlm/monai_vila2d/eval/scripts/metric_radvqa.py \
 		--input $DATA_PATH \
 		--answers $OUTPUT_PATH \
 		--output $RESULT_PATH \

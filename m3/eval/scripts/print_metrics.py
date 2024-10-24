@@ -58,12 +58,50 @@ def main():
 
     try:
         json_data = load_json(os.path.join(args.input, "report_mimiccxr/results.json"))
-        results["report_mimiccxr_bleu4"] = json_data["accuracy"]["Bleu_4"]
-        results["report_mimiccxr_rougel"] = json_data["accuracy"]["ROUGE_L"]
+        results["report_mimiccxr_old_bleu4"] = json_data["BLEU_4"]
+        results["report_mimiccxr_old_rougel"] = json_data["ROUGE_L"]
 
     except:
-        results["report_mimiccxr_bleu4"] = "?"
-        results["report_mimiccxr_rougel"] = "?"
+        results["report_mimiccxr_old_bleu4"] = "?"
+        results["report_mimiccxr_old_rougel"] = "?"
+
+    try:
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/result_green.json"))
+        results["report_mimiccxr_old_green"] = json_data["accuracy"]
+    except:
+        results["report_mimiccxr_old_green"] = "?"
+
+
+    try:
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/results_clean.json"))
+        results["report_mimiccxr_clean_bleu4"] = json_data["BLEU_4"]
+        results["report_mimiccxr_clean_rougel"] = json_data["ROUGE_L"]
+
+    except:
+        results["report_mimiccxr_clean_bleu4"] = "?"
+        results["report_mimiccxr_clean_rougel"] = "?"
+
+    try:
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/result_clean_green.json"))
+        results["report_mimiccxr_clean_green"] = json_data["accuracy"]
+    except:
+        results["report_mimiccxr_clean_green"] = "?"
+
+    try:
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/results_clean_expert.json"))
+        results["report_mimiccxr_clean_expert_bleu4"] = json_data["BLEU_4"]
+        results["report_mimiccxr_clean_expert_rougel"] = json_data["ROUGE_L"]
+
+    except:
+        results["report_mimiccxr_clean_expert_bleu4"] = "?"
+        results["report_mimiccxr_clean_expert_rougel"] = "?"
+    
+
+    try:
+        json_data = load_json(os.path.join(args.input, "report_mimiccxr/result_clean_expert_green.json"))
+        results["report_mimiccxr_clean_expert_green"] = json_data["accuracy"]
+    except:
+        results["report_mimiccxr_clean_expert_green"] = "?"
 
     try:
         json_data = load_json(os.path.join(args.input, "chestxray14_class/results.json"))
