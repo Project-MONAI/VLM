@@ -8,12 +8,20 @@ The repository provides a collection of vision language models, benchmarks, and 
 ## VILA-M3
 
 **VILA-M3** is a *vision language model* designed specifically for medical applications. 
-It focuses on addressing the unique challenges faced by general-purpose vision-language models when applied to the medical domain.
+It focuses on addressing the unique challenges faced by general-purpose vision-language models when applied to the medical domain and integrated with existing expert segmentation and classification models.
+
+<p align="center">
+  <img src="m3/docs/images/MONAI-VLM_Overview.svg" width="95%"/>
+</p>
 
 For details, see [here](m3/README.md).
 
 
 ### Local Demo
+
+<p align="center">
+  <img src="m3/docs/images/gradio_app_ct.png" width="60%"/>
+</p>
 
 #### Prerequisites
 
