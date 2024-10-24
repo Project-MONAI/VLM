@@ -6,7 +6,7 @@
 #SBATCH --time=2:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --dependency=singleton
-#SBATCH -A healthcareeng_monai
+#SBATCH -A monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,7 +72,7 @@ srun -o job_pathvqa_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER 
             --generation-config "$GENERATION_CONFIG" \
             --conv-mode $CONV_MODE 
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/metric_pathvqa.py \
+	python /data/code/monai_vlm/m3/eval/scripts/metric_pathvqa.py \
 		--input "/data/datasets/vnath/datasets/pathvqa/qas/test_vqa.pkl" \
 		--answers $OUTPUT_PATH \
 		--output $RESULT_PATH \

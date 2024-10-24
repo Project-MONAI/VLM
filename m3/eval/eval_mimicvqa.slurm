@@ -7,7 +7,7 @@
 #SBATCH --time=2:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --dependency=singleton
-#SBATCH -A healthcareeng_monai
+#SBATCH -A monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -128,7 +128,7 @@ srun -o job_mimicvqa_${OUTPUT_FOLDER_NAME}_eval.log \
     wait
 
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/mimic_vqa/metric_mimicvqa.py \
+	python /data/code/monai_vlm/m3/eval/scripts/mimic_vqa/metric_mimicvqa.py \
 	--input $GT_ROOT \
 	--answers $OUTPUT_ROOT \
 	--output $RESULT_PATH \

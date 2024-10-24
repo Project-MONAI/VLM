@@ -6,7 +6,7 @@
 #SBATCH --exclusive
 #SBATCH --time=4:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
-#SBATCH -A healthcareeng_monai
+#SBATCH -A monai
 #SBATCH --dependency=singleton
 
 # Copyright (c) MONAI Consortium
@@ -67,7 +67,7 @@ srun -o job_report_mimiccxr_expert_${OUTPUT_FOLDER_NAME}_eval.log --container-im
     mkdir -p $OUTPUT_PATH
 
 
-    IMAGE_LIST_FILE=/data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/images_test_front.txt
+    IMAGE_LIST_FILE=/data/code/monai_vlm/m3/eval/scripts/report_updated/images_test_front.txt
     TEXT_GT_CLEAN_DIR=/data/datasets/vlm/vila/text_gt/test_1_update7_clean_front
     EXPERT_PRED_DIR=/data/datasets/mimic-cxr/torchxrayvision/ensemble
     RESULT_CLEAN_EXPERT_FILE="$OUTPUT_PATH/results_clean_expert.json"
@@ -85,7 +85,7 @@ srun -o job_report_mimiccxr_expert_${OUTPUT_FOLDER_NAME}_eval.log --container-im
     for (( gpu=0; gpu<$NUM_GPUS; gpu++ ))
     do
 
-        CUDA_VISIBLE_DEVICES=${gpu} python /data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/inference_expert.py \
+        CUDA_VISIBLE_DEVICES=${gpu} python /data/code/monai_vlm/m3/eval/scripts/report_updated/inference_expert.py \
             --model-path /data/model_path \
             --image-list-file ${IMAGE_LIST_FILE} \
             --images-folder ${IMAGE_DIR} \
@@ -102,12 +102,12 @@ srun -o job_report_mimiccxr_expert_${OUTPUT_FOLDER_NAME}_eval.log --container-im
     # Step 2: Clean output text
     echo "Cleaning output texts..."
     mkdir -p ${OUTPUT_EXPERT_CLEAN_DIR}
-    python /data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/cleaning.py ${OUTPUT_EXPERT_DIR} ${OUTPUT_EXPERT_CLEAN_DIR}
+    python /data/code/monai_vlm/m3/eval/scripts/report_updated/cleaning.py ${OUTPUT_EXPERT_DIR} ${OUTPUT_EXPERT_CLEAN_DIR}
 
 
     # Step 3: Computing metrics
     echo "Computing metrics..."
-    python /data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/metrics.py \
+    python /data/code/monai_vlm/m3/eval/scripts/report_updated/metrics.py \
         --gt_dir $TEXT_GT_CLEAN_DIR \
         --pred_dir $OUTPUT_EXPERT_CLEAN_DIR \
         --output $RESULT_CLEAN_EXPERT_FILE 
@@ -121,7 +121,7 @@ srun -o job_report_mimiccxr_expert_${OUTPUT_FOLDER_NAME}_eval.log --container-im
     RESULT_CLEAN_EXPERT_GREEN_FILE="$OUTPUT_PATH/result_clean_expert_green.json"
 
     echo "Computing GREEN score..."
-    bash /data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/eval_green_score.sh ${TEXT_GT_CLEAN_DIR} ${OUTPUT_EXPERT_CLEAN_DIR} "$GPU_IDS"  ${RESULT_CLEAN_EXPERT_GREEN_FILE}
+    bash /data/code/monai_vlm/m3/eval/scripts/report_updated/eval_green_score.sh ${TEXT_GT_CLEAN_DIR} ${OUTPUT_EXPERT_CLEAN_DIR} "$GPU_IDS"  ${RESULT_CLEAN_EXPERT_GREEN_FILE}
 
     echo "All steps completed successfully."
 

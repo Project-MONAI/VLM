@@ -7,7 +7,7 @@
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --exclusive
 #SBATCH --dependency=singleton
-#SBATCH -A healthcareeng_monai
+#SBATCH -A monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,15 +56,15 @@ srun -o job_chexpert_class_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CON
 
 	mkdir -p $OUTPUT_PATH
 
-	CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/infer_chexpert.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/infer_chexpert.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/infer_chexpert.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/infer_chexpert.py --idx 4 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
-	CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/infer_chexpert.py --idx 5 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=0 python /data/code/monai_vlm/m3/eval/scripts/classification/infer_chexpert.py --idx 1 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=1 python /data/code/monai_vlm/m3/eval/scripts/classification/infer_chexpert.py --idx 2 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=2 python /data/code/monai_vlm/m3/eval/scripts/classification/infer_chexpert.py --idx 3 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=3 python /data/code/monai_vlm/m3/eval/scripts/classification/infer_chexpert.py --idx 4 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
+	CUDA_VISIBLE_DEVICES=4 python /data/code/monai_vlm/m3/eval/scripts/classification/infer_chexpert.py --idx 5 --mpath /data/model_path --conv $CONV_MODE --output $OUTPUT_PATH &
 
 	wait
 
-	python /data/code/monai_vlm/monai_vila2d/eval/scripts/classification/metric_chexpert.py --answers $OUTPUT_PATH --output $RESULT_PATH
+	python /data/code/monai_vlm/m3/eval/scripts/classification/metric_chexpert.py --answers $OUTPUT_PATH --output $RESULT_PATH
 
     '
 

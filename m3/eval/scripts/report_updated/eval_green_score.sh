@@ -34,7 +34,7 @@ run_inference() {
     PARTITION_INDEX=$2
 
     # Run the Python script on the specific GPU and partition
-    CUDA_VISIBLE_DEVICES=$GPU_ID python /data/code/monai_vlm/monai_vila2d/eval/scripts/report_updated/metric_green_score.py $REFS_DIR $HYPS_DIR $NUM_GPUS $PARTITION_INDEX >> $RESULTS_FILE
+    CUDA_VISIBLE_DEVICES=$GPU_ID python /data/code/monai_vlm/m3/eval/scripts/report_updated/metric_green_score.py $REFS_DIR $HYPS_DIR $NUM_GPUS $PARTITION_INDEX >> $RESULTS_FILE
 }
 
 # Loop over the number of GPUs and assign each a partition
