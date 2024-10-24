@@ -14,16 +14,12 @@ import logging
 import os
 import sys
 
-import openai
+from openai import OpenAI
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Ensure the OpenAI API key is set as an environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    raise ValueError("The OpenAI API key is not set. Please set it as an environment variable 'OPENAI_API_KEY'.")
+client = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key="$API_KEY_REQUIRED_IF_EXECUTING_OUTSIDE_NGC")
 
 # Constants
 MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
@@ -161,11 +157,13 @@ def generate_new_report(templates, report):
     ]
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=messages,
             max_tokens=2048,  # Adjust max tokens based on the expected response length.
             temperature=0.2,  # Set temperature for more deterministic results.
+            top_p=0.7,
+            stream=True,
         )
         new_report = response["choices"][0]["message"]["content"]
         return new_report.replace("new report:", "").replace("New report:", "").strip()
