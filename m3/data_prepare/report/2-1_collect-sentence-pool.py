@@ -22,9 +22,11 @@ client = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key="$API_KE
 
 # Constants
 MODEL_NAME = "meta/llama-3.1-8b-instruct"  # or "meta/llama-3.1-70b-instruct"
-# model names are from the following URL:
+# The model names are from the following URL:
 #     https://build.nvidia.com/meta/llama-3_1-8b-instruct
 #     https://build.nvidia.com/meta/llama-3_1-70b-instruct
+# We are utilizing the Llama 3.1 model provided by NVIDIA NIM. Alternatively, if you have a local copy of the model,
+# you can apply the same approach to use it.
 
 INPUT_JSON_FILENAME = "mimic_annotation.json"
 TEMPLATES_FILENAME = "sentence-pool.txt"
