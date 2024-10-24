@@ -65,4 +65,23 @@ Please make sure that the .csv files were succesfully generated from the prior c
 python pathvqa_instruction_generate.py --input_dir /path/to/output/processed/dataset --output_dir /path/to/output_directory
 ```
 
-### MIMIC-VQA
+### Medical-Diff-VQA (a.k.a MIMIC-VQA)
+The data preparation scrips for this dataset have been adopted from the [D-RAX](https://arxiv.org/abs/2407.02604) paper.
+Please request access to the data following the instructions on the [PhysioNet.org](https://physionet.org/content/medical-diff-vqa/1.0.0) website.
+After downloading the data, you can run our [notebook](./mimicvqa/prepare_json_mimic_vqa.ipynb) to prepare the data for training and evaluation.
+```commandline
+jupyter lab ./mimicvqa/prepare_json_mimic_vqa.ipynb
+```
+Note, if you haven't installed JupyterLab, please follow the instructions [here](https://jupyter.org/install).
+
+If you end up using the data preparation and evaluation scripts for Medical-Diff-VQA/MIMIC-VQA in your work, please cite
+```
+@inproceedings{nisar2024d,
+  title={D-Rax: Domain-specific Radiologic assistant leveraging multi-modal data and eXpert model predictions},
+  author={Nisar, Hareem and Anwar, Syed Muhammad and Jiang, Zhifan and Parida, Abhijeet and Sanchez-Jacob, Ramon and Nath, Vishwesh and Roth, Holger R and Linguraru, Marius George},
+  booktitle={International Workshop on Foundation Models for General Medical AI},
+  pages={91--102},
+  year={2024},
+  organization={Springer}
+}
+```
