@@ -66,7 +66,7 @@ python pathvqa_instruction_generate.py --input_dir /path/to/output/processed/dat
 ```
 
 ### Medical-Diff-VQA (a.k.a MIMIC-VQA)
-The data preparation scrips for this dataset have been adopted from the [D-RAX](https://arxiv.org/abs/2407.02604) paper.
+The data preparation scripts for this dataset have been adopted from the [D-RAX](https://arxiv.org/abs/2407.02604) paper.
 Please request access to the data following the instructions on the [PhysioNet.org](https://physionet.org/content/medical-diff-vqa/1.0.0) website.
 After downloading the data, you can run our [notebook](./mimicvqa/prepare_json_mimic_vqa.ipynb) to prepare the data for training and evaluation.
 ```commandline
