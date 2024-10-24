@@ -1,4 +1,4 @@
-# Training Recipe For M3
+# Quickstart Guide: Training Recipe For M3
 
 The M3-VILA is based on [VILA-v1.5](https://github.com/NVlabs/VILA).
 
@@ -15,7 +15,7 @@ For each model variant type, different large language models (LLM's) and vision 
 Please address the below in the training bash scripts before trying to execute them:
 
 #### Define paths (replace with actual paths)
-1.) STAGE2_PATH="/path/to/your/model", these are VILA pre-trained checkpoints, the link to download them can be found [here](https://github.com/NVlabs/VILA#pre-trained-models).
+1.) STAGE2_PATH="/path/to/your/model", these are VILA pre-trained checkpoints, they can be found [here](https://github.com/NVlabs/VILA#pre-trained-models).
 
 2.) OUTPUT_DIR="/path/to/output/checkpoints"
 
