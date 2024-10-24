@@ -1,6 +1,33 @@
-Please refer the `instruction_files` folder for the pre-generated instruction data files for each dataset. 
+# VQA Data Preparation
 
-The below commands are for reproducing the instruction data files and are not necessary to run.
+## Dataset Download Information
+
+### RadVQA
+To download the RadVQA dataset, please visit this [link](https://osf.io/89kps/)
+
+From the below screenshot, please ensure that the entire OSF Storage directory is downloaded.
+
+![image](../../images/radvqa_osf.png)
+
+An execution of the instruction data generation python script is required on the downloaded OSF Storage data directory.
+
+### SLAKE
+To download the SLAKE dataset, please visit this [link](https://www.med-vqa.com/slake/)
+
+From the below screenshot, please note that we use the 'Google Drive' link to download the dataset.
+
+![image](../../images/slake_web.png)
+
+Once the dataset is downloaded, please unzip the files and place them in a temporary data directory. Execution of instruction data generation python script is required on the unzipped data directory
+
+### PathVQA
+All files from the huggingface PathVQA dataset from the data directory need to be downloaded. Here is the [link](https://huggingface.co/datasets/flaviagiammarino/path-vqa) to the dataset.
+
+Ensure that all 13 parquet files are present in the data directory before trying to generate the instruction data (see screenshot below). The python commands for running them are provided in the next section.
+
+![image](../../images/pathvqa_hf.png)
+
+## Generate Instruction Tuning Training Data
 ### RadVQA
 Example command to run generate the instruction training data json file for RadVQA dataset:
 

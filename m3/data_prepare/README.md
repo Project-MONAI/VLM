@@ -1,5 +1,10 @@
 # MONAI-VILA: Data Preparation
 
+Preparing the datasets for VILA training and testing requires three steps:
+1. Downloading all the datasets (Information to download each dataset is provided in the readme.md for the `vqa`, `report` and `expert` directories)
+2. Generating the instruction data for all datasets (Information to generate the instruction data is provided in the readme.md for the `vqa`, `report` and `expert` directory)
+3. Adding the prepared datasets to VILA in a data mixture (More information can be found in the quickstart guide))
+
 ### VQA Datasets
 - PathVQA: Pathology-based VQA dataset with ~4,000 images and ~32,000 QA pairs, focusing on microscopic views of human tissue.
 - RadVQA: Radiology VQA dataset containing ~7,000 images and ~25,000 QA pairs, covering various imaging modalities like X-rays and CT scans.
