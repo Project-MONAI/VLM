@@ -50,6 +50,7 @@ The resulting expert model output will be fed back to the VLM for generating the
 |     Llama3-VILA-M3-3B     |     Generalist       | 78.2      | 79.8      | 87.9     | 82.0     |
 |     Llama3-VILA-M3-8B     |     Generalist       | **84.5**  | 84.5      | 90.0     | **86.3** |
 |     Llama3-VILA-M3-13B    |     Generalist       | 80.5      | 83.2      | **91.0** | 84.9     |
+
 *Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Report Generation Benchmarks
@@ -60,6 +61,7 @@ The resulting expert model output will be fed back to the VLM for generating the
 |     Llama3-VILA-M3-3B     |     Generalist       | 20.2     | 31.7     | 39.4     |
 |     Llama3-VILA-M3-8B     |     Generalist       | 21.5     | **32.3** | 40.0     |
 |     Llama3-VILA-M3-13B    |     Generalist       | **21.6** | 32.1     | 39.3     |
+
 *Comparisons to Llava-Med & Med-Gemini are not direct as data splits are not available.
 
 ### Classification Benchmarks
