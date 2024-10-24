@@ -28,7 +28,7 @@ To refine the quality of the reports and eliminate noise, we utilize an enhanced
 ### 2. Convert Text Using LLM
 
 This step involves two sub-steps where the LLM helps in processing the textual reports to improve the quality of the data used for **medical report generation**.
-We are utilizing large language models (LLMs), such as Llama 3.1, to process our text data. Users can obtain an API key for NVIDIA NIM to run scripts using the [Llama-3.1-8b-instruct](https://build.nvidia.com/meta/llama-3_1-8b-instruct) or [Llama-3.1-70b-instruct](https://build.nvidia.com/meta/llama-3_1-70b-instruct) models.
+We are utilizing large language models (LLMs), such as Llama 3.1, to process our text data. Users can obtain an API key for NVIDIA [NIM](https://build.nvidia.com/explore/discover) to run scripts using the [Llama-3.1-8b-instruct](https://build.nvidia.com/meta/llama-3_1-8b-instruct) or [Llama-3.1-70b-instruct](https://build.nvidia.com/meta/llama-3_1-70b-instruct) models.
 
 #### 2.1 Collect a Sample Sentence Pool
 
