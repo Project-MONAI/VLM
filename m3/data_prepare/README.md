@@ -30,7 +30,7 @@ A test set of the CheXpert dataset consisting of 500 studies from 500 patients r
 | [PathVQA](https://huggingface.co/datasets/flaviagiammarino/path-vqa)                                                 | ~32,000       | ~4,000       |     Train/Eval    |
 | [RadVQA](https://osf.io/89kps/)                                                                                      | ~25,000       | ~7,000       |     Train/Eval    |
 | [SLAKE](https://www.med-vqa.com/slake/)                                                                              | ~45,000       | ~14,000      |     Train/Eval    |
-| [MIMIC-VQA](https://physionet.org/content/medical-diff-vqa/1.0.0)                                                    | ~429,000      | ~129,000     |     Train/Eval    |
+| [Medical-Diff-VQA](https://physionet.org/content/medical-diff-vqa/1.0.0)                                             | ~429,000      | ~129,000     |     Train/Eval    |
 | [MIMIC-CXR-JPG](https://physionet.org/content/mimic-cxr-jpg/2.1.0/)                                                  | ~271,000      | ~271,000     |     Train/Eval    |
 | [nih-chest-xray](https://cloud.google.com/healthcare-api/docs/resources/public-datasets/nih-chest#additional_labels) | ~2,000        | ~2,000       |     Eval          |
 | [CheXpert (test-set-labels)](https://github.com/rajpurkarlab/cheXpert-test-set-labels)                               | 500           | 500          |     Eval          |
