@@ -10,10 +10,10 @@
 # limitations under the License.
 
 import argparse
-import random
 import copy
+import random
 
-from data_utils import read_json, write_json, read_txt
+from data_utils import read_json, read_txt, write_json
 from expert_utils import add_brats_expert_conversation, assert_image_placeholder, get_predictions, model_list
 from tqdm import tqdm
 
@@ -22,11 +22,8 @@ random.seed(0)
 assert isinstance(model_list, str)
 
 
-
-
-
 def main(args):
-    """Prepare expert training data for CXR."""
+    """Prepare expert training data for brain MRI."""
     in_data = read_json(args.in_meta_data)
 
     assert args.n_samples < len(in_data)
@@ -44,7 +41,7 @@ def main(args):
             "image2": meta["image"][1],
             "image3": meta["image"][2],
             "image4": meta["image"][3],
-            "segmentation": meta["label"]
+            "segmentation": meta["label"],
         }
 
         # what question
@@ -69,7 +66,7 @@ def main(args):
         # add expert instructions
         new_conv = add_brats_expert_conversation(conv)
 
-        #assert_image_placeholder(new_conv)  TODO: add check for brats image placeholders
+        # assert_image_placeholder(new_conv)  TODO: add check for brats image placeholders
         entry["conversations"] = new_conv
 
         all_conversations.append(copy.copy(entry))
