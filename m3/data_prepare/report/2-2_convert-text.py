@@ -9,11 +9,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import logging
 import json
-import openai
+import logging
+import os
 import sys
+
+import openai
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
