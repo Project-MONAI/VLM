@@ -184,12 +184,12 @@ class ExpertVista3D(BaseExpert):
             raise ValueError(f"Label group {arg_matches[0]} is not accepted by the VISTA-3D model.")
 
         if arg_matches[0] != "everything":
-            vista3d_prompts = {"classes": list(label_groups[arg_matches[0]].keys())}
+            vista3d_prompts = [cls_idx for _, cls_idx in label_groups[arg_matches[0]].items()]
 
         # Trigger the VISTA-3D model
         input_dict = {"image": img_file}
         if vista3d_prompts is not None:
-            input_dict["prompts"] = vista3d_prompts
+            input_dict["label_prompt"] = vista3d_prompts
 
         sys.path = [self.bundle_root] + sys.path
 
