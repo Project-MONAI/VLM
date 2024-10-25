@@ -16,6 +16,9 @@ It focuses on addressing the unique challenges faced by general-purpose vision-l
 
 For details, see [here](m3/README.md).
 
+### Online Demo
+
+Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to try out a preview version of the model.
 
 ### Local Demo
 
@@ -40,7 +43,7 @@ For details, see [here](m3/README.md).
             -v <ckpts_dir>:/data/checkpoints \
             nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
         ```
-    - **Manual Installation (not recommended)**: Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
+    - **Manual Installation (not recommended)** Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
 
 1. **Python 3.10** **Git** **Wget** and **Unzip**:
     
