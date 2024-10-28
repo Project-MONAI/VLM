@@ -732,7 +732,6 @@ def create_demo(source, model_path, conv_mode, server_port):
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
                         choices=["Auto", "CT", "MRI", "X-ray", "Unknown"],
-                        default=sv.value.modality_prompt,
                     )
 
             with gr.Column():
