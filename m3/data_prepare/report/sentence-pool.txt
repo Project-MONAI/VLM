@@ -1,0 +1,22 @@
+The cardiac silhouette is normal in size.
+The cardiac silhouette is mildly enlarged.
+The cardiac silhouette is enlarged, 
+The cardiac silhouette is stable.
+The cardiac silhouette is at the upper limits of normal in size.
+The lungs are low in volume.
+The lungs are hyperinflated.
+The lungs are clear.
+The pulmonary vascularity is normal.
+No pleural effusions.
+No large pleural effusions.
+No pulmonary edema.
+No pneumothorax.
+No focal consolidation is seen.
+No definite focal consolidation concerning for pneumonia.
+The mediastinal contours are unchanged.
+The hilar contours are unchanged.
+The mediastinal contours are normal.
+The hilar contours are normal.
+The mediastinal contours are stable.
+There is mild pulmonary vascular congestion.
+There is mild interstitial edema.

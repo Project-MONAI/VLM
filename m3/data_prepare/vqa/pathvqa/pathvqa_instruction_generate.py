@@ -19,7 +19,7 @@ import random
 def process_data_from_csv(file_path, image_prefix):
     """Process the data from a CSV file and return the transformed data."""
     transformed_data = []
-    with open(file_path, mode='r') as csv_file:
+    with open(file_path, mode="r") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
             if random.choice([True, False]):
@@ -85,7 +85,14 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge PathVQA instruct data")
-    parser.add_argument("--input_dir", default='set/path/to/csv/files', required=False, help="Directory containing the CSV files")
-    parser.add_argument("--output_dir", default='set/path/for/output/json/files', required=False, help="Directory to output the JSON files")
+    parser.add_argument(
+        "--input_dir", default="set/path/to/csv/files", required=False, help="Directory containing the CSV files"
+    )
+    parser.add_argument(
+        "--output_dir",
+        default="set/path/for/output/json/files",
+        required=False,
+        help="Directory to output the JSON files",
+    )
     args = parser.parse_args()
     main(args)
