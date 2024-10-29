@@ -31,28 +31,28 @@ Please make sure that the correct labels of datasets are used in the bash script
 
 Below are examples of how datasets are added to the datasets_mixture.py (Append these at the end of the datasets_mixture.py file):
     
-    ```
-    radvqa = Dataset(
-        dataset_name="radvqa",
-        dataset_type="torch",
-        data_path="/set/path/to/instruction/json/file",
-        image_path="/set/path/to/image/folder",
-    )
-    add_dataset(vn_radvqa)
+```
+radvqa = Dataset(
+    dataset_name="radvqa",
+    dataset_type="torch",
+    data_path="/set/path/to/instruction/json/file",
+    image_path="/set/path/to/image/folder",
+)
+add_dataset(vn_radvqa)
 
-    slake = Dataset(
-        dataset_name="slake",
-        dataset_type="torch",
-        data_path="/set/path/to/instruction/json/file",
-        image_path="/set/path/to/image/folder",
-    )
-    add_dataset(slake)
+slake = Dataset(
+    dataset_name="slake",
+    dataset_type="torch",
+    data_path="/set/path/to/instruction/json/file",
+    image_path="/set/path/to/image/folder",
+)
+add_dataset(slake)
 
-    pathvqa = Dataset(
-        dataset_name="pathvqa",
-        dataset_type="torch",
-        data_path="/set/path/to/instruction/json/file",
-        image_path="/set/path/to/image/folder",
-    )
-    add_dataset(pathvqa)
-    ```
+pathvqa = Dataset(
+    dataset_name="pathvqa",
+    dataset_type="torch",
+    data_path="/set/path/to/instruction/json/file",
+    image_path="/set/path/to/image/folder",
+)
+add_dataset(pathvqa)
+```

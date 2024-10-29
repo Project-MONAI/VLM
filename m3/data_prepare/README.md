@@ -1,9 +1,9 @@
-# MONAI-VILA: Data Preparation
+# Data Preparation
 
 Preparing the datasets for VILA training and testing requires three steps:
-1. Downloading all the datasets (Information to download each dataset is provided in the readme.md for the `vqa`, `report` and `expert` directories)
+1. Downloading all the datasets (Information to download each dataset is provided in the readme.md for the [vqa](./vqa/README.md), [report](./report/README.md) and [expert](./experts/README.md) directories)
 2. Generating the instruction data for all datasets (Information to generate the instruction data is provided in the readme.md for the `vqa`, `report` and `expert` directory)
-3. Adding the prepared datasets to VILA in a data mixture (More information can be found in the [quickstart guide](../train/readme.md))
+3. Adding the prepared datasets to VILA in a data mixture (More information can be found in the [quickstart guide](../train/README.md))
 
 ### VQA Datasets
 - **PathVQA**: Pathology-based VQA dataset with ~4,000 images and ~32,000 QA pairs, focusing on microscopic views of human tissue.
@@ -37,7 +37,7 @@ A test set of the CheXpert dataset consisting of 500 studies from 500 patients r
 | **Totals**                                                                                                           | **>800,000**  | **>427,000** |                   |
 
 ### Expert Model Datasets
-To create datasets for training expert model selection capablities, please follow the instructions in the [expert](./experts/README.md) directory.
+To create datasets for training expert model selection capabilities, please follow the instructions in the [expert](./experts/README.md) directory.
 
 We use the following datasets and expert models for expert model selection.
 

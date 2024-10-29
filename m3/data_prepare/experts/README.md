@@ -42,4 +42,4 @@ python expert_train_data_brats.py --in_meta_data ${META_DATA} --images_root ${RO
 ```
 
 ### 2. Prepare expert training data for TorchXRayVision
-Coming soon...
+For details on how to prepare training & evaluation data with an TorchXRayVision expert model ensemble, see [here](./torchxrayvision/README.md).
