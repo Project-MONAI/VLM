@@ -41,11 +41,6 @@ Model cards that describe available expert models for VILA-M3 to choose from are
 
 For an example, see the [code](./data_prepare/experts/expert_utils.py) used for generating [training data](./data_prepare/experts/README.md).
 
-## 💡 News
-
-- [2024/10/24] We presented VILA-M3 and the VLM module in MONAI at MONAI Day (slides, recording)
-- [2024/10/24] Several fine-tuned healthcare checkpoints are released.
-
 ## Performance
 
 ### VQA Benchmarks

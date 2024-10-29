@@ -5,6 +5,12 @@
 # MONAI Vision Language Models
 The repository provides a collection of vision language models, benchmarks, and related applications, released as part of Project [MONAI](https://monai.io) (Medical Open Network for Artificial Intelligence).
 
+## 💡 News
+
+- [2024/10/24] We presented VILA-M3 and the VLM module in MONAI at MONAI Day ([slides](./m3/docs/materials/VILA-M3_MONAI-Day_2024.pdf), [recording - coming soon!](https://www.youtube.com/c/Project-MONAI))
+- [2024/10/24] Interactive [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) is available online!
+- [Coming soon!] Several fine-tuned healthcare checkpoints are released.
+
 ## VILA-M3
 
 **VILA-M3** is a *vision language model* designed specifically for medical applications. 
