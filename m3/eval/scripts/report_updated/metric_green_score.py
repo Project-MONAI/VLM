@@ -33,6 +33,7 @@ def load_text_files_from_directory(directory):
 
 
 def run_inference(refs, hyps):
+    """run_inference"""
     # Initialize the GREEN model (assumes correct GPU has been set in the environment)
     model = GREEN(
         model_id_or_path="StanfordAIMI/GREEN-radllama2-7b",
@@ -80,10 +81,12 @@ def partition_data(data, num_partitions, partition_index):
 
 
 def normalize_spaces(text):
+    """normalize_spaces"""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def read_files(directory):
+    """read_files"""
     files_content = {}
     for filename in os.listdir(directory):
         if filename.endswith(".txt"):

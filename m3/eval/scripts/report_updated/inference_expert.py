@@ -44,11 +44,13 @@ assert isinstance(model_list, str)
 
 
 def load_filenames(file_path):
+    """load_filenames"""
     with open(file_path, "r") as f:
         return [line.strip() for line in f]
 
 
 def load_image(image_file):
+    """load_image"""
     if image_file.startswith("http") or image_file.startswith("https"):
         response = requests.get(image_file)
         image = Image.open(BytesIO(response.content)).convert("RGB")
@@ -58,6 +60,7 @@ def load_image(image_file):
 
 
 def load_images(image_files):
+    """load_images"""
     return [load_image(image_file) for image_file in image_files]
 
 
@@ -92,6 +95,8 @@ def get_predictions(root, image_name):
 
 
 def eval_model(args):
+    """eval_model"""
+
     disable_torch_init()
 
     image_filenames = load_filenames(args.image_list_file)

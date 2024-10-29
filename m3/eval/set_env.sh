@@ -14,11 +14,13 @@
 export CONTAINER='/path/to/container.sqsh'
 export DATASETS='/path/to/datasets'
 export CODE='/path/to/code'
+export ACCOUNT='your_slurm_account'
 
 echo "Setting environment variables:"
 echo "CONTAINER: $CONTAINER"
 echo "DATASETS: $DATASETS"
 echo "CODE: $CODE"
+echo "ACCOUNT: $ACCOUNT"
 
 function print_usage {
     echo "Usage: ... checkpoint_path result_name conv_mode"
