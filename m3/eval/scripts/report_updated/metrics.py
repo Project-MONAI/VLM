@@ -22,7 +22,10 @@ from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 
 
 class CaptionScorer:
+    """CaptionScorer"""
+
     def __init__(self, all_texts):
+        """CaptionScorer __init__"""
         self.scorers = [
             (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
             (Meteor(), "METEOR"),
