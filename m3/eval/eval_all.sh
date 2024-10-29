@@ -27,7 +27,8 @@ export CONV_MODE=$3
 : ${CONTAINER:?"CONTAINER env var is not set!"}
 : ${DATASETS:?"DATASETS env var is not set!"}
 : ${CODE:?"CODE env var is not set!"}
- 
+: ${ACCOUNT:?"ACCOUNT env var is not set!"}
+
 
 sbatch eval_radvqa.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 
 sbatch eval_slakevqa.slurm $MODEL_PATH $OUTPUT_FOLDER_NAME $CONV_MODE 

@@ -6,7 +6,6 @@
 #SBATCH --time=2:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --exclusive
-#SBATCH -A monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,9 +34,10 @@ export CONV_MODE=$3
 : ${CONTAINER:?"CONTAINER env var is not set!"}
 : ${DATASETS:?"DATASETS env var is not set!"}
 : ${CODE:?"CODE env var is not set!"}
+: ${ACCOUNT:?"ACCOUNT env var is not set!"}
 
 
-srun -o job_chexpert_expert_class_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
+srun -o job_chexpert_expert_class_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER --acount=$ACCOUNT \
      --container-mounts=$CODE:/data/code,${DATASETS}:/data/datasets,$MODEL_PATH:/data/model_path \
      --no-container-mount-home \
      --container-remap-root \

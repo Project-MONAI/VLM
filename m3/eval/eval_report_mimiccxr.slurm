@@ -6,7 +6,6 @@
 #SBATCH --exclusive
 #SBATCH --time=4:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
-#SBATCH -A monai
 #SBATCH --dependency=singleton
 
 # Copyright (c) MONAI Consortium
@@ -36,12 +35,13 @@ export CONV_MODE=$3
 : ${CONTAINER:?"CONTAINER env var is not set!"}
 : ${DATASETS:?"DATASETS env var is not set!"}
 : ${CODE:?"CODE env var is not set!"}
+: ${ACCOUNT:?"ACCOUNT env var is not set!"}
 
 # common
 export GENERATION_CONFIG='{"max_new_tokens":1024,"do_sample":false,"temperature":0}'
 
 
-srun -o job_report_mimiccxr_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER \
+srun -o job_report_mimiccxr_${OUTPUT_FOLDER_NAME}_eval.log --container-image=$CONTAINER --acount=$ACCOUNT \
      --container-mounts=$CODE:/data/code,$DATASETS:/data/datasets,$MODEL_PATH:/data/model_path \
      --no-container-mount-home \
      --container-remap-root \
