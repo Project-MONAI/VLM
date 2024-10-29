@@ -101,9 +101,7 @@ def capitalize_first_letter(sentences):
             # Capitalize the first letter
             refined_sentences.append(sentence[0].upper() + sentence[1:])
         else:
-            print(
-                f"First character is not a letter in sentence: '{sentence}'"
-            )
+            print(f"First character is not a letter in sentence: '{sentence}'")
             continue
 
     return refined_sentences
@@ -111,10 +109,7 @@ def capitalize_first_letter(sentences):
 
 def remove_before_colon(sentences):
     # Replace only when a colon is followed by a space
-    refined_sentences = [
-        sentence.split(": ", 1)[-1] if ": " in sentence else sentence
-        for sentence in sentences
-    ]
+    refined_sentences = [sentence.split(": ", 1)[-1] if ": " in sentence else sentence for sentence in sentences]
 
     return refined_sentences
 
@@ -166,9 +161,7 @@ def remove_duplicate_sentences(sentences):
 
     for sentence in sentences:
         if sentence not in seen:
-            unique_sentences.append(
-                sentence
-            )  # Add sentence to the result if not seen before
+            unique_sentences.append(sentence)  # Add sentence to the result if not seen before
             seen.add(sentence)  # Mark this sentence as seen
 
     return unique_sentences
@@ -209,11 +202,7 @@ def replace_appearance(text, target_word, replacement_word, nth_app):
         return text
 
     # Rebuild the string: join the parts, but replace the second occurrence
-    modified_text = (
-        target_word.join(parts[:nth_app])
-        + replacement_word
-        + target_word.join(parts[nth_app:])
-    )
+    modified_text = target_word.join(parts[:nth_app]) + replacement_word + target_word.join(parts[nth_app:])
 
     return modified_text
 

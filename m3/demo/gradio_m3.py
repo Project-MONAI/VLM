@@ -676,6 +676,7 @@ def update_sys_message(sys_message, sv):
     sv.sys_msg = sys_message
     return sv
 
+
 def update_modality_prompt(modality_prompt, sv):
     """Update the modality prompt"""
     logger.debug(f"Updating the modality prompt")
@@ -785,7 +786,16 @@ def create_demo(source, model_path, conv_mode, server_port):
         clear_btn.click(
             fn=clear_all_convs,
             inputs=[sv],
-            outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text, modality_prompt_dropdown],
+            outputs=[
+                sv,
+                prompt_edit,
+                chat_history,
+                history_text,
+                history_text_full,
+                sys_prompt_text,
+                model_cards_text,
+                modality_prompt_dropdown,
+            ],
         )
 
         # States

@@ -17,6 +17,7 @@ import sys
 
 from green_score import GREEN
 
+
 def load_text_files_from_directory(directory):
     """
     Load the content of all text files from a directory and return it as a list of strings.
@@ -26,15 +27,12 @@ def load_text_files_from_directory(directory):
         filepath = os.path.join(directory, filename)
         if os.path.isfile(filepath) and filename.endswith(".txt"):
             with open(filepath, "r") as file:
-                content = (
-                    file.read().strip()
-                )  # Read the file content and remove any surrounding whitespace
+                content = file.read().strip()  # Read the file content and remove any surrounding whitespace
                 texts.append(content)
     return texts
 
 
 def run_inference(refs, hyps):
-
     # Initialize the GREEN model (assumes correct GPU has been set in the environment)
     model = GREEN(
         model_id_or_path="StanfordAIMI/GREEN-radllama2-7b",
@@ -99,9 +97,7 @@ if __name__ == "__main__":
     refs_dir = sys.argv[1]  # refs directory path
     hyps_dir = sys.argv[2]  # hyps directory path
     num_partitions = int(sys.argv[3])  # Total number of partitions (e.g., total GPUs)
-    partition_index = int(
-        sys.argv[4]
-    )  # Index of this partition (e.g., current GPU/process index)
+    partition_index = int(sys.argv[4])  # Index of this partition (e.g., current GPU/process index)
 
     ground_truths = read_files(refs_dir)
     predictions = read_files(hyps_dir)

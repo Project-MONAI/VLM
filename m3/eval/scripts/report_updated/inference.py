@@ -10,16 +10,14 @@
 # limitations under the License.
 
 import argparse
-import re
-from io import BytesIO
+import math
 import os
 import os.path as osp
+import re
+from io import BytesIO
 
-import math
 import requests
 import torch
-from PIL import Image
-
 from llava.constants import (
     DEFAULT_IM_END_TOKEN,
     DEFAULT_IM_START_TOKEN,
@@ -28,14 +26,10 @@ from llava.constants import (
     IMAGE_TOKEN_INDEX,
 )
 from llava.conversation import SeparatorStyle, conv_templates
-from llava.mm_utils import (
-    KeywordsStoppingCriteria,
-    get_model_name_from_path,
-    process_images,
-    tokenizer_image_token,
-)
+from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
 from llava.model.builder import load_pretrained_model
 from llava.utils import disable_torch_init
+from PIL import Image
 
 
 def load_filenames(file_path):
@@ -80,9 +74,7 @@ def eval_model(args):
     output_folder = args.output_folder
 
     model_name = get_model_name_from_path(args.model_path)
-    tokenizer, model, image_processor, context_len = load_pretrained_model(
-        args.model_path, model_name, args.model_base
-    )
+    tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, model_name, args.model_base)
 
     for img_filename in image_filenames:
         image_path = osp.join(images_folder, img_filename)
@@ -90,9 +82,7 @@ def eval_model(args):
 
         query = "Describe the image in detail."
 
-        image_token_se = (
-            DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
-        )
+        image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
         if IMAGE_PLACEHOLDER in query:
             if model.config.mm_use_im_start_end:
                 query = re.sub(IMAGE_PLACEHOLDER, image_token_se, query)
@@ -100,9 +90,7 @@ def eval_model(args):
                 query = re.sub(IMAGE_PLACEHOLDER, DEFAULT_IMAGE_TOKEN, query)
         else:
             if DEFAULT_IMAGE_TOKEN not in query:
-                print(
-                    f"no <image> tag found in input. Automatically append one at the beginning of text."
-                )
+                print(f"no <image> tag found in input. Automatically append one at the beginning of text.")
                 if model.config.mm_use_im_start_end:
                     query = image_token_se + "\n" + query
                 else:
@@ -133,16 +121,8 @@ def eval_model(args):
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
 
-        images_tensor = process_images([image], image_processor, model.config).to(
-            model.device, dtype=torch.float16
-        )
-        input_ids = (
-            tokenizer_image_token(
-                prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
-            )
-            .unsqueeze(0)
-            .cuda()
-        )
+        images_tensor = process_images([image], image_processor, model.config).to(model.device, dtype=torch.float16)
+        input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]

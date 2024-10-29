@@ -15,9 +15,9 @@ import os
 import re
 
 from pycocoevalcap.bleu.bleu import Bleu
+from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 
 
@@ -60,7 +60,7 @@ def compute_scores(gts, res):
     :param res: Dictionary with the image ids ant their generated captions
     :print: Evaluation score (the mean of the scores of all the instances) for each measure
     """
-    print('tokenization...')
+    print("tokenization...")
     tokenizer = PTBTokenizer()
     gts = tokenizer.tokenize(gts)
     res = tokenizer.tokenize(res)
@@ -122,9 +122,7 @@ def main():
 
             _text = predictions[filename]
             _text = normalize_spaces(_text.replace("\n", " "))
-            prediction_data.append(
-                {"image_id": idx, "caption": normalize_spaces(_text.replace("\n", " "))}
-            )
+            prediction_data.append({"image_id": idx, "caption": normalize_spaces(_text.replace("\n", " "))})
 
     print(f"found {len(prediction_data)} prediction data points.")
 
@@ -140,6 +138,7 @@ def main():
 
     with open(args.output, "w") as f:
         json.dump(eval_res, f)
+
 
 if __name__ == "__main__":
     main()
