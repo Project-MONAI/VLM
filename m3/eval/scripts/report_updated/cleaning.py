@@ -17,14 +17,17 @@ import sys
 
 
 def remove_newline(text):
+    """remove_newline"""
     return text.replace("\n", "").replace("\r", "").strip()
 
 
 def normalize_spaces(text):
+    """normalize_spaces"""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def split_into_sentences(paragraph):
+    """split_into_sentences"""
     # Regular expression to split sentences but avoid splitting on "a.m.", "p.m.", and "Dr."
     # The period following a.m., p.m., and Dr. is not treated as sentence-ending punctuation
     sentence_endings = re.compile(r"(?<!a\.m)(?<!p\.m)(?<!Dr)\.(?!\d)|(?<=[!?])")
@@ -56,11 +59,13 @@ def split_into_sentences(paragraph):
 
 
 def remove_sentences_with_underscore(sentences):
+    """remove_sentences_with_underscore"""
     # Filter out sentences that contain the underscore character
     return [sentence for sentence in sentences if "_" not in sentence]
 
 
 def refine_numbered_sentences(sentences):
+    """refine_numbered_sentences"""
     # Regular expression to match "1. ", "2. ", etc.
     pattern = re.compile(r"^\d+\.\s")
 
@@ -76,6 +81,7 @@ def refine_numbered_sentences(sentences):
 
 
 def skip_to_first_letter(sentences):
+    """skip_to_first_letter"""
     refined_sentences = []
 
     for sentence in sentences:
@@ -93,6 +99,7 @@ def skip_to_first_letter(sentences):
 
 
 def capitalize_first_letter(sentences):
+    """capitalize_first_letter"""
     refined_sentences = []
 
     for sentence in sentences:
@@ -108,6 +115,7 @@ def capitalize_first_letter(sentences):
 
 
 def remove_before_colon(sentences):
+    """remove_before_colon"""
     # Replace only when a colon is followed by a space
     refined_sentences = [sentence.split(": ", 1)[-1] if ": " in sentence else sentence for sentence in sentences]
 
@@ -115,6 +123,7 @@ def remove_before_colon(sentences):
 
 
 def replace_abbreviations(text):
+    """replace_abbreviations"""
     # Replace specific abbreviations
     pattern = re.compile(r"a\.m\.\s([A-Z])")
     text = pattern.sub(r"am_. \1", text)
@@ -131,6 +140,7 @@ def replace_abbreviations(text):
 
 
 def add_period_if_missing(sentences):
+    """add_period_if_missing"""
     # Regular expression to check if the sentence ends with a punctuation mark
     pattern = re.compile(r"[.!?]$")
 
@@ -146,6 +156,7 @@ def add_period_if_missing(sentences):
 
 
 def partition_into_paragraphs(report):
+    """partition_into_paragraphs"""
     # Split the report based on double newlines (i.e., paragraphs separated by empty lines)
     paragraphs = report.split("\n\n")
 
@@ -156,6 +167,7 @@ def partition_into_paragraphs(report):
 
 
 def remove_duplicate_sentences(sentences):
+    """remove_duplicate_sentences"""
     seen = set()  # To keep track of sentences we have already seen
     unique_sentences = []
 

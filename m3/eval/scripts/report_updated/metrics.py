@@ -89,10 +89,12 @@ def compute_scores(gts, res):
 
 
 def normalize_spaces(text):
+    """normalize_spaces"""
     return re.sub(r"\s+", " ", text).strip()
 
 
 def read_files(directory):
+    """read_files"""
     files_content = {}
     for filename in os.listdir(directory):
         if filename.endswith(".txt"):
@@ -102,6 +104,7 @@ def read_files(directory):
 
 
 def main():
+    """main"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--gt_dir", action="store", type=str, help="Ground truth directory.")
     parser.add_argument("--pred_dir", action="store", type=str, help="Prediction directory.")
