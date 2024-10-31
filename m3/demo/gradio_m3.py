@@ -274,7 +274,7 @@ class SessionVariables:
         """Initialize the session variables"""
         self.sys_prompt = SYS_PROMPT
         self.sys_msg = MODEL_CARDS
-        self.use_model_cards = False
+        self.use_model_cards = True
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
         self.axis = 2
@@ -286,7 +286,7 @@ class SessionVariables:
         self.idx_range = (None, None)
         self.interactive = False
         self.sys_msgs_to_hide = []
-        self.modality_prompt = "Unknown"
+        self.modality_prompt = "Auto"
 
 
 def new_session_variables(**kwargs):
@@ -865,7 +865,7 @@ if __name__ == "__main__":
         help=(
             "The path to the model to load. "
             "If source is 'local', it can be '/data/checkpoints/vila-m3-8b'. If "
-            "If source is 'huggingface', it can be 'MONAI/Llama3-VILA-M3-13B'."
+            "If source is 'huggingface', it can be 'MONAI/Llama3-VILA-M3-8B'."
         ),
     )
     parser.add_argument(
