@@ -14,6 +14,7 @@ import html
 import logging
 import os
 import tempfile
+import time 
 from copy import deepcopy
 from glob import glob
 from shutil import copyfile, rmtree
@@ -368,6 +369,7 @@ class M3Generator:
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
 
+        start_time = time.time()
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
@@ -382,6 +384,9 @@ class M3Generator:
                 pad_token_id=self.tokenizer.eos_token_id,
                 min_new_tokens=2,
             )
+        end_time = time.time()
+        logger.debug(f"Time taken to generate tokens {len(output_ids[0])}: {end_time - start_time:.2f} seconds")
+        logger.debug(f"Tokens per second: {len(output_ids[0]) / (end_time - start_time):.2f}")
 
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
         outputs = outputs.strip()
