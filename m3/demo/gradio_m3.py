@@ -679,10 +679,13 @@ def update_sys_prompt(sys_prompt, sv):
     return sv
 
 
-def update_sys_message(sys_message, sv):
+def update_model_cards(use_model_card, model_cards, sv):
     """Update the model cards"""
     logger.debug(f"Updating the model cards")
-    sv.sys_msg = sys_message
+    if use_model_card:
+        sv.sys_msg = model_cards
+    else:
+        sv.sys_msg = ""
     return sv
 
 
@@ -734,10 +737,11 @@ def create_demo(source, model_path, conv_mode, server_port):
                         value=sv.value.sys_prompt,
                         lines=4,
                     )
+                    model_cards_checkbox = gr.Checkbox(label="Use Model Cards", checked=False)
                     model_cards_text = gr.Textbox(
                         label="Model Cards",
                         value=sv.value.sys_msg,
-                        lines=10,
+                        lines=8,
                     )
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
@@ -789,7 +793,8 @@ def create_demo(source, model_path, conv_mode, server_port):
         top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, sv], outputs=[sv])
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
         sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
-        model_cards_text.change(fn=update_sys_message, inputs=[model_cards_text, sv], outputs=[sv])
+        model_cards_checkbox.change(fn=update_model_cards, inputs=[model_cards_checkbox, model_cards_text, sv], outputs=[sv])
+        model_cards_text.change(fn=update_model_cards, inputs=[model_cards_checkbox,model_cards_text, sv], outputs=[sv])
         modality_prompt_dropdown.change(fn=update_modality_prompt, inputs=[modality_prompt_dropdown, sv], outputs=[sv])
         # Reset button
         clear_btn.click(
