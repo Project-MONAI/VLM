@@ -456,12 +456,10 @@ class M3Generator:
         if isinstance(img_file, str):
             if "<image>" not in prompt:
                 _prompt = model_cards + "<image>" + mod_msg + prompt
-                logger.debug(f"Appending sys msg: {model_cards + '<image>' + mod_msg}")
                 sv.sys_msgs_to_hide.append(model_cards + "<image>" + mod_msg)
             else:
                 _prompt = model_cards + mod_msg + prompt
                 if model_cards + mod_msg != "":
-                    logger.debug(f"Appending sys msg: {model_cards + mod_msg}")
                     sv.sys_msgs_to_hide.append(model_cards + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
@@ -604,8 +602,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
     if not show_all and role == "expert":
         return ""
     if not show_all and sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
-        logger.debug(f"Hide the system messages: {sys_msgs_to_hide}")
-        for sys_msg in sys_msgs_to_hide:
+        for sys_msg in sys_msgs_to_hide.sort(key=len, reverse=True):
             text = text.replace(sys_msg, "")
 
     escaped_text = html.escape(text)
