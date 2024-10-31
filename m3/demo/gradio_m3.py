@@ -73,7 +73,7 @@ IMG_URLS_OR_PATHS = {
     "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_c2af2ab3-6a11cbae-d9fa4d64-21ab221e-cf6f2146_v1.jpg",
 }
 
-SYS_MSG = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
+MODEL_CARDS = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
 
 SYS_PROMPT = None  # set when the script initializes
 
@@ -273,7 +273,8 @@ class SessionVariables:
     def __init__(self):
         """Initialize the session variables"""
         self.sys_prompt = SYS_PROMPT
-        self.sys_msg = ""
+        self.sys_msg = MODEL_CARDS
+        self.use_model_cards = False
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
         self.axis = 2
@@ -410,6 +411,7 @@ class M3Generator:
         """Generate the response"""
         if self.source == "local" or self.source == "huggingface":
             return self.generate_response_local(**kwargs)
+        raise NotImplementedError(f"Source {self.source} is not supported.")
 
     def squash_expert_messages_into_user(self, messages: list):
         """Squash consecutive expert messages into a single user message."""
@@ -447,16 +449,18 @@ class M3Generator:
             modality = sv.modality_prompt
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
+        model_cards = sv.sys_msg if sv.use_model_cards else ""
+
         img_file = CACHED_IMAGES.get(sv.image_url, None)
 
         if isinstance(img_file, str):
             if "<image>" not in prompt:
-                _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
-                sv.sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
+                _prompt = model_cards + "<image>" + mod_msg + prompt
+                sv.sys_msgs_to_hide.append(model_cards + "<image>" + mod_msg)
             else:
-                _prompt = sv.sys_msg + mod_msg + prompt
-                if sv.sys_msg + mod_msg != "":
-                    sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
+                _prompt = model_cards + mod_msg + prompt
+                if model_cards + mod_msg != "":
+                    sv.sys_msgs_to_hide.append(model_cards + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -526,6 +530,7 @@ class M3Generator:
             # Keep these parameters accross one conversation
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
+            use_model_cards=sv.use_model_cards,
             download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
             interactive=True,
@@ -685,13 +690,16 @@ def update_sys_prompt(sys_prompt, sv):
     return sv
 
 
-def update_sys_message(use_model_card, model_cards, sv):
+def update_model_cards_text(model_cards, sv):
     """Update the model cards"""
-    logger.debug(f"Updating the model cards")
-    if use_model_card:
-        sv.sys_msg = model_cards
-    else:
-        sv.sys_msg = ""
+    logger.debug(f"Updating the model cards contents")
+    sv.sys_msg = model_cards
+    return sv
+
+def update_model_cards_checkbox(use_model_cards, sv):
+    """Update the model cards checkbox"""
+    logger.debug(f"Updating the model cards checkbox")
+    sv.use_model_cards = use_model_cards
     return sv
 
 
@@ -744,10 +752,10 @@ def create_demo(source, model_path, conv_mode, server_port):
                     )
                     model_cards_checkbox = gr.Checkbox(
                         label="Use Model Cards",
-                        value=False,
+                        value=sv.value.use_model_cards,
                         info="Check this to include the model cards of the experts."
                     )
-                    model_cards_text = gr.Textbox(label="Model Cards", value=SYS_MSG, lines=8)
+                    model_cards_text = gr.Textbox(label="Model Cards", value=sv.value.sys_msg, lines=8)
                     sys_prompt_text = gr.Textbox(
                         label="System Prompt",
                         value=sv.value.sys_prompt,
@@ -799,8 +807,8 @@ def create_demo(source, model_path, conv_mode, server_port):
         top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, sv], outputs=[sv])
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
         sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
-        model_cards_checkbox.change(fn=update_sys_message, inputs=[model_cards_checkbox, model_cards_text, sv], outputs=[sv])
-        model_cards_text.change(fn=update_sys_message, inputs=[model_cards_checkbox,model_cards_text, sv], outputs=[sv])
+        model_cards_checkbox.change(fn=update_model_cards_checkbox, inputs=[model_cards_checkbox, sv], outputs=[sv])
+        model_cards_text.change(fn=update_model_cards_text, inputs=[model_cards_text, sv], outputs=[sv])
         modality_prompt_dropdown.change(fn=update_modality_prompt, inputs=[modality_prompt_dropdown, sv], outputs=[sv])
         # Reset button
         clear_btn.click(
