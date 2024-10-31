@@ -650,13 +650,14 @@ def clear_all_convs(sv: SessionVariables):
     if sv.temp_working_dir is not None:
         rmtree(sv.temp_working_dir)
     new_sv = new_session_variables()
-    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text, modality_prompt_dropdown
+    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_checkbox, model_cards_text, modality_prompt_dropdown
     return (
         new_sv,
         "Enter your prompt here",
         ChatHistory(),
         HTML_PLACEHOLDER,
         HTML_PLACEHOLDER,
+        new_sv.use_model_cards,
         new_sv.sys_prompt,
         new_sv.sys_msg,
         new_sv.modality_prompt,
@@ -822,6 +823,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                 history_text,
                 history_text_full,
                 sys_prompt_text,
+                model_cards_checkbox,
                 model_cards_text,
                 modality_prompt_dropdown,
             ],
@@ -838,6 +840,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                 temperature_slider,
                 top_p_slider,
                 max_tokens_slider,
+                model_cards_checkbox,
                 image_download,
                 image_slider,
             ],
