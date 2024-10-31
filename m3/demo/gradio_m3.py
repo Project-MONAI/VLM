@@ -604,6 +604,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
     if not show_all and role == "expert":
         return ""
     if not show_all and sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
+        logger.debug(f"Hide the system messages: {sys_msgs_to_hide}")
         for sys_msg in sys_msgs_to_hide:
             text = text.replace(sys_msg, "")
 
