@@ -284,7 +284,7 @@ class SessionVariables:
         self.idx_range = (None, None)
         self.interactive = False
         self.sys_msgs_to_hide = []
-        self.modality_prompt = "Auto"
+        self.modality_prompt = "Unknown"
 
 
 def new_session_variables(**kwargs):
@@ -301,7 +301,7 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, source="local", model_path="", conv_mode=""):
+    def __init__(self, source="local", model_path="", conv_mode="", device="cuda"):
         """Initialize the M3 generator"""
         self.source = source
         # TODO: support huggingface models
@@ -314,6 +314,10 @@ class M3Generator:
                 model_path, self.model_name
             )
             logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
+            # warmup
+            warm_up = torch.randn((4096, 4096)).to(device)
+            for i in range(100):
+                torch.mm(warm_up, warm_up)
         elif source == "huggingface":
             pass
         else:
@@ -385,7 +389,7 @@ class M3Generator:
                 min_new_tokens=2,
             )
         end_time = time.time()
-        logger.debug(f"Time taken to generate tokens {len(output_ids[0])}: {end_time - start_time:.2f} seconds")
+        logger.debug(f"Time taken to generate {len(output_ids[0])} tokens: {end_time - start_time:.2f} seconds")
         logger.debug(f"Tokens per second: {len(output_ids[0]) / (end_time - start_time):.2f}")
 
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
@@ -737,7 +741,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                     )
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
-                        choices=["Auto", "CT", "MRI", "X-ray", "Unknown"],
+                        choices=["Unknown", "Auto", "CT", "MRI", "X-ray"],
                     )
 
             with gr.Column():
