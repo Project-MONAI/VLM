@@ -304,6 +304,7 @@ class M3Generator:
 
     def __init__(self, source="huggingface", model_path="", conv_mode="", device="cuda"):
         """Initialize the M3 generator"""
+        global SYS_PROMPT
         self.source = source
         # TODO: support huggingface models
         if source == "local":
@@ -325,6 +326,7 @@ class M3Generator:
             logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         else:
             raise NotImplementedError(f"Source {source} is not supported.")
+        SYS_PROMPT = conv_templates[self.conv_mode].system  # only set once
 
     def generate_response_local(
         self,
@@ -854,11 +856,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source",
         type=str,
-        default="local",
-        help="The source of the model. Option is only 'local'.",
+        default="huggingface",
+        help="The source of the model. Option is 'huggingface' or 'local'.",
     )
     args = parser.parse_args()
-    SYS_PROMPT = conv_templates[args.convmode].system
     cache_images()
     create_demo(args.source, args.modelpath, args.convmode, args.port)
     cache_cleanup()
