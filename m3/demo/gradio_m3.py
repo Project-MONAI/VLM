@@ -303,7 +303,7 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, source="huggingface", model_path="", conv_mode="", device="cuda"):
+    def __init__(self, source="huggingface", model_path="", conv_mode=""):
         """Initialize the M3 generator"""
         global SYS_PROMPT
         self.source = source
@@ -318,8 +318,8 @@ class M3Generator:
             )
             logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         elif source == "huggingface":
-            model_path = snapshot_download("MONAI/Llama3-VILA-M3-13B")
-            self.conv_mode = "vicuna_v1"
+            model_path = snapshot_download(model_path)
+            self.conv_mode = conv_mode
             model_name = get_model_name_from_path(model_path)
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
                 model_path, model_name
@@ -855,14 +855,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--convmode",
         type=str,
-        default="vicuna_v1",
-        help="The conversation mode to use. Required if source is 'local'.",
+        default="llama_3",
+        help="The conversation mode to use. For 8B models, use 'llama_3'. For 3B and 13B models, use 'vicuna_v1'.",
     )
     parser.add_argument(
         "--modelpath",
         type=str,
-        default="/data/checkpoints/vila-m3-8b",
-        help="The path to the model to load. Required if source is 'local'.",
+        default="MONAI/Llama3-VILA-M3-8B",
+        help=(
+            "The path to the model to load. "
+            "If source is 'local', it can be '/data/checkpoints/vila-m3-8b'. If "
+            "If source is 'huggingface', it can be 'MONAI/Llama3-VILA-M3-13B'."
+        ),
     )
     parser.add_argument(
         "--port",

@@ -7,7 +7,7 @@ The repository provides a collection of vision language models, benchmarks, and 
 
 ## 💡 News
 
-- [2024/10/31] The fine-tuned VILA-M3-13B checkpoint is released on [HuggingFace](https://huggingface.co/MONAI/Llama3-VILA-M3-13B).
+- [2024/10/31] We released the [VILA-M3-3B](https://huggingface.co/MONAI/Llama3-VILA-M3-3B), [VILA-M3-8B]((https://huggingface.co/MONAI/Llama3-VILA-M3-8B), and [VILA-M3-13B](https://huggingface.co/MONAI/Llama3-VILA-M3-13B) checkpoints on [HuggingFace](https://huggingface.co/MONAI).
 - [2024/10/24] We presented VILA-M3 and the VLM module in MONAI at MONAI Day ([slides](./m3/docs/materials/VILA-M3_MONAI-Day_2024.pdf), [recording - coming soon!](https://www.youtube.com/c/Project-MONAI))
 - [2024/10/24] Interactive [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) is available online!
 
