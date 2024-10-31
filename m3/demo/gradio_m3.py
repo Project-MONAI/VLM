@@ -657,8 +657,8 @@ def clear_all_convs(sv: SessionVariables):
         ChatHistory(),
         HTML_PLACEHOLDER,
         HTML_PLACEHOLDER,
-        new_sv.use_model_cards,
         new_sv.sys_prompt,
+        new_sv.use_model_cards,
         new_sv.sys_msg,
         new_sv.modality_prompt,
     )
