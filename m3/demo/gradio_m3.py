@@ -649,7 +649,7 @@ def clear_all_convs(sv: SessionVariables):
     if sv.temp_working_dir is not None:
         rmtree(sv.temp_working_dir)
     new_sv = new_session_variables()
-    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text
+    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text, modality_prompt_dropdown
     return (
         new_sv,
         "Enter your prompt here",
@@ -748,7 +748,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                 with gr.Accordion("System Prompt and Message", open=False):
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
-                        choices=["Unknown", "Auto", "CT", "MRI", "X-ray"],
+                        choices=["Unknown", "Auto", "CT", "MRI", "CXR"],
                     )
                     model_cards_checkbox = gr.Checkbox(
                         label="Use Model Cards",
