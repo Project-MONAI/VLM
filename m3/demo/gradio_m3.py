@@ -456,10 +456,12 @@ class M3Generator:
         if isinstance(img_file, str):
             if "<image>" not in prompt:
                 _prompt = model_cards + "<image>" + mod_msg + prompt
+                logger.debug(f"Appending sys msg: {model_cards + '<image>' + mod_msg}")
                 sv.sys_msgs_to_hide.append(model_cards + "<image>" + mod_msg)
             else:
                 _prompt = model_cards + mod_msg + prompt
                 if model_cards + mod_msg != "":
+                    logger.debug(f"Appending sys msg: {model_cards + mod_msg}")
                     sv.sys_msgs_to_hide.append(model_cards + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
