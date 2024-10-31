@@ -33,6 +33,7 @@ from experts.utils import (
     load_image,
     save_image_url_to_file,
 )
+from huggingface_hub import snapshot_download
 from llava.constants import IMAGE_TOKEN_INDEX
 from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
@@ -301,7 +302,7 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, source="local", model_path="", conv_mode="", device="cuda"):
+    def __init__(self, source="huggingface", model_path="", conv_mode="", device="cuda"):
         """Initialize the M3 generator"""
         self.source = source
         # TODO: support huggingface models
@@ -309,17 +310,19 @@ class M3Generator:
             # TODO: allow setting the device
             disable_torch_init()
             self.conv_mode = conv_mode
-            self.model_name = get_model_name_from_path(model_path)
+            model_name = get_model_name_from_path(model_path)
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path, self.model_name
+                model_path, model_name
             )
-            logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
-            # warmup
-            warm_up = torch.randn((4096, 4096)).to(device)
-            for i in range(100):
-                torch.mm(warm_up, warm_up)
+            logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         elif source == "huggingface":
-            pass
+            model_path = snapshot_download("MONAI/Llama3-VILA-M3-13B")
+            self.conv_mode = "vicuna_v1"
+            model_name = get_model_name_from_path(model_path)
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path, model_name
+            )
+            logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         else:
             raise NotImplementedError(f"Source {source} is not supported.")
 
