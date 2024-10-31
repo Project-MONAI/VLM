@@ -272,7 +272,7 @@ class SessionVariables:
     def __init__(self):
         """Initialize the session variables"""
         self.sys_prompt = SYS_PROMPT
-        self.sys_msg = SYS_MSG
+        self.sys_msg = ""
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
         self.axis = 2
@@ -450,7 +450,8 @@ class M3Generator:
                 sv.sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
             else:
                 _prompt = sv.sys_msg + mod_msg + prompt
-                sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
+                if sv.sys_msg + mod_msg != "":
+                    sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -732,20 +733,20 @@ def create_demo(source, model_path, conv_mode, server_port):
                     )
 
                 with gr.Accordion("System Prompt and Message", open=False):
+                    modality_prompt_dropdown = gr.Dropdown(
+                        label="Select Modality",
+                        choices=["Unknown", "Auto", "CT", "MRI", "X-ray"],
+                    )
+                    model_cards_checkbox = gr.Checkbox(
+                        label="Use Model Cards",
+                        value=False,
+                        info="Check this to include the model cards of the experts."
+                    )
+                    model_cards_text = gr.Textbox(label="Model Cards", value=SYS_MSG, lines=8)
                     sys_prompt_text = gr.Textbox(
                         label="System Prompt",
                         value=sv.value.sys_prompt,
                         lines=4,
-                    )
-                    model_cards_checkbox = gr.Checkbox(label="Use Model Cards", value=False)
-                    model_cards_text = gr.Textbox(
-                        label="Model Cards",
-                        value=sv.value.sys_msg,
-                        lines=8,
-                    )
-                    modality_prompt_dropdown = gr.Dropdown(
-                        label="Select Modality",
-                        choices=["Unknown", "Auto", "CT", "MRI", "X-ray"],
                     )
 
             with gr.Column():
