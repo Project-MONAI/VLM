@@ -840,7 +840,6 @@ def create_demo(source, model_path, conv_mode, server_port):
                 temperature_slider,
                 top_p_slider,
                 max_tokens_slider,
-                model_cards_checkbox,
                 image_download,
                 image_slider,
             ],
