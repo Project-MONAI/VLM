@@ -14,7 +14,7 @@ import html
 import logging
 import os
 import tempfile
-import time 
+import time
 from copy import deepcopy
 from glob import glob
 from shutil import copyfile, rmtree
@@ -698,6 +698,7 @@ def update_model_cards_text(model_cards, sv):
     sv.sys_msg = model_cards
     return sv
 
+
 def update_model_cards_checkbox(use_model_cards, sv):
     """Update the model cards checkbox"""
     logger.debug(f"Updating the model cards checkbox")
@@ -755,7 +756,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                     model_cards_checkbox = gr.Checkbox(
                         label="Use Model Cards",
                         value=sv.value.use_model_cards,
-                        info="Check this to include the model cards of the experts."
+                        info="Check this to include the model cards of the experts.",
                     )
                     model_cards_text = gr.Textbox(label="Model Cards", value=sv.value.sys_msg, lines=8)
                     sys_prompt_text = gr.Textbox(
