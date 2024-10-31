@@ -30,10 +30,24 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
   <img src="m3/docs/images/gradio_app_ct.png" width="70%"/>
 </p>
 
-### Local Demo
+## Local Demo
 
-#### Prerequisites
+### Prerequisites
 
+#### **Recommended: Build Docker Container**
+1.  To run the demo, we recommend building a Docker container with all the requirements.
+    We use a [base image](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda) with cuda preinstalled.
+    ```bash
+    docker build --network=host --progress=plain -t monai-m3:latest -f m3/demo/Dockerfile .
+    ```
+2. Run the container
+    ```bash
+    docker run -it --rm --ipc host --gpus all --net host monai-m3:latest bash
+    ```
+    > Note: If you want to load your own VILA checkpoint in the demo, you need to mount a folder using `-v <your_ckpts_dir>:/data/checkpoints` in your `docker run` command.
+3. Next, follow the steps to start the [Gradio Demo](./README.md#running-the-gradio-demo).
+
+#### Alternative: Manual installation
 1. **Linux Operating System**
 
 1. **CUDA Toolkit 12.2** (with `nvcc`) for [VILA](https://github.com/NVlabs/VILA).
@@ -45,8 +59,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     If CUDA is not installed, use one of the following methods:
     - **Recommended** Use the Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
         ```bash
-        docker run -it --rm --ipc host --gpus all --net host
-            nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
+        docker run -it --rm --ipc host --gpus all --net host nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
         ```
     - **Manual Installation (not recommended)** Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
 
@@ -65,9 +78,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     - **VISTA3D**: This expert model dynamically loads the [VISTA3D](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/monaitoolkit/models/monai_vista3d) model to segment a 3D-CT volume. The memory requirement is roughly 12GB, and peak memory usage can be higher, depending on the input size of the 3D volume.
     - **BRATS**: (TBD)
 
-#### Setup Environment
-
-1. Clone the repository, set up the environment, and download the experts' checkpoints:
+1. ***Setup Environment***: Clone the repository, set up the environment, and download the experts' checkpoints:
     ```bash
     git clone https://github.com/Project-MONAI/VLM --recursive
     cd VLM
@@ -76,7 +87,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     make demo_m3
     ```
 
-#### Running the Gradio Demo
+### Running the Gradio Demo
 
 1. Navigate to the demo directory:
     ```bash
@@ -84,9 +95,20 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     ```
 
 1. Start the Gradio demo:
+    > This will automatically download the default VILA-M3 checkpoint from Hugging Face.
     ```bash
     python gradio_m3.py
     ```
+
+1. Alternative: Start the Gradio demo with a local checkpoint, e.g.:
+    ```bash
+    python gradio_m3.py  \
+    --source local \
+    --modelpath /data/checkpoints/<8B-checkpoint-name> \
+    --convmode llama_3
+    ```
+>> For details, see the available [commmandline arguments](./m3/demo/gradio_m3.py#L855).
+
 
 #### Adding your own expert model
 - This is still a work in progress. Please refer to the [README](m3/demo/experts/README.md) for more details.
