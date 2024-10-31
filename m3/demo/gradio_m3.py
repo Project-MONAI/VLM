@@ -66,8 +66,8 @@ logging.getLogger("gradio").setLevel(logging.WARNING)
 
 # Sample images dictionary. It accepts either a URL or a local path.
 IMG_URLS_OR_PATHS = {
-    # "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
-    # "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
+    "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
+    "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
     "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_8e067d88-2ea4ee8d-21db2c6b-f78701cb-91ad53f9_v1.jpg",
     "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_51e9421b-c2f395da-5dd48889-7e307aca-1472d6a6_v1.jpg",
     "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_c2af2ab3-6a11cbae-d9fa4d64-21ab221e-cf6f2146_v1.jpg",
