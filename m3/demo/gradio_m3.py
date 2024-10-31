@@ -408,7 +408,7 @@ class M3Generator:
 
     def generate_response(self, **kwargs):
         """Generate the response"""
-        if self.source == "local":
+        if self.source == "local" or self.source == "huggingface":
             return self.generate_response_local(**kwargs)
 
     def squash_expert_messages_into_user(self, messages: list):
@@ -840,12 +840,17 @@ def create_demo(source, model_path, conv_mode, server_port):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # TODO: Add the argument to load multiple models from a JSON file
-    parser.add_argument("--convmode", type=str, default="llama_3", help="The conversation mode to use.")
+    parser.add_argument(
+        "--convmode",
+        type=str,
+        default="vicuna_v1",
+        help="The conversation mode to use. Required if source is 'local'.",
+    )
     parser.add_argument(
         "--modelpath",
         type=str,
         default="/data/checkpoints/vila-m3-8b",
-        help="The path to the model to load.",
+        help="The path to the model to load. Required if source is 'local'.",
     )
     parser.add_argument(
         "--port",

@@ -45,8 +45,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     If CUDA is not installed, use one of the following methods:
     - **Recommended** Use the Docker image: `nvidia/cuda:12.2.2-devel-ubuntu22.04`
         ```bash
-        docker run -it --rm --ipc host --gpus all --net host \
-            -v <ckpts_dir>:/data/checkpoints \
+        docker run -it --rm --ipc host --gpus all --net host
             nvidia/cuda:12.2.2-devel-ubuntu22.04 bash
         ```
     - **Manual Installation (not recommended)** Download the appropiate package from [NVIDIA offical page](https://developer.nvidia.com/cuda-12-2-2-download-archive)
@@ -86,14 +85,11 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
 
 1. Start the Gradio demo:
     ```bash
-    python gradio_m3.py  \
-        --modelpath /data/checkpoints/<8B-checkpoint-name> \
-        --convmode llama_3 \
-        --port 7860
+    python gradio_m3.py
     ```
 
-1. Adding your own expert model
-    - This is still a work in progress. Please refer to the [README](m3/demo/experts/README.md) for more details.
+#### Adding your own expert model
+- This is still a work in progress. Please refer to the [README](m3/demo/experts/README.md) for more details.
 
 ## Contributing
 
