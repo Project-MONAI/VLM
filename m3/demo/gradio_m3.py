@@ -277,6 +277,7 @@ class SessionVariables:
         self.use_model_cards = True
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
+        self.image_url_backup = None  # Backup image URL
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
@@ -499,7 +500,10 @@ class M3Generator:
             logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
             try:
                 if sv.image_url is None:
-                    raise ValueError(f"No image is provided with {outputs}.")
+                    logger.debug(f"Image URL is None. Calling the backup image URL. {sv.image_url_backup}")
+                    sv.image_url = sv.image_url_backup
+                    if sv.image_url is None:
+                        raise ValueError(f"No image is provided with {outputs}.")
                 text_output, seg_file, instruction, download_pkg = expert.run(
                     image_url=sv.image_url,
                     input=outputs,
@@ -535,6 +539,7 @@ class M3Generator:
             temp_working_dir=sv.temp_working_dir,
             interactive=True,
             sys_msgs_to_hide=sv.sys_msgs_to_hide,
+            image_url_backup=sv.image_url,
         )
         return (
             None,
@@ -739,19 +744,24 @@ def create_demo(source, model_path, conv_mode, server_port):
 
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
-                        label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
+                        label="Temperature",
+                        minimum=0.0,
+                        maximum=1.0,
+                        step=0.01,
+                        value=sv.value.temperature,
+                        interactive=True,
                     )
                     top_p_slider = gr.Slider(
-                        label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
+                        label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=sv.value.top_p, interactive=True
                     )
                     max_tokens_slider = gr.Slider(
-                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=1024, interactive=True
+                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=sv.value.max_tokens, interactive=True
                     )
 
                 with gr.Accordion("System Prompt and Message", open=False):
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
-                        choices=["Unknown", "Auto", "CT", "MRI", "CXR"],
+                        choices=["Auto", "CT", "MRI", "CXR", "Unknown"],
                     )
                     model_cards_checkbox = gr.Checkbox(
                         label="Use Model Cards",
