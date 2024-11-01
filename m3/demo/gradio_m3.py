@@ -744,7 +744,12 @@ def create_demo(source, model_path, conv_mode, server_port):
 
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
-                        label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=sv.value.temperature, interactive=True
+                        label="Temperature",
+                        minimum=0.0,
+                        maximum=1.0,
+                        step=0.01,
+                        value=sv.value.temperature,
+                        interactive=True,
                     )
                     top_p_slider = gr.Slider(
                         label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=sv.value.top_p, interactive=True
