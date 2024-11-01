@@ -1,7 +1,7 @@
 demo_m3:
 	cd thirdparty/VILA; \
 	./environment_setup.sh
-	pip install -U python-dotenv deepspeed gradio monai[nibabel,pynrrd,skimage,fire,ignite] torchxrayvision
+	pip install -U python-dotenv deepspeed gradio monai[nibabel,pynrrd,skimage,fire,ignite] torchxrayvision huggingface_hub
 	mkdir -p $(HOME)/.torchxrayvision/models_data/ \
     && wget https://github.com/mlmed/torchxrayvision/releases/download/v1/nih-pc-chex-mimic_ch-google-openi-kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \
     -O $(HOME)/.torchxrayvision/models_data/nih-pc-chex-mimic_ch-google-openi-kaggle-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt \

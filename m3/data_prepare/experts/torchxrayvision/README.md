@@ -1,5 +1,8 @@
 ### Integrating expert model data with torchxrayvision
 
+### Prerequisit: Data download & install dependencies
+Follow the links for CXR datasets this [README.md](../../README.md#chest-x-ray-classification-datasets-for-model-evaluation). 
+
 For both training and inference, `pip install` packages `torchxrayvision` (for the chest X-ray models), `monai` (for json files writing) and `scikit-image` (for image reading)
 are required.  The steps were tested with `torchxrayvision==1.2.4`, `monai==1.3.2` and `scikit-image==0.24.0`.
 The corresponding image data are described in the `data_prepare` folder's [readme file](../../README.md).

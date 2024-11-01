@@ -7,7 +7,6 @@
 #SBATCH --time=2:00:00
 #SBATCH --partition=interactive,interactive_singlenode,grizzly,polar,polar2,polar3,polar4
 #SBATCH --dependency=singleton
-#SBATCH -A healthcareeng_monai
 
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +35,7 @@ export CONV_MODE=$3
 : ${CONTAINER:?"CONTAINER env var is not set!"}
 : ${DATASETS:?"DATASETS env var is not set!"}
 : ${CODE:?"CODE env var is not set!"}
+: ${ACCOUNT:?"ACCOUNT env var is not set!"}
 
 # common
 export GENERATION_CONFIG='{"max_new_tokens":1024,"do_sample":false,"temperature":0}'
@@ -44,7 +44,7 @@ export GENERATION_CONFIG='{"max_new_tokens":1024,"do_sample":false,"temperature"
 
 
 srun -o job_mimicvqa_${OUTPUT_FOLDER_NAME}_eval.log \
-    --container-image=$CONTAINER \
+    --container-image=$CONTAINER --acount=$ACCOUNT \
     --container-mounts=$CODE:/data/code,$DATASETS:/data/datasets,$MODEL_PATH:/data/model_path \
     --no-container-mount-home \
     --container-remap-root \

@@ -14,6 +14,7 @@ import html
 import logging
 import os
 import tempfile
+import time
 from copy import deepcopy
 from glob import glob
 from shutil import copyfile, rmtree
@@ -32,6 +33,7 @@ from experts.utils import (
     load_image,
     save_image_url_to_file,
 )
+from huggingface_hub import snapshot_download
 from llava.constants import IMAGE_TOKEN_INDEX
 from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
@@ -71,7 +73,7 @@ IMG_URLS_OR_PATHS = {
     "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_c2af2ab3-6a11cbae-d9fa4d64-21ab221e-cf6f2146_v1.jpg",
 }
 
-SYS_MSG = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
+MODEL_CARDS = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
 
 SYS_PROMPT = None  # set when the script initializes
 
@@ -271,9 +273,11 @@ class SessionVariables:
     def __init__(self):
         """Initialize the session variables"""
         self.sys_prompt = SYS_PROMPT
-        self.sys_msg = SYS_MSG
+        self.sys_msg = MODEL_CARDS
+        self.use_model_cards = True
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
+        self.image_url_backup = None  # Backup image URL
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
@@ -300,23 +304,31 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, source="local", model_path="", conv_mode=""):
+    def __init__(self, source="huggingface", model_path="", conv_mode=""):
         """Initialize the M3 generator"""
+        global SYS_PROMPT
         self.source = source
         # TODO: support huggingface models
         if source == "local":
             # TODO: allow setting the device
             disable_torch_init()
             self.conv_mode = conv_mode
-            self.model_name = get_model_name_from_path(model_path)
+            model_name = get_model_name_from_path(model_path)
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path, self.model_name
+                model_path, model_name
             )
-            logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
+            logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         elif source == "huggingface":
-            pass
+            model_path = snapshot_download(model_path)
+            self.conv_mode = conv_mode
+            model_name = get_model_name_from_path(model_path)
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path, model_name
+            )
+            logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
         else:
             raise NotImplementedError(f"Source {source} is not supported.")
+        SYS_PROMPT = conv_templates[self.conv_mode].system  # only set once
 
     def generate_response_local(
         self,
@@ -368,6 +380,7 @@ class M3Generator:
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
 
+        start_time = time.time()
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
@@ -382,6 +395,9 @@ class M3Generator:
                 pad_token_id=self.tokenizer.eos_token_id,
                 min_new_tokens=2,
             )
+        end_time = time.time()
+        logger.debug(f"Time taken to generate {len(output_ids[0])} tokens: {end_time - start_time:.2f} seconds")
+        logger.debug(f"Tokens per second: {len(output_ids[0]) / (end_time - start_time):.2f}")
 
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
         outputs = outputs.strip()
@@ -394,8 +410,9 @@ class M3Generator:
 
     def generate_response(self, **kwargs):
         """Generate the response"""
-        if self.source == "local":
+        if self.source == "local" or self.source == "huggingface":
             return self.generate_response_local(**kwargs)
+        raise NotImplementedError(f"Source {self.source} is not supported.")
 
     def squash_expert_messages_into_user(self, messages: list):
         """Squash consecutive expert messages into a single user message."""
@@ -433,15 +450,18 @@ class M3Generator:
             modality = sv.modality_prompt
         mod_msg = f"This is a {modality} image.\n" if modality != "Unknown" else ""
 
+        model_cards = sv.sys_msg if sv.use_model_cards else ""
+
         img_file = CACHED_IMAGES.get(sv.image_url, None)
 
         if isinstance(img_file, str):
             if "<image>" not in prompt:
-                _prompt = sv.sys_msg + "<image>" + mod_msg + prompt
-                sv.sys_msgs_to_hide.append(sv.sys_msg + "<image>" + mod_msg)
+                _prompt = model_cards + "<image>" + mod_msg + prompt
+                sv.sys_msgs_to_hide.append(model_cards + "<image>" + mod_msg)
             else:
-                _prompt = sv.sys_msg + mod_msg + prompt
-                sv.sys_msgs_to_hide.append(sv.sys_msg + mod_msg)
+                _prompt = model_cards + mod_msg + prompt
+                if model_cards + mod_msg != "":
+                    sv.sys_msgs_to_hide.append(model_cards + mod_msg)
 
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
@@ -480,7 +500,10 @@ class M3Generator:
             logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
             try:
                 if sv.image_url is None:
-                    raise ValueError(f"No image is provided with {outputs}.")
+                    logger.debug(f"Image URL is None. Calling the backup image URL. {sv.image_url_backup}")
+                    sv.image_url = sv.image_url_backup
+                    if sv.image_url is None:
+                        raise ValueError(f"No image is provided with {outputs}.")
                 text_output, seg_file, instruction, download_pkg = expert.run(
                     image_url=sv.image_url,
                     input=outputs,
@@ -511,10 +534,12 @@ class M3Generator:
             # Keep these parameters accross one conversation
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
+            use_model_cards=sv.use_model_cards,
             download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
             interactive=True,
             sys_msgs_to_hide=sv.sys_msgs_to_hide,
+            image_url_backup=sv.image_url,
         )
         return (
             None,
@@ -582,6 +607,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
     if not show_all and role == "expert":
         return ""
     if not show_all and sys_msgs_to_hide and isinstance(sys_msgs_to_hide, list):
+        sys_msgs_to_hide.sort(key=len, reverse=True)
         for sys_msg in sys_msgs_to_hide:
             text = text.replace(sys_msg, "")
 
@@ -629,7 +655,7 @@ def clear_all_convs(sv: SessionVariables):
     if sv.temp_working_dir is not None:
         rmtree(sv.temp_working_dir)
     new_sv = new_session_variables()
-    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text
+    # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_checkbox, model_cards_text, modality_prompt_dropdown
     return (
         new_sv,
         "Enter your prompt here",
@@ -637,6 +663,7 @@ def clear_all_convs(sv: SessionVariables):
         HTML_PLACEHOLDER,
         HTML_PLACEHOLDER,
         new_sv.sys_prompt,
+        new_sv.use_model_cards,
         new_sv.sys_msg,
         new_sv.modality_prompt,
     )
@@ -670,11 +697,19 @@ def update_sys_prompt(sys_prompt, sv):
     return sv
 
 
-def update_sys_message(sys_message, sv):
+def update_model_cards_text(model_cards, sv):
     """Update the model cards"""
-    logger.debug(f"Updating the model cards")
-    sv.sys_msg = sys_message
+    logger.debug(f"Updating the model cards contents")
+    sv.sys_msg = model_cards
     return sv
+
+
+def update_model_cards_checkbox(use_model_cards, sv):
+    """Update the model cards checkbox"""
+    logger.debug(f"Updating the model cards checkbox")
+    sv.use_model_cards = use_model_cards
+    return sv
+
 
 def update_modality_prompt(modality_prompt, sv):
     """Update the modality prompt"""
@@ -709,29 +744,35 @@ def create_demo(source, model_path, conv_mode, server_port):
 
                 with gr.Accordion("View Parameters", open=False):
                     temperature_slider = gr.Slider(
-                        label="Temperature", minimum=0.0, maximum=1.0, step=0.01, value=0.0, interactive=True
+                        label="Temperature",
+                        minimum=0.0,
+                        maximum=1.0,
+                        step=0.01,
+                        value=sv.value.temperature,
+                        interactive=True,
                     )
                     top_p_slider = gr.Slider(
-                        label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=0.9, interactive=True
+                        label="Top P", minimum=0.0, maximum=1.0, step=0.01, value=sv.value.top_p, interactive=True
                     )
                     max_tokens_slider = gr.Slider(
-                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=1024, interactive=True
+                        label="Max Tokens", minimum=1, maximum=1024, step=1, value=sv.value.max_tokens, interactive=True
                     )
 
                 with gr.Accordion("System Prompt and Message", open=False):
+                    modality_prompt_dropdown = gr.Dropdown(
+                        label="Select Modality",
+                        choices=["Auto", "CT", "MRI", "CXR", "Unknown"],
+                    )
+                    model_cards_checkbox = gr.Checkbox(
+                        label="Use Model Cards",
+                        value=sv.value.use_model_cards,
+                        info="Check this to include the model cards of the experts.",
+                    )
+                    model_cards_text = gr.Textbox(label="Model Cards", value=sv.value.sys_msg, lines=8)
                     sys_prompt_text = gr.Textbox(
                         label="System Prompt",
                         value=sv.value.sys_prompt,
                         lines=4,
-                    )
-                    model_cards_text = gr.Textbox(
-                        label="Model Cards",
-                        value=sv.value.sys_msg,
-                        lines=10,
-                    )
-                    modality_prompt_dropdown = gr.Dropdown(
-                        label="Select Modality",
-                        choices=["Auto", "CT", "MRI", "X-ray", "Unknown"],
                     )
 
             with gr.Column():
@@ -779,13 +820,24 @@ def create_demo(source, model_path, conv_mode, server_port):
         top_p_slider.change(fn=update_top_p, inputs=[top_p_slider, sv], outputs=[sv])
         max_tokens_slider.change(fn=update_max_tokens, inputs=[max_tokens_slider, sv], outputs=[sv])
         sys_prompt_text.change(fn=update_sys_prompt, inputs=[sys_prompt_text, sv], outputs=[sv])
-        model_cards_text.change(fn=update_sys_message, inputs=[model_cards_text, sv], outputs=[sv])
+        model_cards_checkbox.change(fn=update_model_cards_checkbox, inputs=[model_cards_checkbox, sv], outputs=[sv])
+        model_cards_text.change(fn=update_model_cards_text, inputs=[model_cards_text, sv], outputs=[sv])
         modality_prompt_dropdown.change(fn=update_modality_prompt, inputs=[modality_prompt_dropdown, sv], outputs=[sv])
         # Reset button
         clear_btn.click(
             fn=clear_all_convs,
             inputs=[sv],
-            outputs=[sv, prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_text, modality_prompt_dropdown],
+            outputs=[
+                sv,
+                prompt_edit,
+                chat_history,
+                history_text,
+                history_text_full,
+                sys_prompt_text,
+                model_cards_checkbox,
+                model_cards_text,
+                modality_prompt_dropdown,
+            ],
         )
 
         # States
@@ -810,12 +862,21 @@ def create_demo(source, model_path, conv_mode, server_port):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # TODO: Add the argument to load multiple models from a JSON file
-    parser.add_argument("--convmode", type=str, default="llama_3", help="The conversation mode to use.")
+    parser.add_argument(
+        "--convmode",
+        type=str,
+        default="llama_3",
+        help="The conversation mode to use. For 8B models, use 'llama_3'. For 3B and 13B models, use 'vicuna_v1'.",
+    )
     parser.add_argument(
         "--modelpath",
         type=str,
-        default="/data/checkpoints/vila-m3-8b",
-        help="The path to the model to load.",
+        default="MONAI/Llama3-VILA-M3-8B",
+        help=(
+            "The path to the model to load. "
+            "If source is 'local', it can be '/data/checkpoints/vila-m3-8b'. If "
+            "If source is 'huggingface', it can be 'MONAI/Llama3-VILA-M3-8B'."
+        ),
     )
     parser.add_argument(
         "--port",
@@ -826,11 +887,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source",
         type=str,
-        default="local",
-        help="The source of the model. Option is only 'local'.",
+        default="huggingface",
+        help="The source of the model. Option is 'huggingface' or 'local'.",
     )
     args = parser.parse_args()
-    SYS_PROMPT = conv_templates[args.convmode].system
     cache_images()
     create_demo(args.source, args.modelpath, args.convmode, args.port)
     cache_cleanup()
