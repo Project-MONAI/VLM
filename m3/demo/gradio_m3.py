@@ -751,7 +751,7 @@ def create_demo(source, model_path, conv_mode, server_port):
                 with gr.Accordion("System Prompt and Message", open=False):
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
-                        choices=["Unknown", "Auto", "CT", "MRI", "CXR"],
+                        choices=["Auto", "CT", "MRI", "CXR", "Unknown"],
                     )
                     model_cards_checkbox = gr.Checkbox(
                         label="Use Model Cards",
