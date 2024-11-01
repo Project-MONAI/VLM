@@ -107,7 +107,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
     --modelpath /data/checkpoints/<8B-checkpoint-name> \
     --convmode llama_3
     ```
->> For details, see the available [commmandline arguments](./m3/demo/gradio_m3.py#L855).
+> For details, see the available [commmandline arguments](./m3/demo/gradio_m3.py#L855).
 
 
 #### Adding your own expert model
