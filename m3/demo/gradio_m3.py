@@ -422,7 +422,7 @@ class M3Generator:
                     j += 1
                 del messages[i + 1 : j]  # Remove all the squashed expert messages
 
-            i += 1  # Move to the next message. TODO: Check if this is correct
+            i += 1
 
         return messages
 
@@ -530,6 +530,9 @@ class M3Generator:
             use_model_cards=sv.use_model_cards,
             download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
+            max_tokens=sv.max_tokens,
+            temperature=sv.temperature,
+            top_p=sv.top_p,
             interactive=True,
             sys_msgs_to_hide=sv.sys_msgs_to_hide,
             image_url_backup=sv.image_url,
