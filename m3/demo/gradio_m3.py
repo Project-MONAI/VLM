@@ -304,31 +304,24 @@ def new_session_variables(**kwargs):
 class M3Generator:
     """Class to generate M3 responses"""
 
-    def __init__(self, source="huggingface", model_path="", conv_mode=""):
+    def __init__(self, source="huggingface", model_path="MONAI/Llama3-VILA-M3-8B", conv_mode="llama_3"):
         """Initialize the M3 generator"""
         global SYS_PROMPT
         self.source = source
-        # TODO: support huggingface models
-        if source == "local":
+        if source == "local" or source == "huggingface":
             # TODO: allow setting the device
             disable_torch_init()
             self.conv_mode = conv_mode
+            if source == "huggingface":
+                model_path = snapshot_download(model_path)
             model_name = get_model_name_from_path(model_path)
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
                 model_path, model_name
             )
             logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
-        elif source == "huggingface":
-            model_path = snapshot_download(model_path)
-            self.conv_mode = conv_mode
-            model_name = get_model_name_from_path(model_path)
-            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path, model_name
-            )
-            logger.info(f"Model {model_name} loaded successfully. Context length: {self.context_len}")
+            SYS_PROMPT = conv_templates[self.conv_mode].system  # only set once
         else:
             raise NotImplementedError(f"Source {source} is not supported.")
-        SYS_PROMPT = conv_templates[self.conv_mode].system  # only set once
 
     def generate_response_local(
         self,
