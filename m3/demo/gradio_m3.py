@@ -18,6 +18,7 @@ import time
 from copy import deepcopy
 from glob import glob
 from shutil import copyfile, rmtree
+from zipfile import ZipFile
 
 import gradio as gr
 import nibabel as nib
@@ -113,6 +114,10 @@ CACHED_DIR = tempfile.mkdtemp()
 
 CACHED_IMAGES = {}
 
+FMT_2D_IMAGE = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif"]
+
+FMT_3D_IMAGE = [".nii", ".nii.gz", ".nrrd"]
+
 TITLE = """
 <div style="text-align: center; max-width: 800px; margin: 0 auto; padding: 20px;">
     <p>
@@ -170,7 +175,7 @@ def cache_images():
         if CACHED_IMAGES[item].endswith(".nii.gz"):
             data = nib.load(CACHED_IMAGES[item]).get_fdata()
             for slice_index in tqdm(range(data.shape[2])):
-                image_filename = get_slice_filenames(CACHED_IMAGES[item], slice_index)[0]
+                image_filename = get_slice_filenames(CACHED_IMAGES[item], slice_index)
                 if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
                     compose = get_monai_transforms(
                         ["image"],
@@ -288,7 +293,6 @@ class SessionVariables:
         self.top_p = 0.9
         self.temperature = 0.0
         self.max_tokens = 1024
-        self.download_file_path = ""  # Path to the downloaded file
         self.temp_working_dir = None
         self.idx_range = (None, None)
         self.interactive = False
@@ -470,7 +474,7 @@ class M3Generator:
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
                     _prompt,
-                    image_path=os.path.join(CACHED_DIR, get_slice_filenames(img_file, sv.slice_index)[0]),
+                    image_path=os.path.join(CACHED_DIR, get_slice_filenames(img_file, sv.slice_index)),
                 )
             else:
                 chat_history.append(_prompt, image_path=img_file)
@@ -480,7 +484,6 @@ class M3Generator:
         else:
             raise ValueError(f"Invalid image file: {img_file}")
 
-        # need squash
         outputs = self.generate_response(
             messages=self.squash_expert_messages_into_user(chat_history.messages),
             max_tokens=sv.max_tokens,
@@ -493,7 +496,6 @@ class M3Generator:
 
         # check the message mentions any expert model
         expert = None
-        download_pkg = ""
 
         for expert_model in [ExpertTXRV, ExpertVista3D]:
             expert = expert_model() if expert_model().mentioned_by(outputs) else None
@@ -507,7 +509,7 @@ class M3Generator:
                     logger.debug("Image URL is None. Try restoring the image URL from the backup to continue expert processing.")
                     sv.restore_from_backup("image_url")
                     sv.restore_from_backup("slice_index")
-                text_output, seg_file, instruction, download_pkg = expert.run(
+                text_output, seg_image, instruction = expert.run(
                     image_url=sv.image_url,
                     input=outputs,
                     output_dir=sv.temp_working_dir,
@@ -517,11 +519,10 @@ class M3Generator:
                 )
             except Exception as e:
                 text_output = f"Sorry I met an error: {e}"
-                seg_file = None
+                seg_image = None
                 instruction = ""
-                download_pkg = ""
 
-            chat_history.append(text_output, image_path=seg_file, role="expert")
+            chat_history.append(text_output, image_path=seg_image, role="expert")
             if instruction:
                 chat_history.append(instruction, role="expert")
                 outputs = self.generate_response(
@@ -538,7 +539,6 @@ class M3Generator:
             sys_prompt=sv.sys_prompt,
             sys_msg=sv.sys_msg,
             use_model_cards=sv.use_model_cards,
-            download_file_path=download_pkg,
             temp_working_dir=sv.temp_working_dir,
             max_tokens=sv.max_tokens,
             temperature=sv.temperature,
@@ -585,7 +585,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
             # There is no need to update the idx_range.
             sv.slice_index = slice_index
 
-        image_filename = get_slice_filenames(img_file, sv.slice_index)[0]
+        image_filename = get_slice_filenames(img_file, sv.slice_index)
         if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
             raise ValueError(f"Image file {image_filename} does not exist.")
         return (
@@ -633,7 +633,7 @@ def colorcode_message(text="", data_url=None, show_all=False, role="user", sys_m
 
 def clear_one_conv(sv: SessionVariables):
     """
-    Post-event hook indicating the session ended.It's called when `new_session_variables` finishes.
+    Post-event hook indicating the session ended. It's called when `new_session_variables` finishes.
     Particularly, it resets the non-text parameters. So it excludes:
         - prompt_edit
         - chat_history
@@ -644,11 +644,15 @@ def clear_one_conv(sv: SessionVariables):
     If some of the parameters need to stay persistent in the session, they should be modified in the `clear_all_convs` function.
     """
     logger.debug(f"Clearing the parameters of one conversation")
-    if sv.download_file_path != "":
-        name = os.path.basename(sv.download_file_path)
-        filepath = sv.download_file_path
-        sv.download_file_path = ""
-        d_btn = gr.DownloadButton(label=f"Download {name}", value=filepath, visible=True)
+    image_files = os.listdir(sv.temp_working_dir) if sv.temp_working_dir is not None else []
+    image_files = [f for f in image_files if any(f.endswith(ext) for ext in FMT_2D_IMAGE + FMT_3D_IMAGE)]
+    if len(image_files) > 0:
+        # zip the files
+        zip_file = os.path.join(sv.temp_working_dir, "results.zip")
+        with ZipFile(zip_file, "w") as zipf:
+            for file in image_files:
+                zipf.write(os.path.join(sv.temp_working_dir, file), file)
+        d_btn = gr.DownloadButton(label=f"Download Results From the Expert Model", value=zip_file, visible=True)
     else:
         d_btn = gr.DownloadButton(visible=False)
     # Order of output: image, image_selector, temperature_slider, top_p_slider, max_tokens_slider, download_button, image_slider

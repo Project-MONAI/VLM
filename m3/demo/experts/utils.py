@@ -145,9 +145,7 @@ def get_filename_from_cd(url, cd):
 def get_slice_filenames(image_file: str, slice_index: int, ext: str = "jpg"):
     """Small helper function to get the slice filenames"""
     base_name = os.path.basename(image_file)
-    image_filename = base_name.replace(".nii.gz", f"_slice{slice_index}_img.{ext}")
-    seg_filename = base_name.replace(".nii.gz", f"_slice{slice_index}_seg.{ext}")
-    return image_filename, seg_filename
+    return base_name.replace(".nii.gz", f"_slice{slice_index}_img.{ext}")
 
 
 def _get_modality_url(image_url_or_path: str | None):

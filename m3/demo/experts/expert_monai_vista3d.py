@@ -16,6 +16,7 @@ import sys
 import tempfile
 from pathlib import Path
 from shutil import move
+from uuid import uuid4
 
 import requests
 from experts.base_expert import BaseExpert
@@ -211,6 +212,7 @@ class ExpertVista3D(BaseExpert):
             seg_file = os.path.join(output_dir, "segmentation.nii.gz")
             move(output_file, seg_file)
 
+        seg_image = f"seg_{uuid4()}.jpg"
         text_output = self.segmentation_to_string(
             output_dir,
             img_file,
@@ -218,13 +220,12 @@ class ExpertVista3D(BaseExpert):
             label_groups,
             modality="CT",
             slice_index=slice_index,
-            image_filename=get_slice_filenames(img_file, slice_index)[0],
-            label_filename=get_slice_filenames(img_file, slice_index)[1],
+            image_filename=get_slice_filenames(img_file, slice_index),
+            label_filename=seg_image,
         )
 
         if "segmented" in input:
             instruction = ""  # no need to ask for instruction
         else:
             instruction = "Use this result to respond to this prompt:\n" + prompt
-        mask_overlay = os.path.join(output_dir, get_slice_filenames(img_file, slice_index)[1])
-        return text_output, mask_overlay, instruction, seg_file
+        return text_output, os.path.join(output_dir, seg_image), instruction
