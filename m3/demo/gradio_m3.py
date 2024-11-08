@@ -511,7 +511,7 @@ class M3Generator:
                     image_url=sv.image_url,
                     input=outputs,
                     output_dir=sv.temp_working_dir,
-                    img_file=img_file,
+                    img_file=CACHED_IMAGES.get(sv.image_url, None),
                     slice_index=sv.slice_index,
                     prompt=prompt,
                 )
