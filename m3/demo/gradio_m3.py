@@ -66,11 +66,17 @@ logging.getLogger("gradio").setLevel(logging.WARNING)
 
 # Sample images dictionary. It accepts either a URL or a local path.
 IMG_URLS_OR_PATHS = {
-    "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/liver_0.nii.gz",
+    "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_liver_0.nii.gz",
     "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
-    "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_8e067d88-2ea4ee8d-21db2c6b-f78701cb-91ad53f9_v1.jpg",
-    "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_51e9421b-c2f395da-5dd48889-7e307aca-1472d6a6_v1.jpg",
-    "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_c2af2ab3-6a11cbae-d9fa4d64-21ab221e-cf6f2146_v1.jpg",
+    # "MRI Sample 1": [
+    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1.nii.gz",
+    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1ce.nii.gz",
+    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t2.nii.gz",
+    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_flair.nii.gz",
+    # ],
+    "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_00030389_006.jpg",
+    "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_00030637_016.jpg",
+    "Chest X-ray Sample 3": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_00030788_000.jpg",
 }
 
 MODEL_CARDS = "Here is a list of available expert models:\n<BRATS(args)> Modality: MRI, Task: segmentation, Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, Valid args are: None\n<VISTA3D(args)> Modality: CT, Task: segmentation, Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, Accuracy: 127 organs: 0.792 Dice on average, Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n<VISTA2D(args)> Modality: cell imaging, Task: segmentation, Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, Accuracy: Good accuracy across several cell imaging datasets, Valid args are: None\n<CXR(args)> Modality: chest x-ray (CXR), Task: classification, Overview: pre-trained model which are trained on large cohorts of data, Accuracy: Good accuracy across several diverse chest x-rays datasets, Valid args are: None\nGive the model <NAME(args)> when selecting a suitable expert model.\n"
@@ -169,7 +175,7 @@ def cache_images():
                     compose = get_monai_transforms(
                         ["image"],
                         CACHED_DIR,
-                        modality="CT",  # TODO: Get the modality from the image/prompt/metadata
+                        modality=get_modality(item),
                         slice_index=slice_index,
                         image_filename=image_filename,
                     )
@@ -277,7 +283,7 @@ class SessionVariables:
         self.use_model_cards = True
         self.slice_index = None  # Slice index for 3D images
         self.image_url = None  # Image URL to the image on the web
-        self.image_url_backup = None  # Backup image URL
+        self.backup = {}  # Cached varaiables from previous messages for the current conversation
         self.axis = 2
         self.top_p = 0.9
         self.temperature = 0.0
@@ -289,6 +295,11 @@ class SessionVariables:
         self.sys_msgs_to_hide = []
         self.modality_prompt = "Auto"
 
+    def restore_from_backup(self, attr):
+        """Retrieve the attribute from the backup"""
+        attr_val = self.backup.get(attr, None)
+        if attr_val is not None:
+            self.__setattr__(attr, attr_val)
 
 def new_session_variables(**kwargs):
     """Create a new session variables but keep the conversation mode"""
@@ -493,10 +504,9 @@ class M3Generator:
             logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
             try:
                 if sv.image_url is None:
-                    logger.debug(f"Image URL is None. Calling the backup image URL. {sv.image_url_backup}")
-                    sv.image_url = sv.image_url_backup
-                    if sv.image_url is None:
-                        raise ValueError(f"No image is provided with {outputs}.")
+                    logger.debug("Image URL is None. Try restoring the image URL from the backup to continue expert processing.")
+                    sv.restore_from_backup("image_url")
+                    sv.restore_from_backup("slice_index")
                 text_output, seg_file, instruction, download_pkg = expert.run(
                     image_url=sv.image_url,
                     input=outputs,
@@ -535,7 +545,7 @@ class M3Generator:
             top_p=sv.top_p,
             interactive=True,
             sys_msgs_to_hide=sv.sys_msgs_to_hide,
-            image_url_backup=sv.image_url,
+            backup={"image_url": sv.image_url, "slice_index": sv.slice_index},
         )
         return (
             None,
