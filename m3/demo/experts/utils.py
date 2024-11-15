@@ -396,11 +396,6 @@ class ImageCache:
     def get(self, key, default=None):
         """Get the image or data URL from the cache."""
         if isinstance(key, list):
-            items = [self.cache.get(k) for k in key]
+            items = [self.cache_images.get(k) for k in key]
             return items[0]
-        return self.cache.get(key, default)
-
-    def set(self, key, value):
-        """Set the image or data URL in the cache."""
-        self.cache[key] = value
-        return value
+        return self.cache_images.get(key, default)
