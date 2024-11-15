@@ -9,24 +9,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 import re
-import sys
 import tempfile
-from pathlib import Path
 from shutil import move
 from uuid import uuid4
 
 import requests
-from experts.utils import get_monai_transforms, get_slice_filenames, save_image_url_to_file
+from experts.base_expert import BaseExpert
+from experts.utils import get_monai_transforms, get_slice_filenames
 from monai.bundle import create_workflow
 
-class ExpertBrats():
+
+class ExpertBrats(BaseExpert):
+    """Expert model for BRATS."""
+
     def __init__(self) -> None:
         """Initialize the VISTA-3D expert model."""
         self.model_name = "BRATS"
         self.bundle_root = os.path.expanduser("~/.cache/torch/hub/bundle/brats_mri_segmentation")
+    def mentioned_by(self, input: str):
+        """
+        Check if the VISTA-3D model is mentioned in the input.
+
+        Args:
+            input (str): Text from the LLM, e.g. "Let me trigger <BRATS>."
+
+        Returns:
+            bool: True if the VISTA-3D model is mentioned, False otherwise.
+        """
+        matches = re.findall(r"<(.*?)>", str(input))
+        if len(matches) != 1:
+            return False
+        return self.model_name in str(matches[0])
 
     def download_file(self, url: str, img_file: str):
         """
@@ -36,29 +51,75 @@ class ExpertBrats():
             url (str): The URL.
             img_file (str): The file path.
         """
+        parent_dir = os.path.dirname(img_file)
+        os.makedirs(parent_dir, exist_ok=True)
+        with open(img_file, "wb") as f:
+            response = requests.get(url)
+            f.write(response.content)
 
 
     def run(
-            self,
-            image_url: list[str] | None = None,
-            img_file: list[str] | None = None,
-            output_dir: str = ".",
+        self,
+        img_file: list[str] | None = None,
+        image_url: list[str] | None = None,
+        input: str = "",
+        output_dir: str = "",
+        slice_index: int = 0,
+        prompt: str = "",
+        **kwargs,
     ):
-        """Run the model"""
+        """
+        Run the BRATS model.
 
+        Args:
+            image_url (str): The image URL list.
+            input (str): The input text.
+            output_dir (str): The output directory.
+            img_file (str): The image file path list. If not provided, download from the URL.
+            slice_index (int): The slice index.
+            prompt (str): The prompt text from the original request.
+            **kwargs: Additional keyword arguments.
+        """
         if not img_file:
             # Download the file from the URL
             for url in image_url:
                 img_file = os.path.join(output_dir, os.path.basename(url))
                 self.download_file(url, img_file)
 
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workflow = create_workflow(
+                workflow_type="infer",
+                bundle_root=self.bundle_root,
+                config_file=os.path.join(self.bundle_root, f"configs/inference.json"),
+                logging_file=os.path.join(self.bundle_root, "configs/logging.conf"),
+                meta_file=os.path.join(self.bundle_root, "configs/metadata.json"),
+                test_datalist=[{"image": img_file}],
+                output_dtype="uint8",
+                separate_folder=False,
+                output_ext=".nii.gz",
+                output_dir=temp_dir,
+            )
+            workflow.evaluator.run()
+            output_file = os.path.join(temp_dir, os.listdir(temp_dir)[0])
+            seg_file = os.path.join(output_dir, "segmentation.nii.gz")
+            move(output_file, seg_file)
 
+        seg_image = f"seg_{uuid4()}.jpg"
+        transforms = get_monai_transforms(
+            ["image", "label"],
+            output_dir,
+            modality="MRI",
+            slice_index=slice_index,
+            axis=2,
+            image_filename=get_slice_filenames(img_file[0], slice_index),
+            label_filename=seg_image,
+        )
+        transforms({"image": img_file[0], "label": seg_file})
+        # TODO: find the right label mapping
+        text_output = f"The results are <segmentation>. The colors in this image describe\nyellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor\n"
 
-if __name__ == "__main__":
-    expert = ExpertBrats()
-    expert.run(image_url=[
-        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1.nii.gz",
-        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1ce.nii.gz",
-        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t2.nii.gz",
-        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_flair.nii.gz",
-    ], output_dir="/tmp/brats")
+        if "segmented" in input:
+            instruction = ""  # no need to ask for instruction
+        else:
+            instruction = "Use this result to respond to this prompt:\n" + prompt
+        return text_output, os.path.join(output_dir, seg_image), instruction
