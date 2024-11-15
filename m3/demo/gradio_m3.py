@@ -67,14 +67,14 @@ logging.getLogger("gradio").setLevel(logging.WARNING)
 
 # Sample images dictionary. It accepts either a URL or a local path.
 IMG_URLS_OR_PATHS = {
-    "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_liver_0.nii.gz",
-    "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
-    # "MRI Sample 1": [
-    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1.nii.gz",
-    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1ce.nii.gz",
-    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t2.nii.gz",
-    #     "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_flair.nii.gz",
-    # ],
+    # "CT Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_liver_0.nii.gz",
+    # "CT Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/ct_sample.nii.gz",
+    "MRI Sample 1": [
+        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1.nii.gz",
+        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t1ce.nii.gz",
+        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_t2.nii.gz",
+        "https://developer.download.nvidia.com/assets/Clara/monai/samples/mri_Brats18_2013_31_1_flair.nii.gz",
+    ],
     "Chest X-ray Sample 1": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_00026451_030.jpg",
     "Chest X-ray Sample 2": "https://developer.download.nvidia.com/assets/Clara/monai/samples/cxr_00029943_005.jpg",
 }
@@ -162,6 +162,8 @@ def cache_images():
     """Cache the image and return the file path"""
     logger.debug(f"Caching the image to {CACHED_DIR}")
     for _, item in IMG_URLS_OR_PATHS.items():
+        if isinstance(item, list):
+            item = str(item[0])  # for MRI samples, take the T1 image
         if item.startswith("http"):
             CACHED_IMAGES[item] = save_image_url_to_file(item, CACHED_DIR)
         elif os.path.exists(item):
