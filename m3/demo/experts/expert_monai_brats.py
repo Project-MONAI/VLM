@@ -22,7 +22,7 @@ import requests
 from experts.utils import get_monai_transforms, get_slice_filenames, save_image_url_to_file
 from monai.bundle import create_workflow
 
-class ExpertBrats()
+class ExpertBrats():
     def __init__(self) -> None:
         """Initialize the VISTA-3D expert model."""
         self.model_name = "BRATS"
