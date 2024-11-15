@@ -450,7 +450,8 @@ class M3Generator:
             prompt = prompt.replace("<image>", "") if "<image>" in prompt else prompt  # remove the image token if it's in the prompt
             mod_msg = f"These are different {modality} modalities.\n"
             _prompt = model_cards + "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> " + mod_msg + prompt
-            chat_history.append(_prompt, image_path=img_file)
+            image_paths = [os.path.join(CACHED_IMAGES.dir(), get_slice_filenames(f, sv.slice_index)) for f in img_file]
+            chat_history.append(_prompt, image_path=image_paths)
         elif img_file is None:
             # text-only prompt
             chat_history.append(prompt)  # no image token
