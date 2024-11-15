@@ -16,7 +16,9 @@ import os
 import re
 from io import BytesIO
 from pathlib import Path
+from shutil import copyfile, rmtree
 
+import nibabel as nib
 import numpy as np
 import requests
 import skimage
@@ -24,6 +26,7 @@ from monai.transforms import Compose, LoadImageD, MapTransform, OrientationD, Sc
 from PIL import Image
 from PIL import Image as PILImage
 from PIL.Image import Image
+from tqdm import tqdm
 
 logger = logging.getLogger("gradio_m3")
 
@@ -339,3 +342,65 @@ def resize_data_url(data_url, max_size):
     img_base64 = base64.b64encode(img_byte).decode()
     # Convert the base64 bytes to string and format the data URL
     return f"data:image/jpeg;base64,{img_base64}"
+
+
+class ImageCache:
+    """A simple image cache to store images and data URLs."""
+
+    def __init__(self, cache_dir: Path):
+        """Initialize the image cache."""
+        cache_dir = Path(cache_dir)
+        if not cache_dir.exists():
+            cache_dir.mkdir(parents=True)
+        self.cache_dir = cache_dir
+        self.cache_images = {}
+
+    def cache(self, image_urls_or_paths):
+        """Cache the images from the URLs or paths."""
+        logger.debug(f"Caching the image to {self.cache_dir}")
+        for _, item in image_urls_or_paths.items():
+            if isinstance(item, list):
+                item = str(item[0])  # for MRI samples, take the T1 image
+            if item.startswith("http"):
+                self.cache_images[item] = save_image_url_to_file(item, self.cache_dir)
+            elif os.path.exists(item):
+                # move the file to the cache directory
+                file_name = os.path.basename(item)
+                self.cache_images[item] = os.path.join(self.cache_dir, file_name)
+                if not os.path.isfile(self.cache_images[item]):
+                    copyfile(item, self.cache_images[item])
+
+            if self.cache_images[item].endswith(".nii.gz"):
+                data = nib.load(self.cache_images[item]).get_fdata()
+                for slice_index in tqdm(range(data.shape[2])):
+                    image_filename = get_slice_filenames(self.cache_images[item], slice_index)
+                    if not os.path.exists(os.path.join(self.cache_dir, image_filename)):
+                        compose = get_monai_transforms(
+                            ["image"],
+                            self.cache_dir,
+                            modality=get_modality(item),
+                            slice_index=slice_index,
+                            image_filename=image_filename,
+                        )
+                        compose({"image": self.cache_images[item]})
+    
+    def cleanup(self):
+        """Clean up the cache directory."""
+        logger.debug(f"Cleaning up the cache")
+        rmtree(self.cache_dir)
+
+    def dir(self):
+        """Return the cache directory."""
+        return str(self.cache_dir)
+
+    def get(self, key, default=None):
+        """Get the image or data URL from the cache."""
+        if isinstance(key, list):
+            items = [self.cache.get(k) for k in key]
+            return items[0]
+        return self.cache.get(key, default)
+
+    def set(self, key, value):
+        """Set the image or data URL in the cache."""
+        self.cache[key] = value
+        return value

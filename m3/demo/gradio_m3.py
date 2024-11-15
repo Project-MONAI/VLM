@@ -17,22 +17,20 @@ import tempfile
 import time
 from copy import deepcopy
 from glob import glob
-from shutil import copyfile, rmtree
+from shutil import rmtree
 from zipfile import ZipFile
 
 import gradio as gr
-import nibabel as nib
 import torch
 from dotenv import load_dotenv
 from experts.expert_monai_vista3d import ExpertVista3D
 from experts.expert_torchxrayvision import ExpertTXRV
 from experts.utils import (
+    ImageCache,
     get_modality,
-    get_monai_transforms,
     get_slice_filenames,
     image_to_data_url,
     load_image,
-    save_image_url_to_file,
 )
 from huggingface_hub import snapshot_download
 from llava.constants import IMAGE_TOKEN_INDEX
@@ -109,9 +107,7 @@ EXAMPLE_PROMPTS_2D = [
 
 HTML_PLACEHOLDER = "<br>".join([""] * 15)
 
-CACHED_DIR = tempfile.mkdtemp()
-
-CACHED_IMAGES = {}
+CACHED_IMAGES = ImageCache(cache_dir=tempfile.mkdtemp())
 
 FMT_2D_IMAGE = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif"]
 
@@ -157,41 +153,6 @@ CSS_STYLES = (
     "}\n"
 )
 
-
-def cache_images():
-    """Cache the image and return the file path"""
-    logger.debug(f"Caching the image to {CACHED_DIR}")
-    for _, item in IMG_URLS_OR_PATHS.items():
-        if isinstance(item, list):
-            item = str(item[0])  # for MRI samples, take the T1 image
-        if item.startswith("http"):
-            CACHED_IMAGES[item] = save_image_url_to_file(item, CACHED_DIR)
-        elif os.path.exists(item):
-            # move the file to the cache directory
-            file_name = os.path.basename(item)
-            CACHED_IMAGES[item] = os.path.join(CACHED_DIR, file_name)
-            if not os.path.isfile(CACHED_IMAGES[item]):
-                copyfile(item, CACHED_IMAGES[item])
-
-        if CACHED_IMAGES[item].endswith(".nii.gz"):
-            data = nib.load(CACHED_IMAGES[item]).get_fdata()
-            for slice_index in tqdm(range(data.shape[2])):
-                image_filename = get_slice_filenames(CACHED_IMAGES[item], slice_index)
-                if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
-                    compose = get_monai_transforms(
-                        ["image"],
-                        CACHED_DIR,
-                        modality=get_modality(item),
-                        slice_index=slice_index,
-                        image_filename=image_filename,
-                    )
-                    compose({"image": CACHED_IMAGES[item]})
-
-
-def cache_cleanup():
-    """Clean up the cache"""
-    logger.debug(f"Cleaning up the cache")
-    rmtree(CACHED_DIR)
 
 
 class ChatHistory:
@@ -475,7 +436,7 @@ class M3Generator:
             if img_file.endswith(".nii.gz"):  # Take the specific slice from a volume
                 chat_history.append(
                     _prompt,
-                    image_path=os.path.join(CACHED_DIR, get_slice_filenames(img_file, sv.slice_index)),
+                    image_path=os.path.join(CACHED_IMAGES.dir(), get_slice_filenames(img_file, sv.slice_index)),
                 )
             else:
                 chat_history.append(_prompt, image_path=img_file)
@@ -587,10 +548,10 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
             sv.slice_index = slice_index
 
         image_filename = get_slice_filenames(img_file, sv.slice_index)
-        if not os.path.exists(os.path.join(CACHED_DIR, image_filename)):
+        if not os.path.exists(os.path.join(CACHED_IMAGES.dir(), image_filename)):
             raise ValueError(f"Image file {image_filename} does not exist.")
         return (
-            os.path.join(CACHED_DIR, image_filename),
+            os.path.join(CACHED_IMAGES.dir(), image_filename),
             sv,
             gr.Slider(sv.idx_range[0], sv.idx_range[1], value=sv.slice_index, step=1, visible=True, interactive=True),
             gr.Dataset(samples=EXAMPLE_PROMPTS_3D),
@@ -902,6 +863,6 @@ if __name__ == "__main__":
         help="The source of the model. Option is 'huggingface' or 'local'.",
     )
     args = parser.parse_args()
-    cache_images()
+    CACHED_IMAGES.cache()
     create_demo(args.source, args.modelpath, args.convmode, args.port)
-    cache_cleanup()
+    CACHED_IMAGES.cleanup()
