@@ -157,6 +157,8 @@ def _get_modality_url(image_url_or_path: str | None):
     If the URL or file path contains ".nii.gz" and contain "mri_", then it is MRI, else it is CT.
     If it contains "cxr_" then it is CXR, otherwise it is Unknown.
     """
+    if isinstance(image_url_or_path, list) and len(image_url_or_path) > 0:
+        image_url_or_path = image_url_or_path[0]
     if not isinstance(image_url_or_path, str):
         return "Unknown"
     if image_url_or_path.startswith("data:image"):
