@@ -863,6 +863,6 @@ if __name__ == "__main__":
         help="The source of the model. Option is 'huggingface' or 'local'.",
     )
     args = parser.parse_args()
-    CACHED_IMAGES.cache()
+    CACHED_IMAGES.cache(IMG_URLS_OR_PATHS)
     create_demo(args.source, args.modelpath, args.convmode, args.port)
     CACHED_IMAGES.cleanup()
