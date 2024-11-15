@@ -39,7 +39,6 @@ from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import KeywordsStoppingCriteria, get_model_name_from_path, process_images, tokenizer_image_token
 from llava.model.builder import load_pretrained_model
 from llava.utils import disable_torch_init
-from tqdm import tqdm
 
 load_dotenv()
 
@@ -235,9 +234,11 @@ class ChatHistory:
                         text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide
                     )
                 else:
-                    history_text_html += colorcode_message(
-                        data_url=image_to_data_url(content["image_path"], max_size=(300, 300)), show_all=True, role=role
-                    )  # always show the image
+                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else content["image_path"]
+                    for image_path in image_paths:
+                        history_text_html += colorcode_message(
+                            data_url=image_to_data_url(image_path, max_size=(300, 300)), show_all=True, role=role
+                        )  # always show the image
             history.append(history_text_html)
         return "<br>".join(history)
 
@@ -327,7 +328,9 @@ class M3Generator:
                 if content["type"] == "text":
                     prompt += content["text"]
                 if content["type"] == "image_path":
-                    images.append(load_image(content["image_path"]))
+                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
+                    for image_path in image_paths:
+                        images.append(load_image(image_path))
             conv.append_message(role, prompt)
 
         if conv.sep_style == SeparatorStyle.LLAMA_3:
@@ -424,7 +427,7 @@ class M3Generator:
 
         model_cards = sv.sys_msg if sv.use_model_cards else ""
 
-        img_file = CACHED_IMAGES.get(sv.image_url, None)
+        img_file = CACHED_IMAGES.get(sv.image_url, None, list_return=True)
 
         if isinstance(img_file, str):
             if "<image>" not in prompt:
@@ -442,6 +445,12 @@ class M3Generator:
                 )
             else:
                 chat_history.append(_prompt, image_path=img_file)
+        elif isinstance(img_file, list):
+            # multi-modal images
+            prompt = prompt.replace("<image>", "") if "<image>" in prompt else prompt  # remove the image token if it's in the prompt
+            mod_msg = f"These are different {modality} modalities.\n"
+            _prompt = model_cards + "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> " + mod_msg + prompt
+            chat_history.append(_prompt, image_path=img_file)
         elif img_file is None:
             # text-only prompt
             chat_history.append(prompt)  # no image token
