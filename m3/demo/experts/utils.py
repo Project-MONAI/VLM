@@ -360,31 +360,31 @@ class ImageCache:
     def cache(self, image_urls_or_paths):
         """Cache the images from the URLs or paths."""
         logger.debug(f"Caching the image to {self.cache_dir}")
-        for _, item in image_urls_or_paths.items():
-            if isinstance(item, list):
-                item = str(item[0])  # for MRI samples, take the T1 image
-            if item.startswith("http"):
-                self.cache_images[item] = save_image_url_to_file(item, self.cache_dir)
-            elif os.path.exists(item):
-                # move the file to the cache directory
-                file_name = os.path.basename(item)
-                self.cache_images[item] = os.path.join(self.cache_dir, file_name)
-                if not os.path.isfile(self.cache_images[item]):
-                    copyfile(item, self.cache_images[item])
+        for _, items in image_urls_or_paths.items():
+            items = items if isinstance(items, list) else [items]
+            for item in items:
+                if item.startswith("http"):
+                    self.cache_images[item] = save_image_url_to_file(item, self.cache_dir)
+                elif os.path.exists(item):
+                    # move the file to the cache directory
+                    file_name = os.path.basename(item)
+                    self.cache_images[item] = os.path.join(self.cache_dir, file_name)
+                    if not os.path.isfile(self.cache_images[item]):
+                        copyfile(item, self.cache_images[item])
 
-            if self.cache_images[item].endswith(".nii.gz"):
-                data = nib.load(self.cache_images[item]).get_fdata()
-                for slice_index in tqdm(range(data.shape[2])):
-                    image_filename = get_slice_filenames(self.cache_images[item], slice_index)
-                    if not os.path.exists(os.path.join(self.cache_dir, image_filename)):
-                        compose = get_monai_transforms(
-                            ["image"],
-                            self.cache_dir,
-                            modality=get_modality(item),
-                            slice_index=slice_index,
-                            image_filename=image_filename,
-                        )
-                        compose({"image": self.cache_images[item]})
+                if self.cache_images[item].endswith(".nii.gz"):
+                    data = nib.load(self.cache_images[item]).get_fdata()
+                    for slice_index in tqdm(range(data.shape[2])):
+                        image_filename = get_slice_filenames(self.cache_images[item], slice_index)
+                        if not os.path.exists(os.path.join(self.cache_dir, image_filename)):
+                            compose = get_monai_transforms(
+                                ["image"],
+                                self.cache_dir,
+                                modality=get_modality(item),
+                                slice_index=slice_index,
+                                image_filename=image_filename,
+                            )
+                            compose({"image": self.cache_images[item]})
     
     def cleanup(self):
         """Clean up the cache directory."""
@@ -395,9 +395,9 @@ class ImageCache:
         """Return the cache directory."""
         return str(self.cache_dir)
 
-    def get(self, key, default=None):
+    def get(self, key: str | list, default=None, list_return=False):
         """Get the image or data URL from the cache."""
         if isinstance(key, list):
             items = [self.cache_images.get(k) for k in key]
-            return items[0]
+            return items if list_return else items[0]
         return self.cache_images.get(key, default)

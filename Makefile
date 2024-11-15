@@ -21,4 +21,5 @@ demo_m3:
     -O $(HOME)/.torchxrayvision/models_data/pc-nih-rsna-siim-vin-resnet50-test512-e400-state.pt; \
 	mkdir -p $(HOME)/.cache/torch/hub/bundle \
 	&& python -m monai.bundle download vista3d --version 0.5.4 --bundle_dir $(HOME)/.cache/torch/hub/bundle \
+    && python -m monai.bundle download brats_mri_segmentation --version 0.5.2 --bundle_dir $(HOME)/.cache/torch/hub/bundle \
 	&& unzip $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4.zip -d $(HOME)/.cache/torch/hub/bundle/vista3d_v0.5.4

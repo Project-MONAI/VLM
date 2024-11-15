@@ -25,6 +25,7 @@ import torch
 from dotenv import load_dotenv
 from experts.expert_monai_vista3d import ExpertVista3D
 from experts.expert_torchxrayvision import ExpertTXRV
+from experts.expert_monai_brats import ExpertBrats
 from experts.utils import (
     ImageCache,
     get_modality,
@@ -91,6 +92,7 @@ EXAMPLE_PROMPTS_3D = [
     ["Separate the gastrointestinal region from the surrounding tissue in this image."],
     ["Can you assist me in segmenting the bony structures in this image?"],
     ["Describe the image in detail"],
+    ["Segment the image using BRATS"],
 ]
 
 EXAMPLE_PROMPTS_2D = [
@@ -459,7 +461,7 @@ class M3Generator:
         # check the message mentions any expert model
         expert = None
 
-        for expert_model in [ExpertTXRV, ExpertVista3D]:
+        for expert_model in [ExpertTXRV, ExpertVista3D, ExpertBrats]:
             expert = expert_model() if expert_model().mentioned_by(outputs) else None
             if expert:
                 break
@@ -475,7 +477,7 @@ class M3Generator:
                     image_url=sv.image_url,
                     input=outputs,
                     output_dir=sv.temp_working_dir,
-                    img_file=CACHED_IMAGES.get(sv.image_url, None),
+                    img_file=CACHED_IMAGES.get(sv.image_url, None, list_return=True),
                     slice_index=sv.slice_index,
                     prompt=prompt,
                 )
