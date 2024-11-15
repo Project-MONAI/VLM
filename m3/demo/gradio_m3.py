@@ -548,7 +548,7 @@ def update_image_selection(selected_image, sv: SessionVariables, slice_index=Non
     sv.interactive = True
     if img_file.endswith(".nii.gz"):
         if slice_index is None:
-            slice_file_pttn = img_file.replace(".nii.gz", "*_img.jpg")
+            slice_file_pttn = img_file.replace(".nii.gz", "_slice*_img.jpg")
             # glob the image files
             slice_files = glob(slice_file_pttn)
             sv.slice_index = len(slice_files) // 2
