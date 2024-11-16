@@ -235,6 +235,7 @@ class ChatHistory:
                     )
                 else:
                     image_paths = content["image_path"] if isinstance(content["image_path"], list) else content["image_path"]
+                    logger.debug(f"Image paths: {image_paths}")
                     for image_path in image_paths:
                         history_text_html += colorcode_message(
                             data_url=image_to_data_url(image_path, max_size=(300, 300)), show_all=True, role=role
