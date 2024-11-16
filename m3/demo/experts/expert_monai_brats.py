@@ -28,6 +28,7 @@ class ExpertBrats(BaseExpert):
         """Initialize the VISTA-3D expert model."""
         self.model_name = "BRATS"
         self.bundle_root = os.path.expanduser("~/.cache/torch/hub/bundle/brats_mri_segmentation")
+
     def mentioned_by(self, input: str):
         """
         Check if the VISTA-3D model is mentioned in the input.
@@ -56,7 +57,6 @@ class ExpertBrats(BaseExpert):
         with open(img_file, "wb") as f:
             response = requests.get(url)
             f.write(response.content)
-
 
     def run(
         self,

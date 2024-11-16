@@ -23,16 +23,10 @@ from zipfile import ZipFile
 import gradio as gr
 import torch
 from dotenv import load_dotenv
+from experts.expert_monai_brats import ExpertBrats
 from experts.expert_monai_vista3d import ExpertVista3D
 from experts.expert_torchxrayvision import ExpertTXRV
-from experts.expert_monai_brats import ExpertBrats
-from experts.utils import (
-    ImageCache,
-    get_modality,
-    get_slice_filenames,
-    image_to_data_url,
-    load_image,
-)
+from experts.utils import ImageCache, get_modality, get_slice_filenames, image_to_data_url, load_image
 from huggingface_hub import snapshot_download
 from llava.constants import IMAGE_TOKEN_INDEX
 from llava.conversation import SeparatorStyle, conv_templates
@@ -155,7 +149,6 @@ CSS_STYLES = (
 )
 
 
-
 class ChatHistory:
     """Class to store the chat history"""
 
@@ -234,7 +227,9 @@ class ChatHistory:
                         text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide
                     )
                 else:
-                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
+                    image_paths = (
+                        content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
+                    )
                     for image_path in image_paths:
                         history_text_html += colorcode_message(
                             data_url=image_to_data_url(image_path, max_size=(300, 300)), show_all=True, role=role
@@ -269,6 +264,7 @@ class SessionVariables:
         attr_val = self.backup.get(attr, None)
         if attr_val is not None:
             self.__setattr__(attr, attr_val)
+
 
 def new_session_variables(**kwargs):
     """Create a new session variables but keep the conversation mode"""
@@ -328,7 +324,9 @@ class M3Generator:
                 if content["type"] == "text":
                     prompt += content["text"]
                 if content["type"] == "image_path":
-                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
+                    image_paths = (
+                        content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
+                    )
                     for image_path in image_paths:
                         images.append(load_image(image_path))
             conv.append_message(role, prompt)
@@ -447,7 +445,9 @@ class M3Generator:
                 chat_history.append(_prompt, image_path=img_file)
         elif isinstance(img_file, list):
             # multi-modal images
-            prompt = prompt.replace("<image>", "") if "<image>" in prompt else prompt  # remove the image token if it's in the prompt
+            prompt = (
+                prompt.replace("<image>", "") if "<image>" in prompt else prompt
+            )  # remove the image token if it's in the prompt
             special_token = "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> "
             mod_msg = f"These are different {modality} modalities.\n"
             _prompt = model_cards + special_token + mod_msg + prompt
@@ -482,7 +482,9 @@ class M3Generator:
             logger.debug(f"Expert model {expert.__class__.__name__} is being called to process {sv.image_url}.")
             try:
                 if sv.image_url is None:
-                    logger.debug("Image URL is None. Try restoring the image URL from the backup to continue expert processing.")
+                    logger.debug(
+                        "Image URL is None. Try restoring the image URL from the backup to continue expert processing."
+                    )
                     sv.restore_from_backup("image_url")
                     sv.restore_from_backup("slice_index")
                 text_output, seg_image, instruction = expert.run(

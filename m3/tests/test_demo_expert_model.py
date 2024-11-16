@@ -77,7 +77,7 @@ class TestExperts(unittest.TestCase):
 class TestExpertUtils(unittest.TestCase):
     def test_filename_slices(self):
         filename = "data/ct_image.nii.gz"
-        img  = get_slice_filenames(filename, 0)
+        img = get_slice_filenames(filename, 0)
         self.assertEqual(img, "ct_image_slice0.jpg")
 
     def test_monai_transforms(self):

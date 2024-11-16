@@ -385,7 +385,7 @@ class ImageCache:
                                 image_filename=image_filename,
                             )
                             compose({"image": self.cache_images[item]})
-    
+
     def cleanup(self):
         """Clean up the cache directory."""
         logger.debug(f"Cleaning up the cache")
