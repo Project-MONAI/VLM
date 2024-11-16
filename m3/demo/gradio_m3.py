@@ -235,7 +235,6 @@ class ChatHistory:
                     )
                 else:
                     image_paths = content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
-                    logger.debug(f"Image paths: {image_paths}")
                     for image_path in image_paths:
                         history_text_html += colorcode_message(
                             data_url=image_to_data_url(image_path, max_size=(300, 300)), show_all=True, role=role
@@ -449,10 +448,12 @@ class M3Generator:
         elif isinstance(img_file, list):
             # multi-modal images
             prompt = prompt.replace("<image>", "") if "<image>" in prompt else prompt  # remove the image token if it's in the prompt
+            special_token = "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> "
             mod_msg = f"These are different {modality} modalities.\n"
-            _prompt = model_cards + "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> " + mod_msg + prompt
+            _prompt = model_cards + special_token + mod_msg + prompt
             image_paths = [os.path.join(CACHED_IMAGES.dir(), get_slice_filenames(f, sv.slice_index)) for f in img_file]
             chat_history.append(_prompt, image_path=image_paths)
+            sv.sys_msgs_to_hide.append(model_cards + special_token + mod_msg)
         elif img_file is None:
             # text-only prompt
             chat_history.append(prompt)  # no image token
