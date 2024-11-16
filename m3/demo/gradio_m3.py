@@ -234,7 +234,7 @@ class ChatHistory:
                         text=content["text"], show_all=show_all, role=role, sys_msgs_to_hide=sys_msgs_to_hide
                     )
                 else:
-                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else content["image_path"]
+                    image_paths = content["image_path"] if isinstance(content["image_path"], list) else [content["image_path"]]
                     logger.debug(f"Image paths: {image_paths}")
                     for image_path in image_paths:
                         history_text_html += colorcode_message(
