@@ -9,7 +9,7 @@ The repository provides a collection of vision language models, benchmarks, and 
 
 - [2024/10/31] We released the [VILA-M3-3B](https://huggingface.co/MONAI/Llama3-VILA-M3-3B), [VILA-M3-8B](https://huggingface.co/MONAI/Llama3-VILA-M3-8B), and [VILA-M3-13B](https://huggingface.co/MONAI/Llama3-VILA-M3-13B) checkpoints on [HuggingFace](https://huggingface.co/MONAI).
 - [2024/10/24] We presented VILA-M3 and the VLM module in MONAI at MONAI Day ([slides](./m3/docs/materials/VILA-M3_MONAI-Day_2024.pdf), [recording](https://www.youtube.com/watch?v=ApPVTuEtBjc&list=PLtoSVSQ2XzyDOjOn6oDRfEMCD-m-Rm2BJ&index=16))
-- [2024/10/24] Interactive [VILA-M3 Demo](https://20.163.25.224/) is available online!
+- [2024/10/24] Interactive [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) is available online!
 
 ## VILA-M3
 
@@ -24,8 +24,7 @@ For details, see [here](m3/README.md).
 
 ### Online Demo
 
-Please visit the [VILA-M3 Demo](https://20.163.25.224/) to try out a preview version of the model.
-NOTE: The URL `https://vila-m3-demo.monai.ngc.nvidia.com/` is temporarily unavailable. Please use the new URL `https://20.163.25.224/` instead.
+Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to try out a preview version of the model.
 
 <p align="center">
   <img src="m3/docs/images/gradio_app_ct.png" width="70%"/>
