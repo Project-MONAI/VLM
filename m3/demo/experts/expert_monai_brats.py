@@ -42,6 +42,7 @@ class ExpertBrats(BaseExpert):
         axis: int = 2,
         output_prefix="The results are <segmentation>. The colors in this image describe\n",
     ):
+        """Convert the segmentation to a string."""
         output_dir = Path(output_dir)
 
         transforms = get_monai_transforms(
