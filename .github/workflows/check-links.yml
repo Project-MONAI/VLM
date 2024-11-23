@@ -21,7 +21,7 @@ jobs:
           node-version: '18'
           
       - name: Install markdown-link-check
-        run: npm install -g markdown-link-check
+        run: npm install -g markdown-link-check@3.12.2
 
       - name: Check for broken links
         run: find . -name "*.md" | xargs -I {} markdown-link-check {} --config .github/markdown-link-check.json
