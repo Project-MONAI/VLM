@@ -12,6 +12,7 @@
 import os
 import re
 import tempfile
+from pathlib import Path
 from shutil import move
 from uuid import uuid4
 
@@ -28,6 +29,36 @@ class ExpertBrats(BaseExpert):
         """Initialize the VISTA-3D expert model."""
         self.model_name = "BRATS"
         self.bundle_root = os.path.expanduser("~/.cache/torch/hub/bundle/brats_mri_segmentation")
+
+    def segmentation_to_string(
+        self,
+        output_dir: Path,
+        img_file: str,
+        seg_file: str,
+        slice_index: int,
+        image_filename: str,
+        label_filename: str,
+        modality: str = "MRI",
+        axis: int = 2,
+        output_prefix="The results are <segmentation>. The colors in this image describe\n",
+    ):
+        output_dir = Path(output_dir)
+
+        transforms = get_monai_transforms(
+            ["image", "label"],
+            output_dir,
+            modality=modality,
+            slice_index=slice_index,
+            axis=axis,
+            image_filename=image_filename,
+            label_filename=label_filename,
+        )
+        data = transforms({"image": img_file, "label": seg_file})
+        ncr = data["colormap"][1]
+        # ed = data["colormap"][2]  # not used
+        et = data["colormap"][4]
+
+        return output_prefix +  f"{ncr} and {et}: tumor core, only {et}: enhancing tumor, all colors: whole tumor\n"
 
     def mentioned_by(self, input: str):
         """
@@ -105,18 +136,16 @@ class ExpertBrats(BaseExpert):
             move(output_file, seg_file)
 
         seg_image = f"seg_{uuid4()}.jpg"
-        transforms = get_monai_transforms(
-            ["image", "label"],
+        text_output = self.segmentation_to_string(
             output_dir,
+            img_file[0],
+            seg_file,
+            slice_index,
+            get_slice_filenames(img_file[0], slice_index),
+            seg_image,
             modality="MRI",
-            slice_index=slice_index,
             axis=2,
-            image_filename=get_slice_filenames(img_file[0], slice_index),
-            label_filename=seg_image,
         )
-        transforms({"image": img_file[0], "label": seg_file})
-        # TODO: find the right label mapping
-        text_output = f"The results are <segmentation>. The colors in this image describe\nyellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor\n"
 
         if "segmented" in input:
             instruction = ""  # no need to ask for instruction
