@@ -258,6 +258,7 @@ class SessionVariables:
         self.interactive = False
         self.sys_msgs_to_hide = []
         self.modality_prompt = "Auto"
+        self.img_urls_or_paths = IMG_URLS_OR_PATHS
 
     def restore_from_backup(self, attr):
         """Retrieve the attribute from the backup"""
@@ -544,7 +545,7 @@ def input_image(image, sv: SessionVariables):
 def update_image_selection(selected_image, sv: SessionVariables, slice_index=None):
     """Update the gradio components based on the selected image"""
     logger.debug(f"Updating display image for {selected_image}")
-    sv.image_url = IMG_URLS_OR_PATHS.get(selected_image, None)
+    sv.image_url = sv.img_urls_or_paths.get(selected_image, None)
     img_file = CACHED_IMAGES.get(sv.image_url, None)
 
     if sv.image_url is None or img_file is None:
@@ -710,6 +711,17 @@ def download_file():
     """Download the file."""
     return [gr.DownloadButton(visible=False)]
 
+def upload_file(files, sv):
+    """Upload the file."""
+    logger.debug(f"Uploading the file {files}")
+    idx = len(sv.img_urls_or_paths) + 1 - len(IMG_URLS_OR_PATHS)
+    sv.img_urls_or_paths.update({f"User Data {idx}": files})
+    new_image_dropdown = gr.Dropdown(
+        label="Select an image", choices=["Please select .."] + list(sv.img_urls_or_paths.keys())
+    )
+    CACHED_IMAGES.cache(sv.img_urls_or_paths)
+    return sv, new_image_dropdown
+
 
 def create_demo(source, model_path, conv_mode, server_port):
     """Main function to create the Gradio interface"""
@@ -723,7 +735,7 @@ def create_demo(source, model_path, conv_mode, server_port):
         with gr.Row():
             with gr.Column():
                 image_dropdown = gr.Dropdown(
-                    label="Select an image", choices=["Please select .."] + list(IMG_URLS_OR_PATHS.keys())
+                    label="Select an image", choices=["Please select .."] + list(sv.value.img_urls_or_paths.keys())
                 )
                 image_input = gr.Image(
                     label="Image", sources=[], placeholder="Please select an image from the dropdown list."
@@ -746,7 +758,8 @@ def create_demo(source, model_path, conv_mode, server_port):
                         label="Max Tokens", minimum=1, maximum=1024, step=1, value=sv.value.max_tokens, interactive=True
                     )
 
-                with gr.Accordion("System Prompt and Message", open=False):
+                with gr.Accordion("Advanced Customization", open=False):
+                    upload_button = gr.UploadButton("Click to Upload Files")
                     modality_prompt_dropdown = gr.Dropdown(
                         label="Select Modality",
                         choices=["Auto", "CT", "MRI", "CXR", "Unknown"],
@@ -811,6 +824,7 @@ def create_demo(source, model_path, conv_mode, server_port):
         model_cards_checkbox.change(fn=update_model_cards_checkbox, inputs=[model_cards_checkbox, sv], outputs=[sv])
         model_cards_text.change(fn=update_model_cards_text, inputs=[model_cards_text, sv], outputs=[sv])
         modality_prompt_dropdown.change(fn=update_modality_prompt, inputs=[modality_prompt_dropdown, sv], outputs=[sv])
+        upload_button.upload(fn=upload_file, inputs=[upload_button, sv], outputs=[sv, image_dropdown])
         # Reset button
         clear_btn.click(
             fn=clear_all_convs,
