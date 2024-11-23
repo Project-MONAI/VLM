@@ -54,11 +54,17 @@ class ExpertBrats(BaseExpert):
             label_filename=label_filename,
         )
         data = transforms({"image": img_file, "label": seg_file})
-        ncr = data["colormap"][1]
-        # ed = data["colormap"][2]  # not used
-        et = data["colormap"][4]
-
-        return output_prefix +  f"{ncr} and {et}: tumor core, only {et}: enhancing tumor, all colors: whole tumor\n"
+        ncr = data["colormap"].get(1, None)
+        ed = data["colormap"].get(2, None)
+        et = data["colormap"].get(4, None)
+        output = output_prefix
+        if ncr is not None and et is not None:
+            output += f"{ncr} and {et}: tumor core, "
+        if et is not None:
+            output += f"only {et}: enhancing tumor, "
+        if ncr is not None or et is not None or ed is not None:
+            output += "all colors: whole tumor\n"
+        return output
 
     def mentioned_by(self, input: str):
         """
