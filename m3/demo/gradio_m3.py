@@ -525,6 +525,7 @@ class M3Generator:
             interactive=True,
             sys_msgs_to_hide=sv.sys_msgs_to_hide,
             backup={"image_url": sv.image_url, "slice_index": sv.slice_index},
+            img_urls_or_paths=sv.img_urls_or_paths,
         )
         return (
             None,
@@ -643,7 +644,7 @@ def clear_all_convs(sv: SessionVariables):
     logger.debug(f"Clearing all conversations")
     if sv.temp_working_dir is not None:
         rmtree(sv.temp_working_dir)
-    new_sv = new_session_variables()
+    new_sv = new_session_variables(img_urls_or_paths=sv.img_urls_or_paths)
     # Order of output: prompt_edit, chat_history, history_text, history_text_full, sys_prompt_text, model_cards_checkbox, model_cards_text, modality_prompt_dropdown
     return (
         new_sv,
