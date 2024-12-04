@@ -7,6 +7,7 @@ The repository provides a collection of vision language models, benchmarks, and 
 
 ## 💡 News
 
+- [2024/12/04] The arXiv version of VILA-M3 is now available [here](https://arxiv.org/pdf/2411.12915).
 - [2024/10/31] We released the [VILA-M3-3B](https://huggingface.co/MONAI/Llama3-VILA-M3-3B), [VILA-M3-8B](https://huggingface.co/MONAI/Llama3-VILA-M3-8B), and [VILA-M3-13B](https://huggingface.co/MONAI/Llama3-VILA-M3-13B) checkpoints on [HuggingFace](https://huggingface.co/MONAI).
 - [2024/10/24] We presented VILA-M3 and the VLM module in MONAI at MONAI Day ([slides](./m3/docs/materials/VILA-M3_MONAI-Day_2024.pdf), [recording](https://www.youtube.com/watch?v=ApPVTuEtBjc&list=PLtoSVSQ2XzyDOjOn6oDRfEMCD-m-Rm2BJ&index=16))
 - [2024/10/24] Interactive [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) is available online!
@@ -17,7 +18,7 @@ The repository provides a collection of vision language models, benchmarks, and 
 It focuses on addressing the unique challenges faced by general-purpose vision-language models when applied to the medical domain and integrated with existing expert segmentation and classification models.
 
 <p align="center">
-  <img src="m3/docs/images/MONAI-VLM_Overview.svg" width="95%"/>
+  <img src="m3/docs/images/VILA-M3_overview_v2.png" width="95%"/>
 </p>
 
 For details, see [here](m3/README.md).
@@ -133,4 +134,17 @@ To auto-format the code, run the following command:
 
 ```bash
 isort . && black . && ruff format .
+```
+
+## References & Citation
+
+If you find this work useful in your research, please consider citing:
+
+```bibtex
+@article{nath2024vila,
+  title={VILA-M3: Enhancing Vision-Language Models with Medical Expert Knowledge},
+  author={Nath, Vishwesh and Li, Wenqi and Yang, Dong and Myronenko, Andriy and Zheng, Mingxin and Lu, Yao and Liu, Zhijian and Yin, Hongxu and Law, Yee Man and Tang, Yucheng and others},
+  journal={arXiv preprint arXiv:2411.12915},
+  year={2024}
+}
 ```
