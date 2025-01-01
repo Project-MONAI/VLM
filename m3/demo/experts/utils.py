@@ -312,6 +312,8 @@ def image_to_data_url(image, format="JPEG", max_size=None):
     # Create a BytesIO buffer to save the image
     buffered = BytesIO()
     # Save the image to the buffer in the specified format
+    if img.mode == 'RGBA':
+        img = img.convert('RGB')
     img.save(buffered, format=format)
     # Convert the buffer content into bytes
     img_byte = buffered.getvalue()
@@ -337,6 +339,8 @@ def resize_data_url(data_url, max_size):
     # Create a BytesIO buffer to save the image
     buffered = BytesIO()
     # Save the image to the buffer in the specified format
+    if img.mode == 'RGBA':
+        img = img.convert('RGB')
     img.save(buffered, format="JPEG")
     # Convert the buffer content into bytes
     img_byte = buffered.getvalue()

@@ -20,6 +20,4 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN git clone https://github.com/Project-MONAI/VLM --recursive
 WORKDIR /VLM
-###RUN python3.10 -m venv .venv
-####RUN source .venv/bin/activate
 RUN make demo_m3
