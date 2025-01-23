@@ -281,6 +281,7 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
         self.progress_callback = progress_callback
 
     def __del__(self):
+        '''del method declaration.'''
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def setServer(self, server_url=None):
