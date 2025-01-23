@@ -18,41 +18,35 @@ logger = logging.getLogger(__name__)
 
 
 class RadCoPilotClient:
-    """
-    Basic RadCoPilot Client to invoke infer API over http/https
-    """
+    """Basic RadCoPilot Client to invoke infer API over http/https."""
 
     def __init__(self, server_url=None, tmpdir=None, client_id=None):
-        """
-        :param server_url: Server URL for RadCoPilot (e.g. http://127.0.0.1:8000)
+        """:param server_url: Server URL for RadCoPilot. (e.g. http://127.0.0.1:8000).
+
         :param tmpdir: Temp directory to save temporary files.  If None then it uses tempfile.tempdir
         :param client_id: Client ID that will be added for all basic requests
         """
-
         self._server_url = server_url.rstrip("/").strip() if server_url is not None else server_url
         # self._tmpdir = tmpdir if tmpdir else tempfile.tempdir if tempfile.tempdir else "/tmp"
         # self._client_id = client_id
         # self._headers = {}
 
     def get_server_url(self):
-        """
-        Return server url
+        """Return server url.
 
         :return: the url for monailabel server
         """
         return self._server_url
 
     def set_server_url(self, server_url):
-        """
-        Set url for monailabel server
+        """Set url for monailabel server.
 
         :param server_url: server url for monailabel
         """
         self._server_url = server_url.rstrip("/").strip()
 
     def info(self):
-        """
-        Invoke /info/ request over RadCoPilot Server
+        """Invoke /info/ request over RadCoPilot Server.
 
         :return: string response
         """
@@ -73,12 +67,10 @@ class RadCoPilotClient:
         return response_text  # The API returns a string, so we don't need to parse it as JSON
 
     def getAnswer(self, inputText):
-        """
-        Invoke request over RadCoPilot Server
+        """Invoke request over RadCoPilot Server.
 
         :return: json response
         """
-
         selector = "/v1/chat/completions/"
         url = f"{self._server_url}{selector}"
 

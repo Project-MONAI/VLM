@@ -92,8 +92,7 @@ class RadCoPilotSettingsPanel(ctk.ctkSettingsPanel):
 
 class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def __init__(self, parent=None):
-        """
-        Called when the user opens the module the first time and the widget is initialized.
+        """Called when the user opens the module the first time and the widget is initialized.
         """
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
@@ -124,8 +123,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.optionsNameIndex = 0
 
     def setup(self):
-        """
-        Called when the user opens the module the first time and the widget is initialized.
+        """Called when the user opens the module the first time and the widget is initialized.
         """
         ScriptedLoadableModuleWidget.setup(self)
 
