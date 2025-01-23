@@ -10,8 +10,8 @@
 # limitations under the License.
 
 import json
-import requests
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
