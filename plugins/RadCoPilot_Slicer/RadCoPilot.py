@@ -35,7 +35,9 @@ from slicer.util import VTKObservationMixin
 
 
 class RadCoPilot(ScriptedLoadableModule):
+    '''RadCoPilot class.'''
     def __init__(self, parent):
+        '''Initialize the RadCoPilot class.'''
         ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = _("RadCoPilot")
         self.parent.categories = [translate("qSlicerAbstractCoreModule", "Radiology CoPilot")]
@@ -48,6 +50,7 @@ class RadCoPilot(ScriptedLoadableModule):
         slicer.app.connect("startupCompleted()", self.initializeAfterStartup)
 
     def initializeAfterStartup(self):
+        '''Initialize additional components after application startup is complete.'''
         if not slicer.app.commandOptions().noMainWindow:
             self.settingsPanel = RadCoPilotSettingsPanel()
             slicer.app.settingsDialog().addPanel("RadCoPilot", self.settingsPanel)
@@ -55,6 +58,7 @@ class RadCoPilot(ScriptedLoadableModule):
 
 class _ui_RadCoPilotSettingsPanel:
     def __init__(self, parent):
+        '''Initialize the RadCoPilot settings panel.'''
         vBoxLayout = qt.QVBoxLayout(parent)
 
         # settings
@@ -85,15 +89,17 @@ class _ui_RadCoPilotSettingsPanel:
 
 
 class RadCoPilotSettingsPanel(ctk.ctkSettingsPanel):
+    '''RadCoPilot Setting Panel class.'''
     def __init__(self, *args, **kwargs):
+        '''Initialize RadCoPilot Setting Panel class.'''
         ctk.ctkSettingsPanel.__init__(self, *args, **kwargs)
         self.ui = _ui_RadCoPilotSettingsPanel(self)
 
 
 class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+    '''RadCoPilot Widget class.'''
     def __init__(self, parent=None):
-        """Called when the user opens the module the first time and the widget is initialized.
-        """
+        """Called when the user opens the module the first time and the widget is initialized."""
         ScriptedLoadableModuleWidget.__init__(self, parent)
         VTKObservationMixin.__init__(self)  # needed for parameter node observation
 
@@ -123,8 +129,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.optionsNameIndex = 0
 
     def setup(self):
-        """Called when the user opens the module the first time and the widget is initialized.
-        """
+        """Called when the user opens the module the first time and the widget is initialized."""
         ScriptedLoadableModuleWidget.setup(self)
 
         # Load widget from .ui file (created by Qt Designer).
@@ -159,6 +164,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.cleanOutputButton.connect("clicked(bool)", self.onClickCleanOutputButton)
 
     def icon(self, name="RadCoPilot.png"):
+        '''Get the icon for the RadCoPilot module.'''
         # It should not be necessary to modify this method
         iconPath = os.path.join(os.path.dirname(__file__), "Resources", "Icons", name)
         if os.path.exists(iconPath):
@@ -166,10 +172,12 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         return qt.QIcon()
 
     def updateServerSettings(self):
+        '''Update the server settings based on the current UI state.'''
         self.logic.setServer(self.serverUrl())
         self.saveServerUrl()
 
     def serverUrl(self):
+        '''Get the current server URL from the UI.'''
         serverUrl = self.ui.serverComboBox.currentText.strip()
         if not serverUrl:
             serverUrl = "http://localhost:8000"
@@ -177,6 +185,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         return serverUrl
 
     def saveServerUrl(self):
+        '''Save the current server URL to settings and update history.'''
         # self.updateParameterNodeFromGUI()
 
         # Save selected server URL
@@ -202,13 +211,14 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # self.updateServerUrlGUIFromSettings()
 
     def show_popup(self, title, message):
+        '''Display a popup message box with the given title and message.'''
         msg_box = qt.QMessageBox()
         msg_box.setWindowTitle(title)
         msg_box.setText(message)
         msg_box.exec_()
 
     def onClickFetchInfo(self):
-
+        '''Handle the click event for fetching server information.'''
         start = time.time()
 
         try:
@@ -231,13 +241,15 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
     def onClickCleanOutputButton(self):
+        '''Handle the click event for cleaning the output text.'''
         self.ui.outputText.clear()
 
     def has_text(self, ui_text):
+        '''Check if the given UI text element has any content.'''
         return len(ui_text.toPlainText()) < 1
 
     def onClickSendPrompt(self):
-
+        '''Handle the click event for sending a prompt to the server.'''
         if not self.logic:
             return
 
@@ -259,7 +271,9 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
 class RadCoPilotLogic(ScriptedLoadableModuleLogic):
+    '''RadCoPilot logic.'''
     def __init__(self, server_url=None, tmpdir=None, progress_callback=None):
+        '''Initialize the RadCoPilot logic.'''
         ScriptedLoadableModuleLogic.__init__(self)
 
         self.server_url = server_url
@@ -270,6 +284,7 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def setServer(self, server_url=None):
+        '''Set the server URL for the RadCoPilot client.'''
         self.server_url = server_url if server_url else "http://localhost:8000"
 
     def _client(self):
@@ -277,19 +292,25 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
         return mc
 
     def info(self):
+        '''Get information from the RadCoPilot server.'''
         return self._client().info()
 
     def getAnswer(self, inputText):
+        '''Get an answer from the RadCoPilot server for the given input text.'''
         return self._client().getAnswer(inputText)
 
 
 class RadCoPilotTest(ScriptedLoadableModuleTest):
+    '''RadCoPilot Test class.'''
     def setUp(self):
+        '''Set up the scene.'''
         slicer.mrmlScene.Clear()
 
     def runTest(self):
+        '''Run the test.'''
         self.setUp()
         self.test_RadCoPilot1()
 
     def test_RadCoPilot1(self):
+        '''Run the first RadCoPilot test.'''
         self.delayDisplay("Test passed")
