@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import quote_plus, unquote, urlencode, urlparse
 
 import requests
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -105,13 +106,10 @@ class RadCoPilotClient:
 
             url = f"{self._server_url}{selector}"
 
-            print(f'Volume path: {volumePath}, and url {url} from client.')
 
             with open(volumePath, 'rb') as file:
                 files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
                 response = requests.post(url=url, files=files)
-            
-            print("Request DONE!")
             
             if response.status_code == 200:
                 return response.json()

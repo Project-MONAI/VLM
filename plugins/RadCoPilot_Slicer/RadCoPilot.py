@@ -263,7 +263,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             start = time.time()
             slicer.util.saveNode(volumeNode, in_file)
             info = self.logic.uploadScan(in_file)
-            # self.reportProgress(30)
+            self.reportProgress(30)
             self.info = info
             print(f"Response from the upload image call: {self.info['status']}")
             logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
