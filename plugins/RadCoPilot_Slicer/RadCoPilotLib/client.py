@@ -183,6 +183,20 @@ class RadCoPilotUtils:
 
     @staticmethod
     def http_multipart(method, server_url, selector, fields, files, headers={}):
+        """
+        Send a multipart/form-data request.
+
+        Args:
+            method (str): The HTTP method to use (e.g., 'POST', 'PUT').
+            server_url (str): The base URL of the server.
+            selector (str): The path or endpoint to be appended to the server URL.
+            fields (dict): A dictionary of form fields to be included in the request.
+            files (dict): A dictionary of files to be uploaded, where keys are field names and values are file paths.
+            headers (dict, optional): Additional headers to include in the request. Defaults to an empty dictionary.
+
+        Returns:
+            tuple: A tuple containing the response object and the response data.
+        """
         logging.debug(f"{method} {server_url}{selector}")
 
         content_type, body = RadCoPilotUtils.encode_multipart_formdata(fields, files)
