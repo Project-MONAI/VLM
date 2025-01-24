@@ -108,6 +108,20 @@ class RadCoPilotUtils:
     """Utils class for RadCoPilot client."""
     @staticmethod
     def http_method(method, server_url, selector, body=None, headers=None, content_type=None):
+        """
+        Send an HTTP request using the specified method.
+
+        Args:
+            method (str): The HTTP method to use (e.g., 'GET', 'POST', 'PUT', 'DELETE').
+            server_url (str): The base URL of the server.
+            selector (str): The path or endpoint to be appended to the server URL.
+            body (str, optional): The request body. Defaults to None.
+            headers (dict, optional): Additional headers to include in the request. Defaults to None.
+            content_type (str, optional): The content type of the request. Defaults to None.
+
+        Returns:
+            tuple: A tuple containing the response object and the response data.
+        """
         logging.debug(f"{method} {server_url}{selector}")
 
         parsed = urlparse(server_url)
@@ -138,6 +152,21 @@ class RadCoPilotUtils:
 
     @staticmethod
     def http_upload(method, server_url, selector, fields, files, headers=None):
+        """
+        Upload files using HTTP multipart/form-data.
+
+        Args:
+            method (str): The HTTP method to use (e.g., 'POST', 'PUT').
+            server_url (str): The base URL of the server.
+            selector (str): The path or endpoint to be appended to the server URL.
+            fields (dict): A dictionary of form fields to be included in the request.
+            files (dict): A dictionary of files to be uploaded, where keys are field names and values are file paths.
+            headers (dict, optional): Additional headers to include in the request. Defaults to None.
+
+        Returns:
+            tuple: A tuple containing the response object and the response data.
+        """
+
         logging.debug(f"{method} {server_url}{selector}")
 
         url = server_url.rstrip("/") + "/" + selector.lstrip("/")
@@ -177,6 +206,16 @@ class RadCoPilotUtils:
 
     @staticmethod
     def send_response(conn, content_type="application/json"):
+        """
+        Send and process the HTTP response.
+
+        Args:
+            conn (http.client.HTTPConnection): The HTTP connection object.
+            content_type (str, optional): The expected content type of the response. Defaults to "application/json".
+
+        Returns:
+            dict or str: The response data, parsed as JSON if the content type is "application/json", otherwise as a string.
+        """
         response = conn.getresponse()
         logging.debug(f"HTTP Response Code: {response.status}")
         logging.debug(f"HTTP Response Message: {response.reason}")
@@ -199,6 +238,16 @@ class RadCoPilotUtils:
 
     @staticmethod
     def save_result(files, tmpdir):
+        """
+        Save uploaded files to a temporary directory.
+
+        Args:
+            files (dict): A dictionary of files where keys are field names and values are file-like objects.
+            tmpdir (str): The path to the temporary directory where files will be saved.
+
+        Returns:
+            dict: A dictionary mapping original filenames to their saved paths in the temporary directory.
+        """
         for name in files:
             data = files[name]
             result_file = os.path.join(tmpdir, name)
@@ -219,6 +268,16 @@ class RadCoPilotUtils:
 
     @staticmethod
     def encode_multipart_formdata(fields, files):
+        """
+        Encode fields and files for a multipart/form-data request.
+
+        Args:
+            fields (dict): A dictionary of form fields to be included in the request.
+            files (dict): A dictionary of files to be uploaded, where keys are field names and values are file paths.
+
+        Returns:
+            tuple: A tuple containing the encoded body as bytes and the content type string.
+        """
         limit = "----------lImIt_of_THE_fIle_eW_$"
         lines = []
         for key, value in fields.items():
@@ -247,10 +306,30 @@ class RadCoPilotUtils:
 
     @staticmethod
     def get_content_type(filename):
+        """
+        Guess the content type of a file based on its filename.
+
+        Args:
+            filename (str): The name of the file.
+
+        Returns:
+            str: The guessed content type or "application/octet-stream" if unable to determine.
+        """
         return mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
     @staticmethod
     def parse_multipart(fp, headers):
+        """
+        Parse a multipart/form-data request.
+
+        Args:
+            fp (file-like object): The input stream containing the multipart data.
+            headers (dict): The headers of the HTTP request.
+
+        Returns:
+            cgi.FieldStorage: An object containing the parsed fields and files.
+        """
+
         fs = cgi.FieldStorage(
             fp=fp,
             environ={"REQUEST_METHOD": "POST"},
@@ -270,10 +349,28 @@ class RadCoPilotUtils:
 
     @staticmethod
     def urllib_quote_plus(s):
+        """
+        URL-encode a string, replacing spaces with plus signs.
+
+        Args:
+            s (str): The string to be URL-encoded.
+
+        Returns:
+            str: The URL-encoded string.
+        """
         return quote_plus(s)
 
     @staticmethod
     def get_filename(content_disposition):
+        """
+        Extract the filename from the Content-Disposition header.
+
+        Args:
+            content_disposition (str): The Content-Disposition header value.
+
+        Returns:
+            str: The extracted filename, or None if not found.
+        """
         file_name = re.findall(r"filename\*=([^;]+)", content_disposition, flags=re.IGNORECASE)
         if not file_name:
             file_name = re.findall('filename="(.+)"', content_disposition, flags=re.IGNORECASE)
