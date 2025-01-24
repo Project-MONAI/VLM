@@ -105,14 +105,13 @@ class RadCoPilotClient:
 
             url = f"{self._server_url}{selector}"
 
-            print(f'This is the URL: {url}')
+            print(f'Volume path: {volumePath}, and url {url} from client.')
 
             with open(volumePath, 'rb') as file:
-                print(f'This is volume path: {volumePath}')
                 files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
-                print(f"This is files: {files}")
                 response = requests.post(url=url, files=files)
-                print(f"INSIDE CLIENT!! {response}")
+            
+            print("Request DONE!")
             
             if response.status_code == 200:
                 return response.json()

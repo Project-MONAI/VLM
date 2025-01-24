@@ -262,10 +262,8 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.reportProgress(5)
             start = time.time()
             slicer.util.saveNode(volumeNode, in_file)
-            print(f'Latest volume submitted BEFORE: {in_file}')
             info = self.logic.uploadScan(in_file)
-            print(f'Latest volume submitted AFTER: {in_file}')
-            self.reportProgress(30)
+            # self.reportProgress(30)
             self.info = info
             print(f"Response from the upload image call: {self.info['status']}")
             logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
@@ -347,8 +345,6 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
     
     def uploadScan(self, filePath):
         '''Upload the volume to be analyzed.'''
-        print(f'Latest volume submitted DURINGGG: {filePath}')
-
         return self._client().uploadFile(filePath)
 
     def getAnswer(self, inputText, volumePath=""):
