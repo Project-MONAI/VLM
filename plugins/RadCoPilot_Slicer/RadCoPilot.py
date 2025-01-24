@@ -151,10 +151,11 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Set icons and tune widget properties
         self.ui.serverComboBox.lineEdit().setPlaceholderText("enter server address or leave empty to use default")
         self.ui.fetchServerInfoButton.setIcon(self.icon("refresh-icon.png"))
-        # self.ui.uploadImageButton.setIcon(self.icon("upload.svg"))
+        self.ui.uploadImageButton.setIcon(self.icon("upload.svg"))
 
         # start with button disabled
         self.ui.sendPrompt.setEnabled(False)
+        self.ui.uploadImageButton.setEnabled(False)
         self.ui.outputText.setReadOnly(True)
 
         # Connections
@@ -162,6 +163,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.serverComboBox.connect("currentIndexChanged(int)", self.onClickFetchInfo)
         self.ui.sendPrompt.connect("clicked(bool)", self.onClickSendPrompt)
         self.ui.cleanOutputButton.connect("clicked(bool)", self.onClickCleanOutputButton)
+        self.ui.uploadImageButton.connect("clicked(bool)", self.onUploadImage)
 
     def icon(self, name="RadCoPilot.png"):
         '''Get the icon for the RadCoPilot module.'''
@@ -229,6 +231,10 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             print(f"Connected to RadCoPilot Server - Obtained info from server: {self.info}")
             self.show_popup("Information", "Connected to RadCoPilot Server")
             self.ui.sendPrompt.setEnabled(True)
+            self.ui.uploadImageButton.setEnabled(True)
+            # Updating model name
+            self.ui.appComboBox.clear()
+            self.ui.appComboBox.addItem(self.info)
 
         except AttributeError as e:
             slicer.util.errorDisplay(
@@ -244,6 +250,45 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         '''Handle the click event for cleaning the output text.'''
         self.ui.outputText.clear()
 
+    def onUploadImage(self, init_sample=True, session=False):
+        '''Gets the volume and sen it to the server.'''
+        volumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
+        image_id = volumeNode.GetName()
+
+        try:
+            qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
+            in_file = tempfile.NamedTemporaryFile(suffix=self.file_ext, dir=self.tmpdir).name
+            self.current_sample = in_file
+            self.reportProgress(5)
+
+            start = time.time()
+            slicer.util.saveNode(volumeNode, in_file)
+            logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
+            print(f'Current volume: {in_file}')
+            self.reportProgress(30)
+            self.reportProgress(100)
+
+            self._volumeNode = volumeNode
+            if init_sample:
+                self.initSample({"id": image_id}, autosegment=False)
+            qt.QApplication.restoreOverrideCursor()
+
+            return True
+        except BaseException as e:
+            msg = f"Message: {e.msg}" if hasattr(e, "msg") else ""
+            self.reportProgress(100)
+            qt.QApplication.restoreOverrideCursor()
+            return False
+
+    def reportProgress(self, progressPercentage):
+        '''Reports progress of an event.'''
+        if not self.progressBar:
+            self.progressBar = slicer.util.createProgressDialog(windowTitle=_("Wait..."), maximum=100)
+        self.progressBar.show()
+        self.progressBar.activateWindow()
+        self.progressBar.setValue(progressPercentage)
+        slicer.app.processEvents()
+
     def has_text(self, ui_text):
         '''Check if the given UI text element has any content.'''
         return len(ui_text.toPlainText()) < 1
@@ -255,6 +300,8 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         self.ui.outputText.clear()
 
+        print(f"This is the image to send for analysis: {self.current_sample}")
+        
         if self.has_text(self.ui.inputText):
             self.show_popup("Information", "Empty prompt")
             self.ui.outputText.clear()
@@ -262,7 +309,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             start = time.time()
             self.updateServerSettings()
             inText = self.ui.inputText.toPlainText()
-            info = self.logic.getAnswer(inputText=inText)
+            info = self.logic.getAnswer(inputText=inText, volumePath=self.current_sample)
             if info is not None:
                 self.info = info
                 self.ui.outputText.setText(info['choices'][0]['message']['content'])
@@ -277,7 +324,7 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
         ScriptedLoadableModuleLogic.__init__(self)
 
         self.server_url = server_url
-        self.tmpdir = slicer.util.tempDirectory("slicer-radvilla") if tmpdir is None else tmpdir
+        self.tmpdir = slicer.util.tempDirectory("slicer-radcopilot") if tmpdir is None else tmpdir
         self.progress_callback = progress_callback
 
     def __del__(self):
@@ -296,9 +343,9 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
         '''Get information from the RadCoPilot server.'''
         return self._client().info()
 
-    def getAnswer(self, inputText):
+    def getAnswer(self, inputText, volumePath):
         '''Get an answer from the RadCoPilot server for the given input text.'''
-        return self._client().getAnswer(inputText)
+        return self._client().getAnswer(inputText, volumePath)
 
 
 class RadCoPilotTest(ScriptedLoadableModuleTest):
