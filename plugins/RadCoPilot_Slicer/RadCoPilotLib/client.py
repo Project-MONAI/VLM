@@ -70,11 +70,82 @@ class RadCoPilotClient:
         response_text = response.text
         logging.debug(f"Response: {response_text}")
         return response_text  # The API returns a string, so we don't need to parse it as JSON
+    
 
-    def getAnswer(self, inputText, volumePath):
-        """Invoke request over RadCoPilot Server.
+    def uploadFile(self, volumePath):
+        """
+        Upload a file to the RadCoPilot server using the fileUploadRouter.
 
-        :return: json response
+        This method sends a file to the '/upload' endpoint of the RadCoPilot server,
+        which stores it as the last received file. This uploaded file can then be 
+        used in subsequent requests to the chat_completions API if no file is 
+        provided in those requests.
+
+        Parameters:
+        -----------
+        filePath : str
+            The path to the file that should be uploaded to the server.
+
+        Returns:
+        --------
+        dict
+            A dictionary containing the server's response, typically including
+            the filename and upload status.
+
+        Raises:
+        -------
+        Exception
+            If there's an error during the file upload process or if the server
+            returns an unexpected response.
+        """
+        try:
+            print("Uploading file...")
+
+            selector = "/upload/"
+
+            url = f"{self._server_url}{selector}"
+
+            print(f'This is the URL: {url}')
+
+            with open(volumePath, 'rb') as file:
+                print(f'This is volume path: {volumePath}')
+                files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
+                print(f"This is files: {files}")
+                response = requests.post(url=url, files=files)
+                print(f"INSIDE CLIENT!! {response}")
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise Exception(f"File upload failed with status code {response.status_code}: {response.text}")
+        except Exception as e:
+            raise Exception(f"Error uploading file: {str(e)}")
+
+
+
+    def getAnswer(self, inputText, volumePath=""):
+        """
+        Invoke request over RadCoPilot Server.
+
+        This method sends a request to the RadCoPilot server to get an answer based on the input text.
+        If a volume path is provided, it will upload the file along with the request.
+
+        Parameters:
+        -----------
+        inputText : str
+            The input text or prompt to send to the server.
+        volumePath : str, optional
+            The path to the volume file to be uploaded. If empty, no file will be uploaded.
+
+        Returns:
+        --------
+        dict or None
+            The JSON response from the server if successful, None otherwise.
+
+        Raises:
+        -------
+        Exception
+            If there's an error during the request process.
         """
         selector = "/v1/chat/completions/"
         url = f"{self._server_url}{selector}"
@@ -91,17 +162,31 @@ class RadCoPilotClient:
             "stream": stream  # Pass as a boolean
         }
 
-        # Open the file in binary mode
-        with open(volumePath, "rb") as file:
-            files = {"file": (volumePath, file, "application/octet-stream")}
-            response = requests.post(url, headers=headers, params=params, files=files)
-            print(response.json())
+        try:
+            if volumePath:
+                # If volumePath is provided, open the file and include it in the request
+                with open(volumePath, "rb") as file:
+                    files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
+                    response = requests.post(url, headers=headers, params=params, files=files)
+            else:
+                # If no volumePath is provided, send the request without a file
+                response = requests.post(url, headers=headers, params=params)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logging.error(f"Error: {response.status_code} - {response.text}")
+            response.raise_for_status()  # Raise an exception for bad status codes
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.error(f"Error: {response.status_code} - {response.text}")
+                return None
+
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Request error: {str(e)}")
             return None
+        except Exception as e:
+            logging.error(f"Unexpected error: {str(e)}")
+        return None
+
 
 
 class RadCoPilotUtils:

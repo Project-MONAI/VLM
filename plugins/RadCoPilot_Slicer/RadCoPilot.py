@@ -250,7 +250,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         '''Handle the click event for cleaning the output text.'''
         self.ui.outputText.clear()
 
-    def onUploadImage(self, init_sample=True, session=False):
+    def onUploadImage(self):
         '''Gets the volume and sen it to the server.'''
         volumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
         image_id = volumeNode.GetName()
@@ -260,17 +260,19 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             in_file = tempfile.NamedTemporaryFile(suffix=self.file_ext, dir=self.tmpdir).name
             self.current_sample = in_file
             self.reportProgress(5)
-
             start = time.time()
             slicer.util.saveNode(volumeNode, in_file)
-            logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
-            print(f'Current volume: {in_file}')
+            print(f'Latest volume submitted BEFORE: {in_file}')
+            info = self.logic.uploadScan(in_file)
+            print(f'Latest volume submitted AFTER: {in_file}')
             self.reportProgress(30)
+            self.info = info
+            print(f"Response from the upload image call: {self.info['status']}")
+            logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
+            print(f'Latest volume submitted: {in_file}')
             self.reportProgress(100)
 
             self._volumeNode = volumeNode
-            if init_sample:
-                self.initSample({"id": image_id}, autosegment=False)
             qt.QApplication.restoreOverrideCursor()
 
             return True
@@ -342,8 +344,14 @@ class RadCoPilotLogic(ScriptedLoadableModuleLogic):
     def info(self):
         '''Get information from the RadCoPilot server.'''
         return self._client().info()
+    
+    def uploadScan(self, filePath):
+        '''Upload the volume to be analyzed.'''
+        print(f'Latest volume submitted DURINGGG: {filePath}')
 
-    def getAnswer(self, inputText, volumePath):
+        return self._client().uploadFile(filePath)
+
+    def getAnswer(self, inputText, volumePath=""):
         '''Get an answer from the RadCoPilot server for the given input text.'''
         return self._client().getAnswer(inputText, volumePath)
 
