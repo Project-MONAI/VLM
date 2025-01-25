@@ -269,9 +269,10 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             logging.info(f"Saved Input Node into {in_file} in {time.time() - start:3.1f}s")
             print(f'Latest volume submitted: {in_file}')
             self.reportProgress(100)
-
+            
             self._volumeNode = volumeNode
             qt.QApplication.restoreOverrideCursor()
+            self.show_popup("Information", "Volume uploaded")
 
             return True
         except BaseException as e:
