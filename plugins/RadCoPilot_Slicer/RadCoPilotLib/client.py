@@ -13,12 +13,12 @@ import cgi
 import http.client
 import json
 import logging
+import os
 import re
 from pathlib import Path
 from urllib.parse import quote_plus, unquote, urlencode, urlparse
 
 import requests
-import os
 
 logger = logging.getLogger(__name__)
 
