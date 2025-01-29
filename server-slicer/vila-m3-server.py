@@ -9,20 +9,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import APIRouter, FastAPI, File, UploadFile, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
-from fastapi.openapi.docs import get_swagger_ui_html
+import json
 import os
 import shutil
 import tempfile
 import time
-import json
-from typing import Dict, Union 
-from pydantic import HttpUrl
+from typing import Dict, Union
+
 import requests
+from fastapi import APIRouter, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from pydantic import HttpUrl
 
 # Import VILA M3 utilities
-from utils import ImageCache, M3Generator, ChatHistory, SessionVariables
+from utils import ChatHistory, ImageCache, M3Generator, SessionVariables
 
 # API Key and Cloud Volume Link
 os.environ["api_key"] = "nvapi"
@@ -57,6 +58,7 @@ last_received_file = None
 
 @fileUploadRouter.post("/")
 async def upload_file(file: Union[UploadFile, str] = File(...)):
+    '''Call for uploading file.'''
     global last_received_file
     
     try:
@@ -103,6 +105,7 @@ async def chat_completions(
     stream: bool,
     file: UploadFile = File(None),
 ):
+    '''Call for chatting with the model.'''
     global last_received_file
 
 
@@ -177,6 +180,7 @@ app.include_router(chatCompletionsRouter)
 
 @app.get("/", include_in_schema=False)
 async def custom_swagger_ui_html():
+    '''Custom swagger UI.'''
     html = get_swagger_ui_html(openapi_url=app.openapi_url, title=app.title + " - APIs")
 
     body = html.body.decode("utf-8")
