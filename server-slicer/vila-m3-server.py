@@ -44,6 +44,7 @@ infoRouter = APIRouter(
 
 @infoRouter.get("/", summary="Get App Info")
 async def api_app_info():
+    '''Get model info.'''
     return "VILA-M3 model"
 
 app.include_router(infoRouter)
