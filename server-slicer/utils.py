@@ -11,6 +11,7 @@
 
 import base64
 import itertools
+import json
 import logging
 import os
 import re
@@ -18,10 +19,7 @@ import tempfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from shutil import copyfile, rmtree
-
-import json
-from shutil import move
+from shutil import copyfile, move, rmtree
 from uuid import uuid4
 from zipfile import ZipFile
 
