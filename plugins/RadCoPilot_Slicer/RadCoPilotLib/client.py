@@ -77,15 +77,15 @@ class RadCoPilotClient:
         """
         Upload a file to the RadCoPilot server using the fileUploadRouter.
 
-        This method sends a file to the '/upload' endpoint of the RadCoPilot server,
+        This method sends either a local file or a URL to the '/upload' endpoint of the RadCoPilot server,
         which stores it as the last received file. This uploaded file can then be 
         used in subsequent requests to the chat_completions API if no file is 
         provided in those requests.
 
         Parameters:
         -----------
-        filePath : str
-            The path to the file that should be uploaded to the server.
+        volumePath : str
+            The path to the local file or a URL that should be uploaded to the server.
 
         Returns:
         --------
@@ -103,13 +103,21 @@ class RadCoPilotClient:
             print("Uploading file...")
 
             selector = "/upload/"
-
             url = f"{self._server_url}{selector}"
 
+            # Check if volumePath is a URL
+            parsed_url = urlparse(volumePath)
+            is_url = bool(parsed_url.scheme and parsed_url.netloc)
 
-            with open(volumePath, 'rb') as file:
-                files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
+            if is_url:
+                # If it's a URL, send it as a form-data field
+                files = {"file": (None, str(volumePath))}
                 response = requests.post(url=url, files=files)
+            else:
+                # If it's a local file, open and send it
+                with open(volumePath, 'rb') as file:
+                    files = {"file": (os.path.basename(volumePath), file, "application/octet-stream")}
+                    response = requests.post(url=url, files=files)
             
             if response.status_code == 200:
                 return response.json()
