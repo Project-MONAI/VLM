@@ -164,13 +164,8 @@ async def chat_completions(
             }
             return JSONResponse(content=response)
         else:
-            async def generate():
-                response_id = 'chatcmpl-' + os.urandom(12).hex()
-
-                yield f'data: {json.dumps({"id": response_id, "content": response_message})}\n\n'
-                yield 'data: [DONE]\n\n'
-
-            return StreamingResponse(generate(), media_type='text/event-stream')
+            print(f"Error: Streaming not implemented ...")
+            return HTTPException(status_code=500, detail="Error: Streaming not implemented ...")
 
     except Exception as e:
         print(f"Error: {e}")
