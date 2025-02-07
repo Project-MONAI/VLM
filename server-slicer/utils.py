@@ -482,7 +482,7 @@ class SessionVariables:
 class ExpertVista3D():
     """Expert model for VISTA-3D."""
 
-    NIM_VISTA3D = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/caf65f74-1c04-4b3c-b566-5908ee950f24"
+    NIM_VISTA3D = "https://api.nvcf.nvidia.com/"
 
     def __init__(self) -> None:
         """Initialize the VISTA-3D expert model."""
@@ -732,7 +732,7 @@ class M3Generator:
             )
             logger.info(f"Model {self.model_name} loaded successfully. Context length: {self.context_len}")
         elif source == "nim":
-            self.base_url = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/a2dec46a-b444-45aa-a1fc-a510ca41f186"
+            self.base_url = "https://api.nvcf.nvidia.com/"
             if api_key == "":
                 api_key = os.getenv("api_key", "Invalid")
             if api_key == "Invalid":
