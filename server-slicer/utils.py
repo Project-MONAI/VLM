@@ -30,9 +30,7 @@ import numpy as np
 import requests
 import skimage
 from monai.transforms import Compose, LoadImageD, MapTransform, OrientationD, ScaleIntensityD, ScaleIntensityRangeD
-from PIL import Image
 from PIL import Image as PILImage
-from PIL.Image import Image
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -177,10 +175,12 @@ class Dye(MapTransform):
 
 def save_image_url_to_file(image_url: str, output_dir: Path) -> str:
     """Save the image from the URL to the output directory"""
-    url_response = requests.get(image_url, allow_redirects=True)
     file_name = os.path.join(output_dir, image_url.split("/")[-1])
-    with open(file_name, "wb") as f:
-        f.write(url_response.content)
+    # avoid re-downloading the image if it's already downloaded before
+    if not os.path.exists(file_name):
+        url_response = requests.get(image_url, allow_redirects=True)
+        with open(file_name, "wb") as f:
+            f.write(url_response.content)
     return file_name
 
 
@@ -672,6 +672,7 @@ class ExpertVista3D():
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
             "accept": "application/json",
+            "NVCF-FEATURE-ENABLE-GATEWAY-TIMEOUT": "3600",
         }
 
         payload = {"image": image_url}
@@ -679,10 +680,20 @@ class ExpertVista3D():
             payload["prompts"] = vista3d_prompts
 
         response = requests.post(self.NIM_VISTA3D, headers=headers, json=payload)
-        if response.status_code != 200:
+        if response.status_code not in [200, 202]:
             raise requests.exceptions.HTTPError(
                 f"Error triggering POST to {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}"
             )
+        elif response.status_code == 202:
+            nvcf_url = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/status/" + response.headers["NVCF-REQID"]
+            while (response.status_code == 202):
+                logger.debug("Waiting for VISTA3D")
+                response = requests.get(nvcf_url, headers=headers, allow_redirects=True)
+            if response.status_code not in [200, 302]:
+                raise requests.exceptions.HTTPError(
+                    f"Error calling {self.NIM_VISTA3D} with Payload {payload}: {response.status_code}"
+                )
+
 
         seg_image = f"seg_{uuid4()}.jpg"
         text_output = self.segmentation_to_string(
@@ -1039,4 +1050,3 @@ class M3Generator:
             new_sv,
             chat_history,
         )
-
