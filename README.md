@@ -119,7 +119,7 @@ Please visit the [VILA-M3 Demo](https://vila-m3-demo.monai.ngc.nvidia.com/) to t
 To lint the code, please install these packages:
 
 ```bash
-pip install -r requirements-ci.txt
+pip install pre-commit
 ```
 
 Then run the following command:

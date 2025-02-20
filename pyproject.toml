@@ -1,26 +1,13 @@
-[tool.black]
-line-length = 122
-include = '\.pyi?$'
-exclude = '''
-/(
-    build
-  | docs
-  | setup\.py
-  | thirdparty
-  | \.venv.*
-  | .*test_.*
-  | \.mypy_cache
-  | \.vscode
-)/
-'''
-
 [tool.isort]
-profile = "black"
+
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
-line_length = 122
+line_length = 120
+py_version = 310
+group_by_package = true
+
 skip_glob = [
   "build/*",
   "docs/*",
@@ -30,3 +17,11 @@ skip_glob = [
   "*test_*",
   "./.vscode/*",
 ]
+
+[tool.ruff]
+line-length = 120
+exclude = [
+    "docs/",
+    "venv*/",
+]
+target-version = "py310"
