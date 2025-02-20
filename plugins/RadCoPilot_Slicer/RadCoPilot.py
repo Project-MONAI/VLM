@@ -166,12 +166,14 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.serverComboBox.lineEdit().setPlaceholderText("enter server address or leave empty to use default")
         self.ui.scanComboBox.lineEdit().setPlaceholderText("enter scan address")
         self.ui.fetchServerInfoButton.setIcon(self.icon("refresh-icon.png"))
+        self.ui.recordPromptButton.setIcon(self.icon("mic.jpeg"))
         self.ui.uploadImageButton.setIcon(self.icon("upload.svg"))
 
         # start with button disabled
         self.ui.sendPrompt.setEnabled(False)
         self.ui.uploadImageButton.setEnabled(False)
         self.ui.fetchImageButton.setEnabled(False)
+        self.ui.recordPromptButton.setEnabled(False)
         self.ui.outputText.setReadOnly(True)
 
         # Connections
@@ -181,6 +183,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.cleanOutputButton.connect("clicked(bool)", self.onClickCleanOutputButton)
         self.ui.uploadImageButton.connect("clicked(bool)", self.onUploadImage)
         self.ui.fetchImageButton.connect("clicked(bool)", self.onFetchImage)
+        self.ui.recordPromptButton.connect("clicked(bool)", self.onRecordAudio)
         
 
         self.updateServerUrlGUIFromSettings()
@@ -318,6 +321,7 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.sendPrompt.setEnabled(True)
             self.ui.uploadImageButton.setEnabled(True)
             self.ui.fetchImageButton.setEnabled(True)
+            self.ui.recordPromptButton.setEnabled(True)
             # Updating model name
             self.ui.appDescriptionLabel.text = self.info
 
@@ -452,6 +456,35 @@ class RadCoPilotWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 else:
                     self.ui.outputText.setText(info['choices'][0]['message']['content'])
             logging.info(f"Time consumed by fetch info: {time.time() - start:3.1f}")
+
+    def onRecordAudio(self):
+        '''Handles the voice prompts sent to the server.'''
+        audioRecorder = qt.QAudioRecorder()
+
+        # Select default audio input
+        audioInput = audioRecorder.audioInputs()[0]
+        audioRecorder.setAudioInput(audioInput)
+
+        # Set output location (use a valid path)
+        outputLocation = qt.QUrl.fromLocalFile("/tmp/output5.wav")
+        audioRecorder.setOutputLocation(outputLocation)
+
+        # Configure audio settings with compatible codec and container
+        audioSettings = qt.QAudioEncoderSettings()
+        audioSettings.setCodec("audio/pcm")  # Use "audio/mpeg" for MP3 files
+        audioSettings.setQuality(qt.QMultimedia.HighQuality)
+        audioRecorder.setAudioSettings(audioSettings)
+
+        # Explicitly set container format (optional)
+        audioRecorder.setContainerFormat("wav")  # Use "mp3" for MP3 files
+
+        # Start recording
+        audioRecorder.record()
+
+        # Stop recording after 5 seconds
+        qt.QTimer.singleShot(5000, audioRecorder.stop)
+
+
 
 
 

@@ -180,6 +180,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="recordPromptButton">
+        <property name="text">
+         <string>Record Prompt</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
