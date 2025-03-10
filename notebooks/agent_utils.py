@@ -55,29 +55,29 @@ SEGMENTATION_TOKEN = "<image>"
 MODEL_CARDS = (
     "Here is a list of available expert models:\n"
     "<BRATS(args)> "
-        "Modality: MRI, "
-        "Task: segmentation, "
-        "Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, "
-        "Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, "
-        "Valid args are: None\n"
+    "Modality: MRI, "
+    "Task: segmentation, "
+    "Overview: A pre-trained model for volumetric (3D) segmentation of brain tumor subregions from multimodal MRIs based on BraTS 2018 data, "
+    "Accuracy: Tumor core (TC): 0.8559 - Whole tumor (WT): 0.9026 - Enhancing tumor (ET): 0.7905 - Average: 0.8518, "
+    "Valid args are: None\n"
     "<VISTA3D(args)> "
-        "Modality: CT, "
-        "Task: segmentation, "
-        "Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, "
-        "Accuracy: 127 organs: 0.792 Dice on average, "
-        "Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n"
+    "Modality: CT, "
+    "Task: segmentation, "
+    "Overview: domain-specialized interactive foundation model developed for segmenting and annotating human anatomies with precision, "
+    "Accuracy: 127 organs: 0.792 Dice on average, "
+    "Valid args are: 'everything', 'hepatic tumor', 'pancreatic tumor', 'lung tumor', 'bone lesion', 'organs', 'cardiovascular', 'gastrointestinal', 'skeleton', or 'muscles'\n"
     "<VISTA2D(args)> "
-        "Modality: cell imaging, "
-        "Task: segmentation, "
-        "Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, "
-        "Accuracy: Good accuracy across several cell imaging datasets, "
-        "Valid args are: None\n"
+    "Modality: cell imaging, "
+    "Task: segmentation, "
+    "Overview: model for cell segmentation, which was trained on a variety of cell imaging outputs, including brightfield, phase-contrast, fluorescence, confocal, or electron microscopy, "
+    "Accuracy: Good accuracy across several cell imaging datasets, "
+    "Valid args are: None\n"
     "<CXR(args)> "
-        "Modality: chest x-ray (CXR), "
-        "Task: classification, "
-        "Overview: pre-trained model which are trained on large cohorts of data, "
-        "Accuracy: Good accuracy across several diverse chest x-rays datasets, "
-        "Valid args are: None\n"
+    "Modality: chest x-ray (CXR), "
+    "Task: classification, "
+    "Overview: pre-trained model which are trained on large cohorts of data, "
+    "Accuracy: Good accuracy across several diverse chest x-rays datasets, "
+    "Valid args are: None\n"
     "Give the model <NAME(args)> when selecting a suitable expert model.\n"
 )
 
@@ -95,18 +95,9 @@ MODALITY_MAP = {
 
 VISTA_LABEL_DICT = {
     "everything": "../experts/vista3d/label_dict.json",
-    "hepatic tumor": {
-        "liver": 1,
-        "hepatic tumor": 26
-    },
-    "hepatoma": {
-        "liver": 1,
-        "hepatic tumor": 26
-    },
-    "pancreatic tumor": {
-        "pancreas": 4,
-        "pancreatic tumor": 24
-    },
+    "hepatic tumor": {"liver": 1, "hepatic tumor": 26},
+    "hepatoma": {"liver": 1, "hepatic tumor": 26},
+    "pancreatic tumor": {"pancreas": 4, "pancreatic tumor": 24},
     "lung tumor": {
         "lung": 20,
         "lung tumor": 23,
@@ -114,11 +105,9 @@ VISTA_LABEL_DICT = {
         "left lung lower lobe": 29,
         "right lung upper lobe": 30,
         "right lung middle lobe": 31,
-        "right lung lower lobe": 32
+        "right lung lower lobe": 32,
     },
-    "bone lesion": {
-        "bone lesion": 128
-    },
+    "bone lesion": {"bone lesion": 128},
     "organs": {
         "liver": 1,
         "kidney": 2,
@@ -146,7 +135,7 @@ VISTA_LABEL_DICT = {
         "prostate": 118,
         "spinal cord": 121,
         "thyroid gland": 126,
-        "airway": 132
+        "airway": 132,
     },
     "cardiovascular": {
         "aorta": 6,
@@ -166,16 +155,9 @@ VISTA_LABEL_DICT = {
         "pulmonary vein": 119,
         "left subclavian artery": 123,
         "right subclavian artery": 124,
-        "superior vena cava": 125
+        "superior vena cava": 125,
     },
-    "gastrointestinal": {
-        "esophagus": 11,
-        "stomach": 12,
-        "duodenum": 13,
-        "bladder": 15,
-        "small bowel": 19,
-        "colon": 62
-    },
+    "gastrointestinal": {"esophagus": 11, "stomach": 12, "duodenum": 13, "bladder": 15, "small bowel": 19, "colon": 62},
     "skeleton": {
         "bone": 21,
         "vertebrae L5": 33,
@@ -241,7 +223,7 @@ VISTA_LABEL_DICT = {
         "left hip": 95,
         "right hip": 96,
         "sacrum": 97,
-        "costal cartilages": 114
+        "costal cartilages": 114,
     },
     "muscles": {
         "left gluteus maximus": 98,
@@ -253,9 +235,10 @@ VISTA_LABEL_DICT = {
         "left autochthon": 104,
         "right autochthon": 105,
         "left iliopsoas": 106,
-        "right iliopsoas": 107
-    }
+        "right iliopsoas": 107,
+    },
 }
+
 
 class Dye(MapTransform):
     """
@@ -513,7 +496,7 @@ def _get_modality_url(image_url_or_path: str | None):
 
 def _get_modality_text(text: str):
     """Get the modality from the text"""
-    
+
     if not text:
         return "Unknown"
     for keyword, modality in MODALITY_MAP.items():
@@ -682,7 +665,7 @@ class SessionVariables:
             self.__setattr__(attr, attr_val)
 
 
-class ExpertVista3D():
+class ExpertVista3D:
     """Expert model for VISTA-3D."""
 
     def __init__(self) -> None:
@@ -694,18 +677,9 @@ class ExpertVista3D():
         """Get the label groups from the label groups path."""
         return {
             "everything": "../experts/vista3d/label_dict.json",
-            "hepatic tumor": {
-                "liver": 1,
-                "hepatic tumor": 26
-            },
-            "hepatoma": {
-                "liver": 1,
-                "hepatic tumor": 26
-            },
-            "pancreatic tumor": {
-                "pancreas": 4,
-                "pancreatic tumor": 24
-            },
+            "hepatic tumor": {"liver": 1, "hepatic tumor": 26},
+            "hepatoma": {"liver": 1, "hepatic tumor": 26},
+            "pancreatic tumor": {"pancreas": 4, "pancreatic tumor": 24},
             "lung tumor": {
                 "lung": 20,
                 "lung tumor": 23,
@@ -713,11 +687,9 @@ class ExpertVista3D():
                 "left lung lower lobe": 29,
                 "right lung upper lobe": 30,
                 "right lung middle lobe": 31,
-                "right lung lower lobe": 32
+                "right lung lower lobe": 32,
             },
-            "bone lesion": {
-                "bone lesion": 128
-            },
+            "bone lesion": {"bone lesion": 128},
             "organs": {
                 "liver": 1,
                 "kidney": 2,
@@ -745,7 +717,7 @@ class ExpertVista3D():
                 "prostate": 118,
                 "spinal cord": 121,
                 "thyroid gland": 126,
-                "airway": 132
+                "airway": 132,
             },
             "cardiovascular": {
                 "aorta": 6,
@@ -765,7 +737,7 @@ class ExpertVista3D():
                 "pulmonary vein": 119,
                 "left subclavian artery": 123,
                 "right subclavian artery": 124,
-                "superior vena cava": 125
+                "superior vena cava": 125,
             },
             "gastrointestinal": {
                 "esophagus": 11,
@@ -773,7 +745,7 @@ class ExpertVista3D():
                 "duodenum": 13,
                 "bladder": 15,
                 "small bowel": 19,
-                "colon": 62
+                "colon": 62,
             },
             "skeleton": {
                 "bone": 21,
@@ -840,7 +812,7 @@ class ExpertVista3D():
                 "left hip": 95,
                 "right hip": 96,
                 "sacrum": 97,
-                "costal cartilages": 114
+                "costal cartilages": 114,
             },
             "muscles": {
                 "left gluteus maximus": 98,
@@ -852,8 +824,8 @@ class ExpertVista3D():
                 "left autochthon": 104,
                 "right autochthon": 105,
                 "left iliopsoas": 106,
-                "right iliopsoas": 107
-            }
+                "right iliopsoas": 107,
+            },
         }
 
     def label_id_to_name(self, label_id: int, label_dict: dict):
@@ -1081,6 +1053,7 @@ class M3Generator:
             self.conv_mode = conv_mode
             if source == "huggingface":
                 from huggingface_hub import snapshot_download
+
                 model_path = snapshot_download(model_path)
             model_name = get_model_name_from_path(model_path)
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
@@ -1150,7 +1123,7 @@ class M3Generator:
 
         tokens = tokenizer_image_token(prompt_text, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
 
-        input_ids = (tokens.unsqueeze(0).to(self.model.device))
+        input_ids = tokens.unsqueeze(0).to(self.model.device)
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
@@ -1208,7 +1181,7 @@ class M3Generator:
                             if value == content["image_path"]:
                                 local_path = self.cache_images.dir()
                                 url = url.replace(local_path, REMOTE_URL)
-                                contents.append({"type": "image_url", "image_url":{"url": url}})
+                                contents.append({"type": "image_url", "image_url": {"url": url}})
                     elif os.path.exists(content["image_path"]):
                         data_url = image_to_data_url(content["image_path"], max_size=(384, 384))
                         logger.debug(f"Length of the data URL: {len(data_url)}")
@@ -1217,10 +1190,7 @@ class M3Generator:
         logger.debug(f"Request messages: {req_messages}")
         response = requests.post(
             self.base_url,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Accept": "application/json"
-            },
+            headers={"Authorization": f"Bearer {self.api_key}", "Accept": "application/json"},
             json={
                 "messages": req_messages,
                 "max_tokens": max_tokens,
@@ -1305,7 +1275,9 @@ class M3Generator:
             special_token = "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> "
             mod_msg = f"These are different {modality} modalities.\n"
             _prompt = model_cards + special_token + mod_msg + prompt
-            image_paths = [os.path.join(self.cache_images.dir(), get_slice_filenames(f, sv.slice_index)) for f in img_file]
+            image_paths = [
+                os.path.join(self.cache_images.dir(), get_slice_filenames(f, sv.slice_index)) for f in img_file
+            ]
             chat_history.append(_prompt, image_path=image_paths)
             sv.sys_msgs_to_hide.append(model_cards + special_token + mod_msg)
         elif img_file is None:
@@ -1314,7 +1286,9 @@ class M3Generator:
         else:
             raise ValueError(f"Invalid image file: {img_file}")
 
-        logger.info(f"Processing the prompt: {prompt}, with max tokens: {sv.max_tokens}, temperature: {sv.temperature}, top P: {sv.top_p}, slice index: {sv.slice_index}")
+        logger.info(
+            f"Processing the prompt: {prompt}, with max tokens: {sv.max_tokens}, temperature: {sv.temperature}, top P: {sv.top_p}, slice index: {sv.slice_index}"
+        )
         outputs = self.generate_response(
             messages=self.squash_expert_messages_into_user(chat_history.messages),
             max_tokens=sv.max_tokens,
@@ -1352,6 +1326,7 @@ class M3Generator:
                 )
             except Exception as e:
                 import traceback
+
                 traceback.print_exc()
                 logger.debug(f"Error: {e}")
                 text_output = f"Sorry I met an error: {e}"
@@ -1372,16 +1347,16 @@ class M3Generator:
 
         new_sv = SessionVariables()
         # Keep these parameters accross one conversation
-        new_sv.sys_prompt=sv.sys_prompt
-        new_sv.sys_msg=sv.sys_msg
-        new_sv.use_model_cards=sv.use_model_cards
-        new_sv.temp_working_dir=sv.temp_working_dir
-        new_sv.max_tokens=sv.max_tokens
-        new_sv.temperature=sv.temperature
-        new_sv.top_p=sv.top_p
+        new_sv.sys_prompt = sv.sys_prompt
+        new_sv.sys_msg = sv.sys_msg
+        new_sv.use_model_cards = sv.use_model_cards
+        new_sv.temp_working_dir = sv.temp_working_dir
+        new_sv.max_tokens = sv.max_tokens
+        new_sv.temperature = sv.temperature
+        new_sv.top_p = sv.top_p
         # new_sv.interactive=True,
-        new_sv.sys_msgs_to_hide=sv.sys_msgs_to_hide
-        new_sv.backup={"image_url": sv.image_url, "slice_index": sv.slice_index},
+        new_sv.sys_msgs_to_hide = sv.sys_msgs_to_hide
+        new_sv.backup = ({"image_url": sv.image_url, "slice_index": sv.slice_index},)
 
         return (
             new_sv,
