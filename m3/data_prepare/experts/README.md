@@ -7,7 +7,7 @@ We can take existing CT datasets, run [VISTA3D](https://github.com/Project-MONAI
 export PYTHONPATH=${PWD}/..
 ROOT_DIR=../../data/experts/vista3d/inference_results
 OUT_FILEPREFIX="../../data/experts/vista3d/llama_gen_expert_data_vista3d_what"
-python expert_train_data_cxr.py --in_datapath ${IN_DATAPATH} --root_dir ${ROOT_DIR} --out_fileprefix ${OUT_FILEPREFIX}
+python expert_train_data_vista3d.py --in_datapath ${IN_DATAPATH} --root_dir ${ROOT_DIR} --out_fileprefix ${OUT_FILEPREFIX}
 ```
 
 ### 2. Prepare expert training data for BRATS 
@@ -43,3 +43,11 @@ python expert_train_data_brats.py --in_meta_data ${META_DATA} --images_root ${RO
 
 ### 2. Prepare expert training data for TorchXRayVision
 For details on how to prepare training & evaluation data with an TorchXRayVision expert model ensemble, see [here](./torchxrayvision/README.md).
+
+And run a command similar to this
+```commandline
+export PYTHONPATH=${PWD}/..
+ROOT_DIR=../../data/experts/cxr/inference_results
+OUT_FILEPREFIX="../../data/experts/cxr/cxr_expert"
+python expert_train_data_cxr.py --in_datapath ${IN_DATAPATH} --root_dir ${ROOT_DIR} --out_fileprefix ${OUT_FILEPREFIX}
+```

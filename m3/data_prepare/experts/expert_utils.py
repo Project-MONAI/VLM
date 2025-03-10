@@ -87,7 +87,7 @@ def add_brats_expert_conversation(conv, trigger="This looks like an MRI image se
         {
             "from": "human",
             "value": model_list
-            + f"T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> These are different MRI modalities.\n"
+            + f"T1(contrast enhanced): <image>, T1: <image>, T2: <image>, FLAIR: <image> These are different MRI modalities.\n"
             + first_prompt,
         }
     )
@@ -95,7 +95,7 @@ def add_brats_expert_conversation(conv, trigger="This looks like an MRI image se
     new_conv.append(
         {
             "from": "human",
-            "value": f"The results are <segmentation>. The colors in this image describe\nyellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor\nUse this result to respond to this prompt:\n{first_prompt}.",
+            "value": f"The results are <image>. The colors in this image describe\nyellow and red: tumor core, only yellow: enhancing tumor, all colors: whole tumor\nUse this result to respond to this prompt:\n{first_prompt}.",
         }
     )
     new_conv.extend(conv[1::])

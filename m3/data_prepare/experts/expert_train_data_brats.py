@@ -14,7 +14,7 @@ import copy
 import random
 
 from data_utils import read_json, read_txt, write_json
-from expert_utils import add_brats_expert_conversation, assert_image_placeholder, get_predictions, model_list
+from expert_utils import add_brats_expert_conversation, model_list
 from tqdm import tqdm
 
 random.seed(0)
@@ -37,11 +37,7 @@ def main(args):
     for meta in tqdm(in_data, desc="creating train data..."):
         # create a q & a conversation
         entry = {
-            "image1": meta["image"][0],
-            "image2": meta["image"][1],
-            "image3": meta["image"][2],
-            "image4": meta["image"][3],
-            "segmentation": meta["label"],
+            "images": [meta["image"][0], meta["image"][1], meta["image"][2], meta["image"][3], meta["label"]],
         }
 
         # what question

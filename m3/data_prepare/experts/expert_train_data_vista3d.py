@@ -156,7 +156,7 @@ def main(args):
 
         id = str(uuid.uuid4())
 
-        entry = {"image": image, "id": id}
+        entry = {"images": [image], "id": id}
 
         if "tumor" in group_name or "lesion" in group_name:
             # tumor task
@@ -173,7 +173,7 @@ def main(args):
             conv.append(
                 {
                     "from": "human",
-                    "value": f"The results are <segmentation>. The colors in this image describe {m['label_colors']}. "
+                    "value": f"The results are <image>. The colors in this image describe {m['label_colors']}. "
                     f"Use this result to respond to this prompt:\n{question}.",
                 }
             )
@@ -206,7 +206,7 @@ def main(args):
                 answer = "no"
                 conv.append({"from": "gpt", "value": answer})
 
-            entry["segmentation"] = label
+            entry["images"].append(label)
         else:  # segmentation or what is task
             segment_task = True if random.random() > 0.5 else False
             if segment_task:
@@ -230,7 +230,7 @@ def main(args):
                 conv.append(
                     {
                         "from": "human",
-                        "value": f"The results are <segmentation>. "
+                        "value": f"The results are <image>. "
                         f"The colors in this image describe {m['label_colors']}. "
                         f"Use this result to respond to this prompt:\n{question}.",
                     }
