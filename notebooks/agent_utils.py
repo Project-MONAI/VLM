@@ -41,7 +41,7 @@ logger.addHandler(logging.StreamHandler())
 # Constants
 SYS_PROMPT = None  # only useful in local mode
 REMOTE_URL = "https://developer.download.nvidia.com/assets/Clara/monai/samples"
-SEGMENTATION_TOKEN = "<segmentation>"
+SEGMENTATION_TOKEN = "<image>"
 
 MODEL_CARDS = (
     "Here is a list of available expert models:\n"

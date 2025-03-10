@@ -40,7 +40,7 @@ class ExpertBrats(BaseExpert):
         label_filename: str,
         modality: str = "MRI",
         axis: int = 2,
-        output_prefix="The results are <segmentation>. The colors in this image describe\n",
+        output_prefix="The results are <image>. The colors in this image describe\n",
     ):
         """Convert the segmentation to a string."""
         output_dir = Path(output_dir)

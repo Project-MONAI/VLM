@@ -59,7 +59,7 @@ class ExpertVista3D(BaseExpert):
         axis: int = 2,
         image_filename: str = "image.jpg",
         label_filename: str = "label.jpg",
-        output_prefix="The results are <segmentation>. The colors in this image describe ",
+        output_prefix="The results are <image>. The colors in this image describe ",
     ):
         """
         Format the segmentation response to a string.

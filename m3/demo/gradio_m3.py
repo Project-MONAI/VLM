@@ -449,7 +449,7 @@ class M3Generator:
             prompt = (
                 prompt.replace("<image>", "") if "<image>" in prompt else prompt
             )  # remove the image token if it's in the prompt
-            special_token = "T1(contrast enhanced): <image1>, T1: <image2>, T2: <image3>, FLAIR: <image4> "
+            special_token = "T1(contrast enhanced): <image>, T1: <image>, T2: <image>, FLAIR: <image> "
             mod_msg = f"These are different {modality} modalities.\n"
             _prompt = model_cards + special_token + mod_msg + prompt
             image_paths = [os.path.join(CACHED_IMAGES.dir(), get_slice_filenames(f, sv.slice_index)) for f in img_file]
