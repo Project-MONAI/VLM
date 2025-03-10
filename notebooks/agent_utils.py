@@ -31,14 +31,7 @@ import requests
 import skimage
 import torch
 from monai.bundle import create_workflow
-from monai.transforms import (
-    Compose,
-    LoadImageD,
-    MapTransform,
-    OrientationD,
-    ScaleIntensityD,
-    ScaleIntensityRangeD,
-)
+from monai.transforms import Compose, LoadImageD, MapTransform, OrientationD, ScaleIntensityD, ScaleIntensityRangeD
 from PIL import Image
 from tqdm import tqdm
 
